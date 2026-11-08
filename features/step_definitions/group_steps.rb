@@ -20,6 +20,26 @@ When("I view the group {string}") do |name|
   visit_page(:get, group_path(name))
 end
 
+When("I delete the group {string}") do |name|
+  visit_page(:delete, group_path(name))
+end
+
+Then("I am told the group was deleted") do
+  expect(@response.status).to eq(200)
+  expect(@page.fetch("component")).to eq("groups/index")
+  expect(props.dig("flash", "notice")).to eq("The group was deleted.")
+end
+
+Then("the group {string} has been deleted") do |name|
+  expect(Group.exists?(group_id(name))).to be(false)
+  expect(Membership.where(group_id: group_id(name))).to be_empty
+end
+
+Then("the viewer accounts still exist:") do |table|
+  account_ids = table.raw.flatten.map { |name| @accounts.fetch(name) }
+  expect(User.where(id: account_ids).pluck(:id)).to match_array(account_ids)
+end
+
 Then("the group is named {string} and owned by {string}") do |name, owner|
   expect(props.fetch("group")).to include("name" => name, "owner_id" => @accounts.fetch(owner))
 end

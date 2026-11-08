@@ -7,7 +7,9 @@ import type { GroupDetails } from "../../types";
 export default function Group({ group }: { group: GroupDetails }) {
   const { auth } = usePage().props;
   const reset = useForm({});
+  const deletion = useForm({});
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
   const [copyError, setCopyError] = useState("");
   const isOwner = auth.user?.id === group.owner_id;
@@ -143,7 +145,15 @@ export default function Group({ group }: { group: GroupDetails }) {
                   </div>
                 </div>
               ) : (
-                <button className="text-button" type="button" onClick={() => setConfirmReset(true)}>
+                <button
+                  className="text-button"
+                  type="button"
+                  disabled={deletion.processing}
+                  onClick={() => {
+                    setConfirmReset(true);
+                    setConfirmDelete(false);
+                  }}
+                >
                   Replace invitation code
                 </button>
               )}
@@ -159,6 +169,52 @@ export default function Group({ group }: { group: GroupDetails }) {
           </aside>
         )}
       </div>
+      {isOwner && (
+        <section className="card group-danger" aria-labelledby="delete-group-title">
+          <h2 id="delete-group-title">Delete this group</h2>
+          <p className="muted">
+            Permanently remove this group for everyone. Member accounts will be kept.
+          </p>
+          {confirmDelete ? (
+            <div className="confirmation">
+              <p className="delete-warning">
+                Delete “{group.name}”? Everyone will lose access and its invitation code will stop
+                working. This cannot be undone.
+              </p>
+              <div className="invite-actions">
+                <button
+                  type="button"
+                  className="button button-danger"
+                  disabled={deletion.processing}
+                  onClick={() => deletion.delete(`/groups/${group.id}`)}
+                >
+                  {deletion.processing ? "Deleting…" : "Yes, delete group"}
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={deletion.processing}
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="button button-danger delete-trigger"
+              disabled={reset.processing}
+              onClick={() => {
+                setConfirmDelete(true);
+                setConfirmReset(false);
+              }}
+            >
+              Delete group
+            </button>
+          )}
+        </section>
+      )}
     </Layout>
   );
 }

@@ -1,6 +1,6 @@
 # WatchTogether
 
-WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, member lists, and reusable invitation codes. Watchlists, voting, progress tracking, and spoiler-free discussion are future iterations.
+WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, member lists, reusable invitation codes, and owner-only group deletion. Watchlists, voting, progress tracking, and spoiler-free discussion are future iterations.
 
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
@@ -39,7 +39,9 @@ The browser receives its session token in a signed, HttpOnly, SameSite cookie, w
 
 Group creation and the owner's membership are one transaction. Only members can view a group. Member lists contain display names, not email addresses. Only the owner sees or resets its invitation code. Resetting invalidates the previous code while preserving existing members. Joining repeatedly, including joining your own group, does not duplicate membership.
 
-There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing/deletion, leaving/removing members, and ownership transfer are outside this iteration.
+An owner can delete a group after confirming in the web interface. Deletion removes the group and all its memberships, invalidates its invitation code, and returns the owner to their group list. Member accounts and unrelated groups are kept. Ordinary members and outsiders cannot delete the group.
+
+There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving/removing members, and ownership transfer are outside this iteration.
 
 ## Tests and grading
 
@@ -73,7 +75,7 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Eight user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US07`.
+- [Nine user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US09`.
 - RSpec checks models, constraints, authentication, permissions, privacy, and failure paths. SimpleCov enforces at least **90% Rails application line coverage** and writes `coverage/index.html`.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
@@ -93,6 +95,7 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 | `GET /groups/new`, `POST /groups`   | Create a private group.                                   |
 | `GET/POST /groups/join`             | Paste an invitation code and join.                        |
 | `GET /groups/:id`                   | Member-only details, with owner-only invitation controls. |
+| `DELETE /groups/:id`                | Owner-only deletion of the group and its memberships.     |
 | `POST /groups/:id/invitation/reset` | Replace the owner's invitation code.                      |
 | `GET /up`                           | Public Rails health endpoint.                             |
 

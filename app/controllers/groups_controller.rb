@@ -29,6 +29,14 @@ class GroupsController < InertiaController
     render inertia: "groups/show", props: { group: details }
   end
 
+  def destroy
+    group = current_user.groups.find(params[:id])
+    return render_error(403, "Only the group owner can delete this group.") unless group.owner_id == current_user.id
+
+    group.with_lock { group.destroy! }
+    redirect_to groups_path, notice: "The group was deleted.", status: :see_other
+  end
+
   def join_form
     render inertia: "groups/join"
   end
