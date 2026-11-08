@@ -10,6 +10,8 @@ void createInertiaApp({
 
   strictMode: true,
 
+  progress: { color: "#e6b75b" },
+
   defaults: {
     form: {
       forceIndicesArrayFormatInFormData: false,
