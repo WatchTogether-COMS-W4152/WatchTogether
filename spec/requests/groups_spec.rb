@@ -177,4 +177,99 @@ RSpec.describe "Groups and invitations", type: :request do
     post join_groups_path, params: { code: group.invite_code }
     expect(response).to redirect_to(group_path(group))
   end
+
+  describe "deleting a group" do
+    it "lets the owner remove the group and all its memberships while keeping accounts and other groups" do
+      group.memberships.create!(user: member)
+      other_group = Group.create_with_owner!(owner: owner, name: "Another watch night")
+      deleted_id = group.id
+      sign_in(owner)
+
+      expect {
+        delete group_path(group)
+      }.to change(Group, :count).by(-1).and change(Membership, :count).by(-2)
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(groups_path)
+      expect(Group.exists?(deleted_id)).to be(false)
+      expect(Membership.where(group_id: deleted_id)).to be_empty
+      expect(User.where(id: [ owner.id, member.id ]).count).to eq(2)
+      expect(other_group.reload.members).to contain_exactly(owner)
+      follow_redirect!
+      expect(page_props.dig("flash", "notice")).to eq("The group was deleted.")
+      expect(page_props["groups"].map { |item| item["id"] }).to eq([ other_group.id ])
+    end
+
+    it "removes former members' access and invalidates the group's invitation" do
+      group.memberships.create!(user: member)
+      deleted_path = group_path(group)
+      old_code = group.invite_code
+      sign_in(owner)
+      delete deleted_path
+      delete session_path
+      sign_in(member)
+
+      get groups_path
+      expect(page_props["groups"]).to eq([])
+      get deleted_path
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).not_to include(group.name, old_code)
+      post join_groups_path, params: { code: old_code }
+      expect(response).to redirect_to(join_groups_path)
+      follow_redirect!
+      expect(page_props.dig("errors", "code")).to eq([ "This invitation code is invalid or has been replaced." ])
+      expect(member.memberships).to be_empty
+    end
+
+    it "forbids a member from deleting the group even with a forged owner parameter" do
+      group.memberships.create!(user: member)
+      sign_in(member)
+
+      expect {
+        delete group_path(group), params: { owner_id: member.id }
+      }.not_to change(Group, :count)
+
+      expect(response).to have_http_status(:forbidden)
+      expect(page_props["message"]).to eq("Only the group owner can delete this group.")
+      expect(group.reload.members).to contain_exactly(owner, member)
+      expect(response.body).not_to include(group.invite_code, owner.email)
+    end
+
+    it "hides a group from a nonmember attempting to delete it" do
+      group
+      sign_in(member)
+
+      expect {
+        delete group_path(group)
+      }.not_to change(Group, :count)
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).not_to include(group.name, group.invite_code)
+      expect(group.members).to contain_exactly(owner)
+    end
+
+    it "requires authentication before deleting a group" do
+      group
+
+      expect {
+        delete group_path(group)
+      }.not_to change(Group, :count)
+
+      expect(response).to redirect_to(sign_in_path)
+      expect(group.members).to contain_exactly(owner)
+    end
+
+    it "returns not found for a missing or already deleted group" do
+      deleted_path = group_path(group)
+      sign_in(owner)
+      delete deleted_path
+
+      expect {
+        delete deleted_path
+      }.not_to change(Group, :count)
+
+      expect(response).to have_http_status(:not_found)
+      expect(page_props["message"]).to eq("That group could not be found.")
+    end
+  end
 end

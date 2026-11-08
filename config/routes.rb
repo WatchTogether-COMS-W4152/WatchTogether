@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   post "sign-in", to: "sessions#create"
   delete "session", to: "sessions#destroy"
   resource :profile, only: [ :show, :update ]
-  resources :groups, only: [ :index, :new, :create, :show ] do
+  resources :groups, only: [ :index, :new, :create, :show, :destroy ] do
     collection do
       get "join", action: :join_form
       post "join", action: :join

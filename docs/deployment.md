@@ -44,7 +44,7 @@ After the team deploys, record the actual URL, release identifier, date, and res
 1. Confirm dependency installation, Vite compilation, and release database preparation finish successfully.
 2. Open the app, refresh it, and verify JavaScript/CSS/icons load with no browser console errors.
 3. Request `/up` and confirm HTTP 200. This only proves application health; continue with database-backed checks.
-4. Complete the [two-user demonstration](user-stories.md#two-user-demonstration), including invalid forms, owner-only code controls, reset-code rejection, profile updates, and logout.
+4. Complete the [two-user demonstration](user-stories.md#two-user-demonstration), including invalid forms, owner-only code controls, reset-code rejection, profile updates, logout, and deletion of a temporary group by its owner.
 5. Confirm users and memberships remain after refresh and application restart.
 6. Confirm production session cookies are Secure and HttpOnly and that unauthorized group access exposes no private details.
 7. Check application logs for unexpected errors. Avoid copying credentials, cookie values, or private user data into the verification record.

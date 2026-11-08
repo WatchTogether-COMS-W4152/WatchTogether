@@ -228,6 +228,8 @@ describe("group flows", () => {
       screen.queryByRole("button", { name: "Replace invitation code" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("alice@example.com")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete group" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Delete this group" })).not.toBeInTheDocument();
   });
 
   it("copies the owner's invitation code", async () => {
@@ -276,6 +278,55 @@ describe("group flows", () => {
       options?.onStart?.(visit);
     });
     expect(screen.getByRole("button", { name: "Replacing…" })).toBeDisabled();
+  });
+
+  it("lets the owner cancel deletion without sending a request", async () => {
+    const user = userEvent.setup();
+    render(<Group group={group} />);
+    await user.click(screen.getByRole("button", { name: "Delete group" }));
+    expect(screen.getByText(/Delete “Friday Film Club”/)).toHaveTextContent(
+      "This cannot be undone",
+    );
+    expect(deleteRequest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("button", { name: "Yes, delete group" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete group" })).toBeEnabled();
+    expect(deleteRequest).not.toHaveBeenCalled();
+  });
+
+  it("deletes only after confirmation and blocks repeated submissions", async () => {
+    const user = userEvent.setup();
+    render(<Group group={group} />);
+    await user.click(screen.getByRole("button", { name: "Delete group" }));
+    expect(deleteRequest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Yes, delete group" }));
+    const [url, options] = deleteRequest.mock.calls[0];
+    expect(url).toBe("/groups/7");
+    act(() => options?.onStart?.(visit));
+    expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Deleting…" }));
+    expect(deleteRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows retrying a failed deletion while keeping its confirmation visible", async () => {
+    const user = userEvent.setup();
+    render(<Group group={group} />);
+    await user.click(screen.getByRole("button", { name: "Delete group" }));
+    await user.click(screen.getByRole("button", { name: "Yes, delete group" }));
+    const options = deleteRequest.mock.calls[0][1];
+    act(() => options?.onStart?.(visit));
+    fireEvent(
+      document,
+      new CustomEvent("inertia:networkError", {
+        cancelable: true,
+        detail: { error: new Error("Offline") },
+      }),
+    );
+    act(() => options?.onFinish?.(visit));
+    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("button", { name: "Yes, delete group" })).toBeEnabled();
+    expect(screen.getByText(/Delete “Friday Film Club”/)).toBeVisible();
   });
 });
 
