@@ -17,14 +17,14 @@ export type SharedProps = {
 export type GroupSummary = {
   id: number;
   name: string;
-  owner_id: number;
+  is_owner: boolean;
   member_count: number;
 };
 
 export type GroupDetails = {
   id: number;
   name: string;
-  owner_id: number;
-  members: { id: number; display_name: string }[];
+  is_owner: boolean;
+  members: { id: number; display_name: string; role: "owner" | "member" }[];
   invitation_code?: string;
 };

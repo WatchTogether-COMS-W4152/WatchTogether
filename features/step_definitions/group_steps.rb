@@ -41,7 +41,11 @@ Then("the viewer accounts still exist:") do |table|
 end
 
 Then("the group is named {string} and owned by {string}") do |name, owner|
-  expect(props.fetch("group")).to include("name" => name, "owner_id" => @accounts.fetch(owner))
+  group = props.fetch("group")
+  expect(group.fetch("name")).to eq(name)
+  expect(group.fetch("members")).to include(
+    include("id" => @accounts.fetch(owner), "role" => "owner")
+  )
 end
 
 Then("the group has these members:") do |table|

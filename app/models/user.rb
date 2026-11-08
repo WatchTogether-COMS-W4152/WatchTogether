@@ -2,10 +2,10 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :sessions, dependent: :destroy
+  has_many :ownerships, -> { where(role: "owner") }, class_name: "Membership", dependent: :restrict_with_error
+  has_many :owned_groups, through: :ownerships, source: :group
   has_many :memberships, dependent: :destroy
   has_many :groups, through: :memberships
-  has_many :owned_groups, class_name: "Group", foreign_key: :owner_id,
-    inverse_of: :owner, dependent: :restrict_with_error
 
   normalizes :email, with: ->(email) { email.strip.downcase }
   normalizes :display_name, with: ->(name) { name.strip }

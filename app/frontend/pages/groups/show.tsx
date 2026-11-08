@@ -1,18 +1,32 @@
 import { Link, useForm, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import GroupMembers, { type MemberPanel } from "../../components/group-members";
 import Layout, { PageHeader } from "../../components/layout";
 import type { GroupDetails } from "../../types";
 
 export default function Group({ group }: { group: GroupDetails }) {
   const { auth } = usePage().props;
-  const reset = useForm({});
-  const deletion = useForm({});
+  const action = useForm({});
+  const [memberPanel, setMemberPanel] = useState<MemberPanel | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
   const [copyError, setCopyError] = useState("");
-  const isOwner = auth.user?.id === group.owner_id;
+  const isOwner = group.is_owner;
+  const resetCancel = useRef<HTMLButtonElement | null>(null);
+  const deleteCancel = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (confirmReset) resetCancel.current?.focus();
+    if (confirmDelete) deleteCancel.current?.focus();
+  }, [confirmReset, confirmDelete]);
+
+  function finishMemberAction() {
+    setMemberPanel(null);
+    setCopyMessage("");
+    setCopyError("");
+  }
 
   async function copyInvitation() {
     setCopyMessage("");
@@ -53,28 +67,29 @@ export default function Group({ group }: { group: GroupDetails }) {
         description="Your people, all in one place."
       />
       <div className="details-grid">
-        <section className="card members-card">
-          <div className="section-label">
-            <h2>The crew</h2>
-            <span>
-              {group.members.length} {group.members.length === 1 ? "member" : "members"}
-            </span>
-          </div>
-          <ul className="member-list">
-            {group.members.map((member) => (
-              <li key={member.id}>
-                <span className="avatar" aria-hidden="true">
-                  {member.display_name.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="member-name">
-                  {member.display_name}
-                  {member.id === auth.user?.id && <span className="muted"> (you)</span>}
-                </span>
-                {member.id === group.owner_id && <span className="badge">Owner</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <GroupMembers
+          group={group}
+          currentUserId={auth.user?.id}
+          panel={memberPanel}
+          processing={action.processing}
+          onPanelChange={(panel) => {
+            setMemberPanel(panel);
+            setConfirmReset(false);
+            setConfirmDelete(false);
+          }}
+          onPromote={(memberId) =>
+            action.post(`/groups/${group.id}/members/${memberId}/promote`, {
+              preserveScroll: true,
+              onSuccess: finishMemberAction,
+            })
+          }
+          onRemove={(memberId) =>
+            action.delete(`/groups/${group.id}/members/${memberId}`, {
+              preserveScroll: true,
+              onSuccess: finishMemberAction,
+            })
+          }
+        />
         {isOwner && group.invitation_code ? (
           <section className="card invitation-card" aria-labelledby="invitation-title">
             <span className="eyebrow">Save them a seat</span>
@@ -86,6 +101,7 @@ export default function Group({ group }: { group: GroupDetails }) {
               <button
                 className="button button-primary"
                 type="button"
+                disabled={action.processing}
                 onClick={() => void copyInvitation()}
               >
                 Copy code
@@ -94,6 +110,7 @@ export default function Group({ group }: { group: GroupDetails }) {
                 <button
                   className="button button-secondary"
                   type="button"
+                  disabled={action.processing}
                   onClick={() => void shareInvitation()}
                 >
                   Share
@@ -120,9 +137,9 @@ export default function Group({ group }: { group: GroupDetails }) {
                     <button
                       type="button"
                       className="button button-danger"
-                      disabled={reset.processing}
+                      disabled={action.processing}
                       onClick={() =>
-                        reset.post(`/groups/${group.id}/invitation/reset`, {
+                        action.post(`/groups/${group.id}/invitation/reset`, {
                           preserveScroll: true,
                           onSuccess: () => {
                             setConfirmReset(false);
@@ -132,12 +149,13 @@ export default function Group({ group }: { group: GroupDetails }) {
                         })
                       }
                     >
-                      {reset.processing ? "Replacing…" : "Replace code"}
+                      {action.processing ? "Replacing…" : "Replace code"}
                     </button>
                     <button
                       type="button"
                       className="text-button"
-                      disabled={reset.processing}
+                      ref={resetCancel}
+                      disabled={action.processing}
                       onClick={() => setConfirmReset(false)}
                     >
                       Cancel
@@ -148,10 +166,11 @@ export default function Group({ group }: { group: GroupDetails }) {
                 <button
                   className="text-button"
                   type="button"
-                  disabled={deletion.processing}
+                  disabled={action.processing}
                   onClick={() => {
                     setConfirmReset(true);
                     setConfirmDelete(false);
+                    setMemberPanel(null);
                   }}
                 >
                   Replace invitation code
@@ -164,7 +183,7 @@ export default function Group({ group }: { group: GroupDetails }) {
             <span className="eyebrow">Just for your crew</span>
             <h2>A private place to gather</h2>
             <p className="muted">
-              Want to bring a friend? Ask your group owner for an invitation code.
+              Want to bring a friend? Ask a group owner for an invitation code.
             </p>
           </aside>
         )}
@@ -185,15 +204,16 @@ export default function Group({ group }: { group: GroupDetails }) {
                 <button
                   type="button"
                   className="button button-danger"
-                  disabled={deletion.processing}
-                  onClick={() => deletion.delete(`/groups/${group.id}`)}
+                  disabled={action.processing}
+                  onClick={() => action.delete(`/groups/${group.id}`)}
                 >
-                  {deletion.processing ? "Deleting…" : "Yes, delete group"}
+                  {action.processing ? "Deleting…" : "Yes, delete group"}
                 </button>
                 <button
                   type="button"
                   className="text-button"
-                  disabled={deletion.processing}
+                  ref={deleteCancel}
+                  disabled={action.processing}
                   onClick={() => setConfirmDelete(false)}
                 >
                   Cancel
@@ -204,10 +224,11 @@ export default function Group({ group }: { group: GroupDetails }) {
             <button
               type="button"
               className="button button-danger delete-trigger"
-              disabled={reset.processing}
+              disabled={action.processing}
               onClick={() => {
                 setConfirmDelete(true);
                 setConfirmReset(false);
+                setMemberPanel(null);
               }}
             >
               Delete group

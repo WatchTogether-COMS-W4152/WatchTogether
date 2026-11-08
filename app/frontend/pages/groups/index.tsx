@@ -1,10 +1,9 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 
 import Layout, { PageHeader } from "../../components/layout";
 import type { GroupSummary } from "../../types";
 
 export default function Groups({ groups }: { groups: GroupSummary[] }) {
-  const { auth } = usePage().props;
   return (
     <Layout title="My groups">
       <PageHeader
@@ -45,9 +44,7 @@ export default function Groups({ groups }: { groups: GroupSummary[] }) {
                   <span>
                     {group.member_count} {group.member_count === 1 ? "member" : "members"}
                   </span>
-                  <span className="badge">
-                    {group.owner_id === auth.user?.id ? "Owner" : "Member"}
-                  </span>
+                  <span className="badge">{group.is_owner ? "Owner" : "Member"}</span>
                 </div>
               </div>
             </Link>

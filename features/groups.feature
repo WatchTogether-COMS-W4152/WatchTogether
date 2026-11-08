@@ -89,7 +89,7 @@ Feature: Private watch groups
     And "Bob" joined "Friday Night" using an invitation
     And I am signed in as "Bob"
     When I delete the group "Friday Night"
-    Then only the owner is allowed to do that
+    Then only an owner is allowed to do that
     When I view the group "Friday Night"
     Then the group has these members:
       | Alice |

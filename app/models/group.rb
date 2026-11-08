@@ -1,7 +1,8 @@
 class Group < ApplicationRecord
-  belongs_to :owner, class_name: "User", inverse_of: :owned_groups
   has_many :memberships, dependent: :destroy
   has_many :members, through: :memberships, source: :user
+  has_many :owner_memberships, -> { where(role: "owner") }, class_name: "Membership"
+  has_many :owners, through: :owner_memberships, source: :user
 
   normalizes :name, with: ->(name) { name.strip }
   before_validation :set_invite_code, on: :create
@@ -12,10 +13,14 @@ class Group < ApplicationRecord
 
   def self.create_with_owner!(owner:, name:)
     transaction do
-      group = create!(owner: owner, name: name)
-      group.memberships.create!(user: owner)
+      group = create!(name: name)
+      group.memberships.create!(user: owner, role: "owner")
       group
     end
+  end
+
+  def owner?(user)
+    memberships.exists?(user: user, role: "owner")
   end
 
   def reset_invitation!

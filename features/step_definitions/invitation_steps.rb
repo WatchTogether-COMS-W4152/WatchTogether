@@ -38,7 +38,7 @@ Then("member details contain names but no emails or invitation code") do
   expect(group).not_to have_key("invitation_code")
   expect(group).not_to have_key("invite_code")
   group.fetch("members").each do |member|
-    expect(member.keys).to match_array(%w[id display_name])
+    expect(member.keys).to match_array(%w[id display_name role])
   end
 end
 
@@ -50,7 +50,7 @@ Then("{string} has no membership in {string}") do |viewer, name|
   expect(membership_for(viewer, name)).to be_empty
 end
 
-Then("only the owner is allowed to do that") do
+Then("only an owner is allowed to do that") do
   expect(@response.status).to eq(403)
   expect(@page.fetch("component")).to eq("errors/show")
 end

@@ -10,15 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_08_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_000001) do
   create_table "groups", force: :cascade do |t|
     t.string "name", null: false
-    t.integer "owner_id", null: false
     t.string "invite_code", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["invite_code"], name: "index_groups_on_invite_code", unique: true
-    t.index ["owner_id"], name: "index_groups_on_owner_id"
   end
 
   create_table "memberships", force: :cascade do |t|
@@ -26,9 +24,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_000004) do
     t.integer "group_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role", default: "member", null: false
     t.index ["group_id", "user_id"], name: "index_memberships_on_group_id_and_user_id", unique: true
     t.index ["group_id"], name: "index_memberships_on_group_id"
     t.index ["user_id"], name: "index_memberships_on_user_id"
+    t.check_constraint "role IN ('member', 'owner')", name: "memberships_role_check"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -50,7 +50,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_08_000004) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
-  add_foreign_key "groups", "users", column: "owner_id"
   add_foreign_key "memberships", "groups"
   add_foreign_key "memberships", "users"
   add_foreign_key "sessions", "users"

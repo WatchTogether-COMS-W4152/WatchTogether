@@ -8,6 +8,8 @@ The implementation is being left in a local commit at the team's request. No rem
 
 Run the checks in [README.md](../README.md) and review the [verification record](verification.md). Use the Ruby/Node versions and lockfiles committed on this branch. Keep secrets and local `.env` files out of Git. Preserve LF line endings for Ruby lockfiles and Linux entrypoint scripts; the repository's attributes make checkout behavior explicit.
 
+The shared-ownership migration backfills owner roles on memberships and removes the single `groups.owner_id` column. Back up existing data before applying it. This migration cannot be automatically rolled back to one owner per group; rolling back to the old application version requires restoring a compatible database backup.
+
 ## Production Docker image
 
 The checked-in `Dockerfile` builds the production image, installs Ruby and JavaScript dependencies, and precompiles assets. Build it from the repository root:
@@ -44,7 +46,7 @@ After the team deploys, record the actual URL, release identifier, date, and res
 1. Confirm dependency installation, Vite compilation, and release database preparation finish successfully.
 2. Open the app, refresh it, and verify JavaScript/CSS/icons load with no browser console errors.
 3. Request `/up` and confirm HTTP 200. This only proves application health; continue with database-backed checks.
-4. Complete the [two-user demonstration](user-stories.md#two-user-demonstration), including invalid forms, owner-only code controls, reset-code rejection, profile updates, logout, and deletion of a temporary group by its owner.
+4. Complete the [two-user demonstration](user-stories.md#two-user-demonstration), including invalid forms, owner-only code controls, reset-code rejection, profile updates, logout, shared ownership, member removal with invitation replacement, and deletion of a temporary group by an owner.
 5. Confirm users and memberships remain after refresh and application restart.
 6. Confirm production session cookies are Secure and HttpOnly and that unauthorized group access exposes no private details.
 7. Check application logs for unexpected errors. Avoid copying credentials, cookie values, or private user data into the verification record.

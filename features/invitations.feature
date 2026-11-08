@@ -63,7 +63,7 @@ Feature: Invite friends to a private group
     When I view the group "Friday Night"
     Then member details contain names but no emails or invitation code
     When I reset the invitation for "Friday Night"
-    Then only the owner is allowed to do that
+    Then only an owner is allowed to do that
     And the invitation code for "Friday Night" is unchanged
 
   @US06 @US08
