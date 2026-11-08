@@ -1,0 +1,51 @@
+# Development and test use SQLite (zero setup). Production uses PostgreSQL.
+
+sqlite: &sqlite
+  adapter: sqlite3
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  timeout: 5000
+
+development:
+  <<: *sqlite
+  database: storage/development.sqlite3
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *sqlite
+  database: storage/test.sqlite3
+
+# Production runs four PostgreSQL databases: the app's primary database plus
+# one each for Solid Cache, Solid Queue and Solid Cable. They can live on the
+# same server.
+#
+# Connection details come from environment variables, which Rails merges
+# into the matching entry below:
+#
+#   DATABASE_URL        -> primary
+#   CACHE_DATABASE_URL  -> cache
+#   QUEUE_DATABASE_URL  -> queue
+#   CABLE_DATABASE_URL  -> cable
+#
+# e.g. DATABASE_URL=postgres://user:pass@host:5432/watch_together_production
+#
+# Read more: https://guides.rubyonrails.org/configuring.html#configuring-a-database
+production:
+  primary: &primary_production
+    adapter: postgresql
+    encoding: unicode
+    max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    database: watch_together_production
+  cache:
+    <<: *primary_production
+    database: watch_together_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: watch_together_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: watch_together_production_cable
+    migrations_paths: db/cable_migrate
