@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+ruby file: ".ruby-version"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.4", ">= 8.1.4.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
@@ -16,7 +18,7 @@ end
 gem "puma", ">= 5.0"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -50,6 +52,12 @@ group :development, :test do
 
   # Testing framework [https://rspec.info/]
   gem "rspec-rails", "~> 8.1"
+end
+
+group :test do
+  gem "simplecov", require: false
+  gem "cucumber-rails", "~> 4.1", require: false
+  gem "rack-test"
 end
 
 group :development do

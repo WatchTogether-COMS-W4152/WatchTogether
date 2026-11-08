@@ -36,6 +36,8 @@
 
 # Ignore assets.
 /node_modules/
+/coverage/
+/artifacts/
 /app/assets/builds/*
 !/app/assets/builds/.keep
 /public/assets
