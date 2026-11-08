@@ -11,6 +11,32 @@ RSpec.describe Membership, type: :model do
     expect(membership.errors).to include(:user, :group)
   end
 
+  it "defaults to an ordinary member and accepts only the two supported roles" do
+    membership = group.memberships.build(user: create_user)
+    expect(membership.role).to eq("member")
+    expect(membership).to be_member
+    [ nil, "admin", "" ].each do |role|
+      membership.role = role
+      expect(membership).not_to be_valid
+      expect(membership.errors[:role]).not_to be_empty
+    end
+    membership.role = "owner"
+    expect(membership).to be_valid
+    expect(membership).to be_owner
+  end
+
+  it "enforces supported and non-null roles in the database" do
+    membership = group.memberships.build(user: create_user, role: "admin")
+    expect {
+      Membership.transaction(requires_new: true) { membership.save!(validate: false) }
+    }.to raise_error(ActiveRecord::StatementInvalid)
+
+    membership.role = nil
+    expect {
+      Membership.transaction(requires_new: true) { membership.save!(validate: false) }
+    }.to raise_error(ActiveRecord::NotNullViolation)
+  end
+
   it "prevents duplicate memberships" do
     duplicate = group.memberships.build(user: owner)
 

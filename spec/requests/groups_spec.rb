@@ -18,12 +18,12 @@ RSpec.describe "Groups and invitations", type: :request do
   it "creates a private group with the signed-in user as its owner and first member" do
     sign_in(owner)
     expect {
-      post groups_path, params: { name: " Weekend movies ", owner_id: member.id, invite_code: "A" * 16 }
+      post groups_path, params: { name: " Weekend movies ", owner_id: member.id, owner_ids: [ member.id ], role: "member", invite_code: "A" * 16 }
     }.to change(Group, :count).by(1).and change(Membership, :count).by(1)
     created = Group.last
     expect(response).to redirect_to(group_path(created))
     expect(created.name).to eq("Weekend movies")
-    expect(created.owner).to eq(owner)
+    expect(created.owners).to contain_exactly(owner)
     expect(created.members).to contain_exactly(owner)
     expect(created.invite_code).not_to eq("A" * 16)
   end
@@ -46,7 +46,7 @@ RSpec.describe "Groups and invitations", type: :request do
     Group.create_with_owner!(owner: create_user, name: "Other private group")
     sign_in(member)
     get groups_path
-    expect(page_props["groups"]).to eq([ { "id" => joined.id, "name" => "Friday films", "owner_id" => owner.id, "member_count" => 2 } ])
+    expect(page_props["groups"]).to eq([ { "id" => joined.id, "name" => "Friday films", "is_owner" => false, "member_count" => 2 } ])
     expect(page_props.to_json).not_to include(joined.invite_code)
   end
 
@@ -56,9 +56,12 @@ RSpec.describe "Groups and invitations", type: :request do
     get group_path(group)
     details = page_props["group"]
     expect(details["members"]).to contain_exactly(
-      { "id" => owner.id, "display_name" => "Owner" }, { "id" => member.id, "display_name" => "Member" }
+      { "id" => owner.id, "display_name" => "Owner", "role" => "owner" },
+      { "id" => member.id, "display_name" => "Member", "role" => "member" }
     )
     expect(details).not_to have_key("invitation_code")
+    expect(details["is_owner"]).to be(false)
+    expect(details).not_to have_key("owner_id")
     expect(response.body).not_to include(owner.email, owner.password_digest, group.invite_code)
   end
 
@@ -66,6 +69,7 @@ RSpec.describe "Groups and invitations", type: :request do
     sign_in(owner)
     get group_path(group)
     expect(page_props.dig("group", "invitation_code")).to eq(group.invite_code)
+    expect(page_props.dig("group", "is_owner")).to be(true)
   end
 
   it "returns the same not-found page for inaccessible and missing groups" do
@@ -82,9 +86,10 @@ RSpec.describe "Groups and invitations", type: :request do
 
   it "joins using a code with different case and surrounding whitespace" do
     sign_in(member)
-    post join_groups_path, params: { code: " #{group.invite_code.downcase} " }
+    post join_groups_path, params: { code: " #{group.invite_code.downcase} ", role: "owner", is_owner: true }
     expect(response).to redirect_to(group_path(group))
     expect(group.members).to contain_exactly(owner, member)
+    expect(group.owner?(member)).to be(false)
   end
 
   it "handles repeated joins without duplicate memberships" do
@@ -230,7 +235,7 @@ RSpec.describe "Groups and invitations", type: :request do
       }.not_to change(Group, :count)
 
       expect(response).to have_http_status(:forbidden)
-      expect(page_props["message"]).to eq("Only the group owner can delete this group.")
+      expect(page_props["message"]).to eq("Only group owners can delete this group.")
       expect(group.reload.members).to contain_exactly(owner, member)
       expect(response.body).not_to include(group.invite_code, owner.email)
     end

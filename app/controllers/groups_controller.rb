@@ -4,7 +4,10 @@ class GroupsController < InertiaController
 
   def index
     groups = current_user.groups.includes(:memberships).order(:name, :id).map do |group|
-      group.as_json(only: [ :id, :name, :owner_id ]).merge(member_count: group.memberships.size)
+      group.as_json(only: [ :id, :name ]).merge(
+        member_count: group.memberships.size,
+        is_owner: group.memberships.any? { |membership| membership.user_id == current_user.id && membership.owner? }
+      )
     end
     render inertia: "groups/index", props: { groups: groups }
   end
@@ -22,18 +25,24 @@ class GroupsController < InertiaController
 
   def show
     group = current_user.groups.find(params[:id])
-    details = group.as_json(only: [ :id, :name, :owner_id ]).merge(
-      members: group.members.order(:display_name, :id).as_json(only: [ :id, :display_name ])
+    is_owner = group.owner?(current_user)
+    details = group.as_json(only: [ :id, :name ]).merge(
+      is_owner: is_owner,
+      members: group.memberships.includes(:user).joins(:user).order("users.display_name", "users.id").map do |membership|
+        membership.user.as_json(only: [ :id, :display_name ]).merge(role: membership.role)
+      end
     )
-    details[:invitation_code] = group.invite_code if group.owner_id == current_user.id
+    details[:invitation_code] = group.invite_code if is_owner
     render inertia: "groups/show", props: { group: details }
   end
 
   def destroy
     group = current_user.groups.find(params[:id])
-    return render_error(403, "Only the group owner can delete this group.") unless group.owner_id == current_user.id
+    group.with_lock do
+      return render_error(403, "Only group owners can delete this group.") unless group.owner?(current_user)
 
-    group.with_lock { group.destroy! }
+      group.destroy!
+    end
     redirect_to groups_path, notice: "The group was deleted.", status: :see_other
   end
 

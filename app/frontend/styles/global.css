@@ -540,20 +540,77 @@ nav {
   list-style: none;
 }
 .member-list li {
-  display: flex;
-  align-items: center;
-  gap: 13px;
   padding: 16px 0;
   border-top: 1px solid var(--border);
 }
 .member-list li:last-child {
   padding-bottom: 0;
 }
-.member-name {
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.member-identity {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.member-name {
   font-size: 0.89rem;
   font-weight: 500;
   overflow-wrap: anywhere;
+}
+.member-help {
+  font-size: 0.8rem;
+  margin: -4px 0 18px;
+}
+.manage-member {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 9px 12px;
+  font-size: 0.78rem;
+}
+.manage-member[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.member-management {
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.member-management h3 {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.member-management p {
+  margin: 10px 0 18px;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+.member-management .invite-actions {
+  margin-bottom: 0;
+}
+.member-removal-option {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 18px;
+}
+.member-removal-option .text-button {
+  min-height: 44px;
+}
+.danger-text {
+  color: var(--error);
 }
 .invitation-card h2 {
   margin-bottom: 9px;

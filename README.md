@@ -1,6 +1,6 @@
 # WatchTogether
 
-WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, member lists, reusable invitation codes, and owner-only group deletion. Watchlists, voting, progress tracking, and spoiler-free discussion are future iterations.
+WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. Watchlists, voting, progress tracking, and spoiler-free discussion are future iterations.
 
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
@@ -28,20 +28,24 @@ Create an account, create a group, and copy its invitation code. Use a second br
 
 The implementation uses ordinary Rails controllers, Inertia pages, and four models:
 
-| Model        | Responsibility                                                                             |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| `User`       | Display name, normalized unique email, and bcrypt password digest.                         |
-| `Session`    | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session. |
-| `Group`      | Name, owner, and cryptographically random reusable invitation code.                        |
-| `Membership` | User/group relationship with foreign keys and a unique pair constraint.                    |
+| Model        | Responsibility                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| `User`       | Display name, normalized unique email, and bcrypt password digest.                             |
+| `Session`    | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.     |
+| `Group`      | Name and cryptographically random reusable invitation code.                                    |
+| `Membership` | User/group relationship and member/owner role, with foreign keys and a unique pair constraint. |
 
 The browser receives its session token in a signed, HttpOnly, SameSite cookie, with the Secure flag in production. Rails protects form submissions against CSRF. Authentication and invitation attempts are throttled. Passwords and tokens are filtered from logs.
 
-Group creation and the owner's membership are one transaction. Only members can view a group. Member lists contain display names, not email addresses. Only the owner sees or resets its invitation code. Resetting invalidates the previous code while preserving existing members. Joining repeatedly, including joining your own group, does not duplicate membership.
+Group creation and the creator's owner membership are one transaction. Only members can view a group. Member lists contain display names and roles, not email addresses. All owners can see or reset the invitation code. Resetting invalidates the previous code while preserving existing members. Joining repeatedly, including joining your own group, does not duplicate membership or change an existing role. New members always join as ordinary members.
+
+Owners can make existing members owners. Ownership is shared: the original owner remains an owner, and every owner has the same permissions to invite friends, manage members, and delete the group. Each other member's **Manage** control opens the available actions; promotion asks for confirmation and explains these permissions.
+
+Owners can remove another member, including another owner. Removal asks for confirmation, removes access to that group, and replaces its invitation code in the same transaction so a saved code cannot restore access. Existing members stay in the group; member accounts and memberships in other groups are kept. An owner cannot remove themselves, so these actions always leave at least one owner. Removal is not a permanent ban: someone with a newly shared invitation can join again as an ordinary member.
 
 An owner can delete a group after confirming in the web interface. Deletion removes the group and all its memberships, invalidates its invitation code, and returns the owner to their group list. Member accounts and unrelated groups are kept. Ordinary members and outsiders cannot delete the group.
 
-There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving/removing members, and ownership transfer are outside this iteration.
+There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving groups, owner demotion, and exclusive ownership transfer are outside this iteration.
 
 ## Tests and grading
 
@@ -75,7 +79,7 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Nine user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US09`.
+- [Eleven user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US10` or `--tags @US11`.
 - RSpec checks models, constraints, authentication, permissions, privacy, and failure paths. SimpleCov enforces at least **90% Rails application line coverage** and writes `coverage/index.html`.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
@@ -85,21 +89,25 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                               | Purpose                                                   |
-| ----------------------------------- | --------------------------------------------------------- |
-| `GET/POST /sign-up`                 | Registration; automatically signs in.                     |
-| `GET/POST /sign-in`                 | Sign-in form and authentication.                          |
-| `DELETE /session`                   | Revoke the current session and sign out.                  |
-| `GET/PATCH /profile`                | Read profile and update display name.                     |
-| `GET /`, `GET /groups`              | List the current user's groups.                           |
-| `GET /groups/new`, `POST /groups`   | Create a private group.                                   |
-| `GET/POST /groups/join`             | Paste an invitation code and join.                        |
-| `GET /groups/:id`                   | Member-only details, with owner-only invitation controls. |
-| `DELETE /groups/:id`                | Owner-only deletion of the group and its memberships.     |
-| `POST /groups/:id/invitation/reset` | Replace the owner's invitation code.                      |
-| `GET /up`                           | Public Rails health endpoint.                             |
+| Route                                       | Purpose                                                   |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `GET/POST /sign-up`                         | Registration; automatically signs in.                     |
+| `GET/POST /sign-in`                         | Sign-in form and authentication.                          |
+| `DELETE /session`                           | Revoke the current session and sign out.                  |
+| `GET/PATCH /profile`                        | Read profile and update display name.                     |
+| `GET /`, `GET /groups`                      | List the current user's groups.                           |
+| `GET /groups/new`, `POST /groups`           | Create a private group.                                   |
+| `GET/POST /groups/join`                     | Paste an invitation code and join.                        |
+| `GET /groups/:id`                           | Member-only details, with owner-only invitation controls. |
+| `DELETE /groups/:id`                        | Owner-only deletion of the group and its memberships.     |
+| `POST /groups/:id/invitation/reset`         | Replace the owner's invitation code.                      |
+| `POST /groups/:id/members/:user_id/promote` | Make an existing member another owner.                    |
+| `DELETE /groups/:id/members/:user_id`       | Remove another member and replace the invitation code.    |
+| `GET /up`                                   | Public Rails health endpoint.                             |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
+
+The shared-ownership migration preserves existing data: each group's previous owner becomes an owner-role member before the old single-owner column is removed. Run `bin/rails db:prepare` when updating an existing checkout, then `bin/rails restart` if the development server is already running so it reloads the schema. Docker startup and the production release phase already run database preparation.
 
 ## Production
 
