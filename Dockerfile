@@ -24,7 +24,7 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Throw-away build stage to reduce size of final image
@@ -44,7 +44,7 @@ RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz
 
 # Install application gems
 COPY vendor/* ./vendor/
-COPY Gemfile Gemfile.lock ./
+COPY Gemfile Gemfile.lock .ruby-version ./
 
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \

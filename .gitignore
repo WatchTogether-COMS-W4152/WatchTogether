@@ -31,6 +31,8 @@
 
 # Node / Vite
 /node_modules
+/coverage/
+/artifacts/
 /public/vite*
 /public/assets
 *.local

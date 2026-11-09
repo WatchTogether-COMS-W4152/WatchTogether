@@ -1,0 +1,137 @@
+.voting-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 24px;
+  align-items: start;
+}
+.suggest-card,
+.ranking-card {
+  padding: 28px;
+}
+.suggest-card h2 {
+  margin-bottom: 18px;
+}
+.scoring-note {
+  margin-top: 22px;
+}
+.empty-ranking {
+  font-size: 0.88rem;
+}
+.suggestion-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.suggestion-item {
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+.suggestion-item:last-child {
+  padding-bottom: 0;
+}
+.suggestion-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.suggestion-rank {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.suggestion-identity {
+  flex: 1;
+  min-width: 0;
+}
+.suggestion-identity h3 {
+  font-size: 0.98rem;
+}
+.suggestion-identity p {
+  font-size: 0.77rem;
+  margin-top: 2px;
+}
+.suggestion-score {
+  flex-shrink: 0;
+  min-width: 48px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--surface-raised);
+  color: var(--success);
+  font-weight: 700;
+  text-align: center;
+}
+.suggestion-score.is-negative {
+  color: var(--error);
+}
+.rating-control {
+  margin: 14px 0 0 48px;
+}
+.rating-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.rating-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.rating-button:hover {
+  border-color: var(--accent);
+}
+.rating-button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.rating-not_interested.is-active {
+  background: #342224;
+  border-color: #bd776c;
+  color: var(--error);
+}
+.suggestion-remove,
+.suggestion-removal {
+  margin: 10px 0 0 48px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .voting-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .suggest-card,
+  .ranking-card {
+    padding: 23px;
+  }
+  .rating-control,
+  .suggestion-remove,
+  .suggestion-removal {
+    margin-left: 0;
+  }
+}
