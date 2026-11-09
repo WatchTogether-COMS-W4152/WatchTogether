@@ -65,6 +65,11 @@ export default function Group({ group }: { group: GroupDetails }) {
         eyebrow="Private group"
         title={group.name}
         description="Your people, all in one place."
+        actions={
+          <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
+            What should we watch?
+          </Link>
+        }
       />
       <div className="details-grid">
         <GroupMembers
