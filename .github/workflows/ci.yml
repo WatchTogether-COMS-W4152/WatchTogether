@@ -3,7 +3,6 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
 
 jobs:
   scan_ruby:
@@ -65,6 +64,7 @@ jobs:
       - run: npm run fmt:check
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm test
 
   test:
     runs-on: ubuntu-latest
@@ -89,4 +89,16 @@ jobs:
       - name: Run tests
         env:
           RAILS_ENV: test
-        run: bin/rails db:test:prepare && bin/rspec
+        run: bin/rails db:test:prepare && bin/rspec && bundle exec cucumber
+
+      - name: Build production assets
+        env:
+          RAILS_ENV: production
+          SECRET_KEY_BASE_DUMMY: "1"
+        run: bin/rails assets:precompile
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rails-coverage
+          path: coverage/
