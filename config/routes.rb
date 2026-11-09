@@ -23,5 +23,10 @@ Rails.application.routes.draw do
     post "invitation/reset", to: "invitations#reset", as: :reset_invitation
     post "members/:user_id/promote", to: "memberships#promote", as: :member_promote
     delete "members/:user_id", to: "memberships#destroy", as: :member
+
+    # Voting
+    resources :suggestions, only: [ :index, :create, :destroy ] do
+      resource :vote, only: [ :update ]
+    end
   end
 end
