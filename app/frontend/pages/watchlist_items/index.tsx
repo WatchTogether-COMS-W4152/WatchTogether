@@ -1,4 +1,3 @@
-
 import { Link, router, useForm } from "@inertiajs/react";
 
 import Field from "../../components/field";
@@ -62,11 +61,7 @@ export default function Watchlist({
             error={form.errors.title}
           />
 
-          <button
-            className="button button-primary"
-            type="submit"
-            disabled={form.processing}
-          >
+          <button className="button button-primary" type="submit" disabled={form.processing}>
             {form.processing ? "Adding…" : "Add to Watchlist"}
           </button>
         </form>
@@ -76,9 +71,7 @@ export default function Watchlist({
         <h2>Movies & Shows</h2>
 
         {watchlist_items.length === 0 ? (
-          <p className="muted">
-            Your watchlist is empty. Add your first movie!
-          </p>
+          <p className="muted">Your watchlist is empty. Add your first movie!</p>
         ) : (
           <ul>
             {watchlist_items.map((item) => (
@@ -95,27 +88,26 @@ export default function Watchlist({
                     router.patch(
                       `/groups/${group.id}/watchlist_items/${item.id}`,
                       {},
-                      { preserveScroll: true }
+                      { preserveScroll: true },
                     );
                   }}
                 >
                   {item.watched ? "Mark as Unwatched" : "Mark as Watched"}
                 </button>
-<button
-  className="button"
-  type="button"
-  style={{ marginLeft: "8px" }}
-  onClick={() => {
-    if (window.confirm(`Remove "${item.title}" from the watchlist?`)) {
-      router.delete(
-        `/groups/${group.id}/watchlist_items/${item.id}`,
-        { preserveScroll: true }
-      );
-    }
-  }}
->
-  Remove
-</button>
+                <button
+                  className="button"
+                  type="button"
+                  style={{ marginLeft: "8px" }}
+                  onClick={() => {
+                    if (window.confirm(`Remove "${item.title}" from the watchlist?`)) {
+                      router.delete(`/groups/${group.id}/watchlist_items/${item.id}`, {
+                        preserveScroll: true,
+                      });
+                    }
+                  }}
+                >
+                  Remove
+                </button>
               </li>
             ))}
           </ul>
@@ -124,4 +116,3 @@ export default function Watchlist({
     </Layout>
   );
 }
-

@@ -19,4 +19,3 @@ RSpec.describe WatchlistItem, type: :model do
     expect(WatchlistItem.reflect_on_association(:group).macro).to eq(:belongs_to)
   end
 end
-
