@@ -2,7 +2,7 @@
 
 This branch serves a Rails/Inertia/React web app. Vite builds browser assets during `rails assets:precompile`; Puma serves the application. A separate React Native app and public JSON API are future work.
 
-The app is deployed on Heroku at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/** (app name `watchtogether-w4152`).
+The `main` version is deployed on Heroku at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/** (app name `watchtogether-w4152`). The watchlist is currently on `feature/watchlist`, has not been merged into `main`, and is available for local review. Its absence from the deployed app is expected until the team merges and deploys it.
 
 ## Before deployment
 

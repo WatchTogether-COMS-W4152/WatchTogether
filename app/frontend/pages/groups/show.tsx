@@ -65,9 +65,14 @@ export default function Group({ group }: { group: GroupDetails }) {
         title={group.name}
         description={`${group.members.length} ${group.members.length === 1 ? "member" : "members"}`}
         actions={
-          <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
-            What should we watch?
-          </Link>
+          <>
+            <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
+              What should we watch?
+            </Link>
+            <Link className="button button-secondary" href={`/groups/${group.id}/watchlist_items`}>
+              Our Watchlist
+            </Link>
+          </>
         }
       />
       <div className="details-grid">

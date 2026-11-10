@@ -1,6 +1,6 @@
 # WatchTogether
 
-WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. Watchlists, progress tracking, and spoiler-free discussion are not part of this branch.
+WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. This branch adds a **shared watchlist** where members keep titles, mark them watched or unwatched, and remove them. Episode-level progress tracking and spoiler-free discussion are outside this iteration.
 
 ## Team
 
@@ -11,7 +11,7 @@ WatchTogether helps friends organize what they watch together. This web-first it
 | Larissa | ls4270  |
 | Yuqi    | yl6408  |
 
-**Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/
+**Live app (`main`):** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/. The watchlist is currently on `feature/watchlist` and has not been merged into `main` or deployed.
 
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
@@ -37,16 +37,17 @@ Create an account, create a group, and copy its invitation code. Use a second br
 
 ## Design and scope
 
-The implementation uses ordinary Rails controllers, Inertia pages, and six models:
+The implementation uses ordinary Rails controllers, Inertia pages, and seven models:
 
-| Model        | Responsibility                                                                                     |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| `User`       | Display name, normalized unique email, and bcrypt password digest.                                 |
-| `Session`    | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.         |
-| `Group`      | Name and cryptographically random reusable invitation code.                                        |
-| `Membership` | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.     |
-| `Suggestion` | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.     |
-| `Vote`       | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member. |
+| Model           | Responsibility                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| `User`          | Display name, normalized unique email, and bcrypt password digest.                                 |
+| `Session`       | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.         |
+| `Group`         | Name and cryptographically random reusable invitation code.                                        |
+| `Membership`    | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.     |
+| `Suggestion`    | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.     |
+| `Vote`          | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member. |
+| `WatchlistItem` | A title on a group's shared watchlist and its watched/unwatched status.                            |
 
 The browser receives its session token in a signed, HttpOnly, SameSite cookie, with the Secure flag in production. Rails protects form submissions against CSRF. Authentication and invitation attempts are throttled. Passwords and tokens are filtered from logs.
 
@@ -63,6 +64,12 @@ An owner can delete a group after confirming in the web interface. Deletion remo
 Any member can suggest a title to their group from **What should we watch?** on the group page. Blank titles and duplicates (ignoring letter case and extra spaces) are rejected. Each member privately rates each title with exactly one of three options: **Love it** (+2), **Maybe** (+1), or **Not interested** (−2). A member can change their rating at any time; there is no way to clear it.
 
 The group ranking orders titles by total score, then by number of Love it ratings, then by the oldest suggestion. Unrated titles score 0, so one dislike cancels one Love without acting as a veto. Only current members' ratings count: when someone is removed from the group, their ratings stop affecting the ranking. Members see each title's total score, how many members have rated it, and their own rating, but never who chose which rating. The suggester or any owner can remove a title, which deletes its ratings. Deleting a group deletes its suggestions and ratings; deleting an account deletes that person's ratings and keeps their suggestions.
+
+### Watchlist
+
+Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title of 1–120 characters, mark any item watched or unwatched, and remove any item after confirmation. Blank or whitespace-only titles are rejected. Items start unwatched and appear newest first; duplicate titles are allowed. Changes persist and are shared with the group. Watchlist items are separate from voting suggestions; adding or rating a suggestion does not automatically add it to the watchlist.
+
+Visitors must sign in, and outsiders or removed members cannot view or change the list. An item's ID only works within its own group. Deleting a group deletes its watchlist while preserving other groups and their items.
 
 There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving groups, owner demotion, and exclusive ownership transfer are outside this iteration.
 
@@ -98,8 +105,8 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Fifteen user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US10`, or run just the voting stories with `bundle exec cucumber features/voting.feature`.
-- RSpec checks models, constraints, authentication, permissions, privacy, and failure paths. SimpleCov enforces at least **90% Rails application line coverage** and writes `coverage/index.html`.
+- [Eighteen user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US16`, just the voting stories with `bundle exec cucumber features/voting.feature`, or the watchlist stories with `bundle exec cucumber features/watchlist.feature`.
+- RSpec checks models, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
 - GitHub Actions is configured to run the checks when the branch is pushed or opened as a pull request. A local run does not imply a remote workflow has run.
@@ -126,6 +133,10 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 | `POST /groups/:id/suggestions`              | Suggest a title to the group.                             |
 | `DELETE /groups/:id/suggestions/:id`        | Remove a title (its suggester or any owner).              |
 | `PUT /groups/:id/suggestions/:id/vote`      | Set or change your rating for a title.                    |
+| `GET /groups/:id/watchlist_items`           | View the group's shared watchlist (members only).         |
+| `POST /groups/:id/watchlist_items`          | Add a title to the group's watchlist.                     |
+| `PATCH /groups/:id/watchlist_items/:id`     | Toggle an item between watched and unwatched.             |
+| `DELETE /groups/:id/watchlist_items/:id`    | Remove an item from the group's watchlist.                |
 | `GET /up`                                   | Public Rails health endpoint.                             |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
@@ -136,4 +147,4 @@ The shared-ownership migration preserves existing data: each group's previous ow
 
 The [deployment guide](docs/deployment.md) covers the production Docker image and Heroku configuration. The frontend is compiled during Rails asset precompilation, and Puma serves the application.
 
-The app is live at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/**.
+The `main` version is live at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/**. Run this branch locally to review the watchlist until it is merged and deployed.
