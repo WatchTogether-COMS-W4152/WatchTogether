@@ -36,4 +36,6 @@ The [two-user demonstration](user-stories.md#two-user-demonstration) remains the
 
 ## Deployment status
 
-This change is intended to remain in a local commit for the team to push. No new remote GitHub Actions result or Heroku release is claimed. Record a deployment URL only after this branch has actually been deployed and verified.
+Deployed to Heroku on November 9, 2026, at https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/ (release v5, Heroku-24 stack, one Basic dyno, Heroku Postgres `essential-0`). The build installed dependencies, compiled the frontend with Vite, and ran `db:prepare` in the release phase without errors. `/up` returned HTTP 200, and the sign-in page and its JavaScript and CSS loaded.
+
+A browser check on the deployed app then registered a temporary account, created a group, suggested a title, and rated it. The ranking showed the expected score (+2 for Love it). The temporary account and group were then deleted from production.

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import type { GroupDetails } from "../types";
+import Avatar from "./avatar";
 
 export type MemberPanel = { memberId: number; step: "actions" | "promote" | "remove" };
 
@@ -36,29 +37,20 @@ export default function GroupMembers({
   }, [panel]);
 
   return (
-    <section className="card members-card" aria-labelledby="members-title">
+    <section className="panel members-card" aria-labelledby="members-title">
       <div className="section-label">
         <h2 id="members-title" ref={listTitle} tabIndex={-1}>
-          The crew
+          Members
         </h2>
-        <span>
-          {group.members.length} {group.members.length === 1 ? "member" : "members"}
-        </span>
       </div>
-      {group.is_owner && (
-        <p className="member-help muted">
-          Owners share group management. Choose Manage to change someone's access.
-        </p>
-      )}
+      {group.is_owner && <p className="member-help muted">Owners can invite and remove people.</p>}
       <ul className="member-list">
         {group.members.map((member) => {
           const isActive = panel?.memberId === member.id;
           return (
             <li key={member.id}>
               <div className="member-row">
-                <span className="avatar" aria-hidden="true">
-                  {member.display_name.slice(0, 1).toUpperCase()}
-                </span>
+                <Avatar name={member.display_name} />
                 <div className="member-identity">
                   <span className="member-name">
                     {member.display_name}
@@ -79,7 +71,7 @@ export default function GroupMembers({
                       onPanelChange(isActive ? null : { memberId: member.id, step: "actions" });
                     }}
                   >
-                    Manage <span aria-hidden="true">{isActive ? "−" : "+"}</span>
+                    Manage
                   </button>
                 )}
               </div>

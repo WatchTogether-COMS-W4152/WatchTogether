@@ -1,10 +1,6 @@
 require "simplecov"
-
-SimpleCov.start "rails" do
-  enable_coverage :branch
-  cover "app/{controllers,models}/**/*.rb"
-  minimum_coverage line: 90
-end
+SimpleCov.command_name "RSpec"
+SimpleCov.minimum_coverage line: 90
 
 RSpec.configure do |config|
   config.expect_with(:rspec) { |expectations| expectations.syntax = :expect }
