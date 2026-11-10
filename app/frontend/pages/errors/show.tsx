@@ -6,8 +6,8 @@ export default function ErrorPage({ status, message }: { status: number; message
   const { auth } = usePage().props;
   return (
     <Layout title={`Error ${status}`} narrow>
-      <section className="card empty-state">
-        <p className="eyebrow">{status}</p>
+      <section className="empty-state">
+        <p>Error {status}</p>
         <h1>{status === 404 ? "We couldn't find that page" : "We couldn't open that page"}</h1>
         <p>{message}</p>
         <Link className="button button-primary" href={auth.user ? "/groups" : "/sign-in"}>
