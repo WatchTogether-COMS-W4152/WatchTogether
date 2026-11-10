@@ -59,12 +59,11 @@ export default function Group({ group }: { group: GroupDetails }) {
   return (
     <Layout title={group.name}>
       <Link className="back-link" href="/groups">
-        ← My groups
+        ← Groups
       </Link>
       <PageHeader
-        eyebrow="Private group"
         title={group.name}
-        description="Your people, all in one place."
+        description={`${group.members.length} ${group.members.length === 1 ? "member" : "members"}`}
         actions={
           <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
             What should we watch?
@@ -96,15 +95,14 @@ export default function Group({ group }: { group: GroupDetails }) {
           }
         />
         {isOwner && group.invitation_code ? (
-          <section className="card invitation-card" aria-labelledby="invitation-title">
-            <span className="eyebrow">Save them a seat</span>
-            <h2 id="invitation-title">Invite your friends</h2>
-            <p className="muted">Share this code with people you'd like in your group.</p>
+          <section className="panel invitation-card" aria-labelledby="invitation-title">
+            <h2 id="invitation-title">Invite people</h2>
+            <p className="muted">Anyone with this code can join the group.</p>
             <p className="code-label">Invitation code</p>
             <code className="invite-code">{group.invitation_code}</code>
             <div className="invite-actions">
               <button
-                className="button button-primary"
+                className="button button-secondary"
                 type="button"
                 disabled={action.processing}
                 onClick={() => void copyInvitation()}
@@ -128,9 +126,6 @@ export default function Group({ group }: { group: GroupDetails }) {
                 {copyError}
               </p>
             )}
-            <p className="field-hint">
-              This code stays valid until you replace it. Anyone with the code can join.
-            </p>
             <div className="reset-invitation">
               {confirmReset ? (
                 <div className="confirmation">
@@ -184,21 +179,17 @@ export default function Group({ group }: { group: GroupDetails }) {
             </div>
           </section>
         ) : (
-          <aside className="card invitation-card member-note">
-            <span className="eyebrow">Just for your crew</span>
-            <h2>A private place to gather</h2>
-            <p className="muted">
-              Want to bring a friend? Ask a group owner for an invitation code.
-            </p>
+          <aside className="panel invitation-card member-note">
+            <h2>Invite people</h2>
+            <p className="muted">Ask a group owner for the invitation code.</p>
           </aside>
         )}
       </div>
       {isOwner && (
-        <section className="card group-danger" aria-labelledby="delete-group-title">
-          <h2 id="delete-group-title">Delete this group</h2>
-          <p className="muted">
-            Permanently remove this group for everyone. Member accounts will be kept.
-          </p>
+        <section className="group-danger" aria-labelledby="delete-group-title">
+          <h2 id="delete-group-title" className="visually-hidden">
+            Delete this group
+          </h2>
           {confirmDelete ? (
             <div className="confirmation">
               <p className="delete-warning">
@@ -228,7 +219,7 @@ export default function Group({ group }: { group: GroupDetails }) {
           ) : (
             <button
               type="button"
-              className="button button-danger delete-trigger"
+              className="text-button danger-text delete-trigger"
               disabled={action.processing}
               onClick={() => {
                 setConfirmDelete(true);
