@@ -72,4 +72,3 @@ RSpec.describe "Watchlist items", type: :request do
     end
   end
 end
-
