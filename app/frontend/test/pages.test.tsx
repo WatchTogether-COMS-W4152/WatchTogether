@@ -164,8 +164,8 @@ describe("accounts", () => {
 describe("group flows", () => {
   it("offers clear create/join actions when the user has no groups", () => {
     render(<Groups groups={[]} />);
-    expect(screen.getByText("Your next watch night starts here")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Create your first group" })).toHaveAttribute(
+    expect(screen.getByText("No groups yet")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Create a group" })).toHaveAttribute(
       "href",
       "/groups/new",
     );
@@ -183,8 +183,7 @@ describe("group flows", () => {
       "href",
       "/groups/7",
     );
-    expect(screen.getByText("2 members")).toBeVisible();
-    expect(screen.getByText("Owner")).toBeVisible();
+    expect(screen.getByText("2 members · Owner")).toBeVisible();
   });
 
   it("submits a group name and presents a rejected name", async () => {

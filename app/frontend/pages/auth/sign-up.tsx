@@ -8,7 +8,7 @@ export default function SignUp() {
   const form = useForm({ display_name: "", email: "", password: "", password_confirmation: "" });
   return (
     <Layout title="Create an account">
-      <AuthPanel title="Find your crew" description="Create your profile and start a group.">
+      <AuthPanel title="Create your account" description="Plan what to watch with your friends.">
         <form
           noValidate
           onSubmit={(event) => {
@@ -28,7 +28,7 @@ export default function SignUp() {
             value={form.data.display_name}
             onChange={(event) => form.setData("display_name", event.target.value)}
             error={form.errors.display_name}
-            hint="This is the name your group members will see."
+            hint="Shown to people in your groups."
           />
           <Field
             label="Email"
@@ -71,7 +71,7 @@ export default function SignUp() {
           </button>
         </form>
         <p className="form-footer">
-          Already part of a group? <Link href="/sign-in">Sign in</Link>
+          Already have an account? <Link href="/sign-in">Sign in</Link>
         </p>
       </AuthPanel>
     </Layout>

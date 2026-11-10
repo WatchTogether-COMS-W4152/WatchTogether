@@ -8,14 +8,13 @@ export default function JoinGroup() {
   return (
     <Layout title="Join a group" narrow>
       <Link className="back-link" href="/groups">
-        ← My groups
+        ← Groups
       </Link>
       <PageHeader
-        eyebrow="Your seat is waiting"
         title="Join a group"
-        description="Have an invitation? You're one step away."
+        description="Enter the invitation code someone shared with you."
       />
-      <section className="card form-card">
+      <section>
         <form
           noValidate
           onSubmit={(event) => {
@@ -35,7 +34,7 @@ export default function JoinGroup() {
             value={form.data.code}
             onChange={(event) => form.setData("code", event.target.value)}
             error={form.errors.code}
-            hint="Ask the group owner for a code, then paste it here."
+            hint="Group owners can find this on the group page."
           />
           <div className="form-actions">
             <Link className="button button-secondary" href="/groups">
