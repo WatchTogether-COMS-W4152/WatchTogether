@@ -1,6 +1,8 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import Avatar from "./avatar";
+
 export default function Layout({
   title,
   children,
@@ -37,24 +39,16 @@ export default function Layout({
       <header className="site-header">
         <div className="header-inner">
           <Link href={auth.user ? "/groups" : "/sign-in"} className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              ▶
-            </span>
-            WatchTogether
-            <span className="brand-dot" aria-hidden="true">
-              .
-            </span>
+            Watch<span>Together</span>
           </Link>
           <nav aria-label="Main navigation">
             {auth.user ? (
               <>
                 <Link href="/groups" className="nav-link">
-                  My groups
+                  Groups
                 </Link>
                 <Link href="/profile" className="nav-link profile-link">
-                  <span className="avatar avatar-small" aria-hidden="true">
-                    {auth.user.display_name.slice(0, 1).toUpperCase()}
-                  </span>
+                  <Avatar name={auth.user.display_name} size="small" />
                   <span>Profile</span>
                 </Link>
                 <button
@@ -67,9 +61,14 @@ export default function Layout({
                 </button>
               </>
             ) : (
-              <Link href="/sign-up" className="nav-link">
-                Create an account <span aria-hidden="true">↗</span>
-              </Link>
+              <>
+                <Link href="/sign-in" className="nav-link">
+                  Sign in
+                </Link>
+                <Link href="/sign-up" className="button button-primary">
+                  Sign up
+                </Link>
+              </>
             )}
           </nav>
         </div>
@@ -88,18 +87,15 @@ export default function Layout({
         )}
         {children}
       </main>
-      <footer className="site-footer">Good company. Great watch nights.</footer>
     </div>
   );
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   description,
   actions,
 }: {
-  eyebrow: string;
   title: string;
   description?: string;
   actions?: ReactNode;
@@ -107,7 +103,6 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         {description && <p className="page-description">{description}</p>}
       </div>

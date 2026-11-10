@@ -1,6 +1,9 @@
 # Acceptance scenarios use real Rails requests and independent browser cookies.
 ENV["RAILS_ENV"] = "test"
 
+require "simplecov"
+SimpleCov.command_name "Cucumber"
+
 require_relative "../../config/environment"
 require "rack/test"
 require "rspec/expectations"

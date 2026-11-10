@@ -16,36 +16,13 @@ test:
   <<: *sqlite
   database: storage/test.sqlite3
 
-# Production runs four PostgreSQL databases: the app's primary database plus
-# one each for Solid Cache, Solid Queue and Solid Cable. They can live on the
-# same server.
-#
-# Connection details come from environment variables, which Rails merges
-# into the matching entry below:
-#
-#   DATABASE_URL        -> primary
-#   CACHE_DATABASE_URL  -> cache
-#   QUEUE_DATABASE_URL  -> queue
-#   CABLE_DATABASE_URL  -> cable
-#
+# Production uses PostgreSQL. Connection details come from DATABASE_URL
+# (set automatically by Heroku Postgres), which Rails merges into this entry,
 # e.g. DATABASE_URL=postgres://user:pass@host:5432/watch_together_production
 #
 # Read more: https://guides.rubyonrails.org/configuring.html#configuring-a-database
 production:
-  primary: &primary_production
-    adapter: postgresql
-    encoding: unicode
-    max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-    database: watch_together_production
-  cache:
-    <<: *primary_production
-    database: watch_together_production_cache
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: watch_together_production_queue
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *primary_production
-    database: watch_together_production_cable
-    migrations_paths: db/cable_migrate
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  database: watch_together_production
