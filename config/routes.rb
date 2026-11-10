@@ -28,5 +28,7 @@ Rails.application.routes.draw do
     resources :suggestions, only: [ :index, :create, :destroy ] do
       resource :vote, only: [ :update ]
     end
+    # Watchlist
+    resources :watchlist_items, only: [ :index, :create, :update, :destroy ]
   end
 end

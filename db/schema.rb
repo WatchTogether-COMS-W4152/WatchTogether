@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_200002) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_003700) do
   create_table "groups", force: :cascade do |t|
     t.string "name", null: false
     t.string "invite_code", null: false
@@ -72,6 +72,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_200002) do
     t.check_constraint "rating IN ('love', 'maybe', 'not_interested')", name: "votes_rating_check"
   end
 
+  create_table "watchlist_items", force: :cascade do |t|
+    t.integer "group_id", null: false
+    t.string "title", null: false
+    t.boolean "watched", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id"], name: "index_watchlist_items_on_group_id"
+  end
+
   add_foreign_key "memberships", "groups"
   add_foreign_key "memberships", "users"
   add_foreign_key "sessions", "users"
@@ -79,4 +88,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_200002) do
   add_foreign_key "suggestions", "users", column: "suggested_by_id", on_delete: :nullify
   add_foreign_key "votes", "suggestions", on_delete: :cascade
   add_foreign_key "votes", "users", on_delete: :cascade
+  add_foreign_key "watchlist_items", "groups"
 end

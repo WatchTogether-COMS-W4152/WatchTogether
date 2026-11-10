@@ -66,9 +66,14 @@ export default function Group({ group }: { group: GroupDetails }) {
         title={group.name}
         description="Your people, all in one place."
         actions={
+	<>
           <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
             What should we watch?
           </Link>
+    <Link className="button button-secondary" href={`/groups/${group.id}/watchlist_items`}>
+      Our Watchlist
+    </Link>
+  </>
         }
       />
       <div className="details-grid">
