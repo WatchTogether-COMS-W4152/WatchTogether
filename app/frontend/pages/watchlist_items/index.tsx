@@ -30,7 +30,6 @@ export default function Watchlist({
       </Link>
 
       <PageHeader
-        eyebrow="GROUP WATCHLIST"
         title="Our Watchlist"
         description="Keep track of movies and shows your group wants to watch."
       />
