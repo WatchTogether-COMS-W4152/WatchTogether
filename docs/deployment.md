@@ -2,7 +2,7 @@
 
 This branch serves a Rails/Inertia/React web app. Vite builds browser assets during `rails assets:precompile`; Puma serves the application. A separate React Native app and public JSON API are future work.
 
-The implementation is being left in a local commit at the team's request. No remote push or new Heroku deployment is part of this change. The earlier Expo/API deployment is a different iteration and should not be presented as this branch's deployment.
+The app is deployed on Heroku at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/** (app name `watchtogether-w4152`).
 
 ## Before deployment
 
@@ -20,24 +20,32 @@ docker build -t watchtogether-web .
 
 Provide database connections and a production `SECRET_KEY_BASE` when running the image. If using encrypted Rails credentials, provide the matching `RAILS_MASTER_KEY` as well. Never bake either secret into the image. The default entrypoint runs `bin/rails db:prepare` before starting Rails.
 
-Production preserves the scaffold's four PostgreSQL connections:
+Production uses a single PostgreSQL database, read from `DATABASE_URL`. The app doesn't use the Rails cache, background jobs, or Action Cable yet, so in production they run in-process (memory cache, async jobs, async cable). Move them to Solid Cache, Solid Queue, and Solid Cable when a feature needs them to be durable or shared across processes.
 
-| Environment variable | Database purpose                          |
-| -------------------- | ----------------------------------------- |
-| `DATABASE_URL`       | Users, sessions, groups, and memberships. |
-| `CACHE_DATABASE_URL` | Solid Cache.                              |
-| `QUEUE_DATABASE_URL` | Solid Queue.                              |
-| `CABLE_DATABASE_URL` | Solid Cable.                              |
+## Heroku
 
-Provision each connection before starting the app. These are four configured databases, not four schemas created automatically inside a single Heroku Postgres add-on. The Solid components are inherited infrastructure; group management does not enqueue background work or use realtime channels.
+The app runs on one Basic web dyno with a Heroku Postgres `essential-0` database, which sets `DATABASE_URL`. Buildpacks run **Node before Ruby**, so Node is available when Rails asset precompilation builds the frontend with Vite. The `Procfile` runs `rails db:prepare` in the release phase, so migrations apply on every deploy, and then starts Puma.
 
-## Heroku configuration
+The setup, for reference or for recreating the app:
 
-Use the **Node buildpack before Ruby** so JavaScript dependencies are available to Vite during Rails asset precompilation. Keep Vite build dependencies installed during that step, for example with `NPM_CONFIG_INCLUDE=dev`. Pin the versions using the repository's configuration.
+```sh
+heroku create watchtogether-w4152 --stack heroku-24
+heroku buildpacks:add heroku/nodejs -a watchtogether-w4152
+heroku buildpacks:add heroku/ruby -a watchtogether-w4152
+heroku addons:create heroku-postgresql:essential-0 -a watchtogether-w4152
+heroku config:set SECRET_KEY_BASE=$(openssl rand -hex 64) -a watchtogether-w4152
+```
 
-The `Procfile` declares the web process and a release-phase database preparation command. Set the four database URL variables and production secrets in Heroku configuration. Provision databases appropriate for that configuration before releasing. `Procfile.dev` is for local development and is not the production process definition.
+To deploy, push `main` to Heroku. Ask the app owner to add you as a collaborator first:
 
-The team should choose the target app and database arrangement deliberately before deployment. Replacing the prior Expo/API deployment with this branch is an application migration, not merely changing the frontend assets; review its database migration history and existing data first. Do not reset or drop an existing production database to make a release pass.
+```sh
+git remote add heroku https://git.heroku.com/watchtogether-w4152.git
+git push heroku main
+```
+
+Useful commands: `heroku logs --tail -a watchtogether-w4152`, `heroku run bin/rails console -a watchtogether-w4152`, and `heroku releases -a watchtogether-w4152`. Do not reset or drop the production database to make a release pass.
+
+`Procfile.dev` is for local development and is not the production process definition.
 
 ## Verify the deployed release
 
