@@ -1,5 +1,6 @@
 class Group < ApplicationRecord
   has_many :memberships, dependent: :destroy
+  has_many :watchlist_items, dependent: :destroy
   has_many :members, through: :memberships, source: :user
   has_many :owner_memberships, -> { where(role: "owner") }, class_name: "Membership"
   has_many :owners, through: :owner_memberships, source: :user

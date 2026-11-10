@@ -2,7 +2,11 @@
 ENV["RAILS_ENV"] = "test"
 
 require "simplecov"
-SimpleCov.command_name "Cucumber"
+SimpleCov.start "rails" do
+  command_name "Cucumber"
+  coverage_dir "coverage/cucumber"
+  minimum_coverage line: 90
+end
 
 require_relative "../../config/environment"
 require "rack/test"
