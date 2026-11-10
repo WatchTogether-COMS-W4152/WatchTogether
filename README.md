@@ -11,6 +11,8 @@ WatchTogether helps friends organize what they watch together. This web-first it
 | Larissa | ls4270  |
 | Yuqi    | yl6408  |
 
+**Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/
+
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
 ## Run locally
@@ -134,4 +136,4 @@ The shared-ownership migration preserves existing data: each group's previous ow
 
 The [deployment guide](docs/deployment.md) covers the production Docker image and Heroku configuration. The frontend is compiled during Rails asset precompilation, and Puma serves the application.
 
-This web implementation is committed locally for the team to review and push. It has not replaced the earlier Expo/API deployment. An existing URL from that earlier iteration is not evidence that this branch has been deployed.
+The app is live at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/**.
