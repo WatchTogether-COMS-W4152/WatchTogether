@@ -8,14 +8,10 @@ export default function NewGroup() {
   return (
     <Layout title="Create a group" narrow>
       <Link className="back-link" href="/groups">
-        ← My groups
+        ← Groups
       </Link>
-      <PageHeader
-        eyebrow="Make it a group thing"
-        title="Create a group"
-        description="Give your crew a name. Invite your friends next."
-      />
-      <section className="card form-card">
+      <PageHeader title="New group" description="You can invite people once it's created." />
+      <section>
         <form
           noValidate
           onSubmit={(event) => {
@@ -34,11 +30,8 @@ export default function NewGroup() {
             value={form.data.name}
             onChange={(event) => form.setData("name", event.target.value)}
             error={form.errors.name}
+            hint="Groups are private. People join with an invitation code."
           />
-          <div className="info-note">
-            <span aria-hidden="true">◇</span>
-            <p>Your group is private. People can join only with your invitation code.</p>
-          </div>
           <div className="form-actions">
             <Link className="button button-secondary" href="/groups">
               Cancel

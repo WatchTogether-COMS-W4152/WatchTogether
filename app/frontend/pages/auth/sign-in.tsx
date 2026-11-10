@@ -8,7 +8,7 @@ export default function SignIn() {
   const form = useForm({ email: "", password: "" });
   return (
     <Layout title="Sign in">
-      <AuthPanel title="Welcome back" description="Sign in to find your people.">
+      <AuthPanel title="Sign in" description="Welcome back.">
         <form
           noValidate
           onSubmit={(event) => {
@@ -47,7 +47,7 @@ export default function SignIn() {
           </button>
         </form>
         <p className="form-footer">
-          New here? <Link href="/sign-up">Create an account</Link>
+          Don't have an account? <Link href="/sign-up">Sign up</Link>
         </p>
       </AuthPanel>
     </Layout>
