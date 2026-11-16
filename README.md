@@ -11,7 +11,7 @@ WatchTogether helps friends organize what they watch together. This web-first it
 | Larissa | ls4270  |
 | Yuqi    | yl6408  |
 
-**Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/. This branch adds TMDB integration for local review; it has not been deployed.
+**Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/.
 
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
