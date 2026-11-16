@@ -1,3 +1,5 @@
+import type { MediaMetadata } from "./catalog";
+
 export type Rating = "love" | "maybe" | "not_interested";
 
 export const RATING_OPTIONS: { value: Rating; label: string; points: string }[] = [
@@ -6,7 +8,7 @@ export const RATING_OPTIONS: { value: Rating; label: string; points: string }[] 
   { value: "not_interested", label: "Not interested", points: "-2" },
 ];
 
-export type Suggestion = {
+export type Suggestion = MediaMetadata & {
   id: number;
   title: string;
   score: number;
@@ -14,6 +16,7 @@ export type Suggestion = {
   my_rating: Rating | null;
   suggested_by: string | null;
   can_remove: boolean;
+  in_watchlist?: boolean;
 };
 
 export type VotingGroup = {

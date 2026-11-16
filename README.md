@@ -1,6 +1,6 @@
 # WatchTogether
 
-WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. This branch adds a **shared watchlist** where members keep titles, mark them watched or unwatched, and remove them. Episode-level progress tracking and spoiler-free discussion are outside this iteration.
+WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. A **shared watchlist** lets members keep titles, mark them watched or unwatched, and remove them. Both voting and watchlist support **TMDB movie and TV search**, saved metadata, and posters. Episode-level progress tracking and spoiler-free discussion are outside this iteration.
 
 ## Team
 
@@ -11,7 +11,7 @@ WatchTogether helps friends organize what they watch together. This web-first it
 | Larissa | ls4270  |
 | Yuqi    | yl6408  |
 
-**Live app (`main`):** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/. The watchlist is currently on `feature/watchlist` and has not been merged into `main` or deployed.
+**Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/.
 
 Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
@@ -34,6 +34,16 @@ docker compose up --build
 Open [localhost:3000](http://localhost:3000). The container installs dependencies and prepares SQLite automatically. Rails builds Vite assets on request in this workflow; the native `bin/dev` workflow also provides Vite hot reloading. Stop the container with `docker compose down`.
 
 Create an account, create a group, and copy its invitation code. Use a second browser profile or private window to register a friend and join. See the [complete two-user demonstration](docs/user-stories.md#two-user-demonstration).
+
+### TMDB configuration
+
+Copy `.env.example` to `.env` and set `TMDB_API_KEY` to your TMDB API key. Docker Compose and `bin/dev` read this local file. For standalone Rails commands, export `TMDB_API_KEY` in the server's environment, or store it as `tmdb.api_key` in encrypted Rails credentials. Restart the server after changing credentials. Never put the key in a `VITE_` variable: those values can become public browser code.
+
+`.env` is ignored by Git and excluded from Docker builds. Only the blank `.env.example` belongs in source control. In production, configure `TMDB_API_KEY` as a runtime secret (see [deployment](docs/deployment.md#tmdb-runtime-secret)); asset builds and automated tests do not need a real key.
+
+Both voting and watchlist title fields search movies and TV shows as you type. Select a result to preview its poster, description, year, TMDB audience score, and US age certification when available. Arrow keys navigate results, Enter selects, and Escape dismisses the dropdown. You can also add a title as plain text, including when TMDB is unavailable. Existing titles are preserved without guessing which TMDB entry they represent.
+
+Rails authenticates catalogue requests and fetches canonical details for selected IDs before saving them. Saved metadata remains available if TMDB is later offline. Movie and TV IDs are treated separately, and distinct adaptations with the same name can coexist. Search uses [TMDB multi-search](https://developer.themoviedb.org/reference/search-multi); age labels come from [movie certifications](https://developer.themoviedb.org/reference/movie-release-dates) or [TV content ratings](https://developer.themoviedb.org/reference/tv-series-content-ratings), not the audience score.
 
 ## Design and scope
 
@@ -67,7 +77,7 @@ The group ranking orders titles by total score, then by number of Love it rating
 
 ### Watchlist
 
-Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title of 1–120 characters, mark any item watched or unwatched, and remove any item after confirmation. Blank or whitespace-only titles are rejected. Items start unwatched and appear newest first; duplicate titles are allowed. Changes persist and are shared with the group. Watchlist items are separate from voting suggestions; adding or rating a suggestion does not automatically add it to the watchlist.
+Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Plain-text titles must contain 1–120 characters; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
 
 Visitors must sign in, and outsiders or removed members cannot view or change the list. An item's ID only works within its own group. Deleting a group deletes its watchlist while preserving other groups and their items.
 
@@ -105,8 +115,8 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Eighteen user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US16`, just the voting stories with `bundle exec cucumber features/voting.feature`, or the watchlist stories with `bundle exec cucumber features/watchlist.feature`.
-- RSpec checks models, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other.
+- [Twenty-two user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
+- RSpec checks models, services, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model/service files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other. TMDB tests use fake credentials and deterministic HTTP responses; no real key or live service is needed.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
 - GitHub Actions is configured to run the checks when the branch is pushed or opened as a pull request. A local run does not imply a remote workflow has run.
@@ -115,29 +125,32 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                                       | Purpose                                                   |
-| ------------------------------------------- | --------------------------------------------------------- |
-| `GET/POST /sign-up`                         | Registration; automatically signs in.                     |
-| `GET/POST /sign-in`                         | Sign-in form and authentication.                          |
-| `DELETE /session`                           | Revoke the current session and sign out.                  |
-| `GET/PATCH /profile`                        | Read profile and update display name.                     |
-| `GET /`, `GET /groups`                      | List the current user's groups.                           |
-| `GET /groups/new`, `POST /groups`           | Create a private group.                                   |
-| `GET/POST /groups/join`                     | Paste an invitation code and join.                        |
-| `GET /groups/:id`                           | Member-only details, with owner-only invitation controls. |
-| `DELETE /groups/:id`                        | Owner-only deletion of the group and its memberships.     |
-| `POST /groups/:id/invitation/reset`         | Replace the owner's invitation code.                      |
-| `POST /groups/:id/members/:user_id/promote` | Make an existing member another owner.                    |
-| `DELETE /groups/:id/members/:user_id`       | Remove another member and replace the invitation code.    |
-| `GET /groups/:id/suggestions`               | Member-only ranked suggestions with the viewer's ratings. |
-| `POST /groups/:id/suggestions`              | Suggest a title to the group.                             |
-| `DELETE /groups/:id/suggestions/:id`        | Remove a title (its suggester or any owner).              |
-| `PUT /groups/:id/suggestions/:id/vote`      | Set or change your rating for a title.                    |
-| `GET /groups/:id/watchlist_items`           | View the group's shared watchlist (members only).         |
-| `POST /groups/:id/watchlist_items`          | Add a title to the group's watchlist.                     |
-| `PATCH /groups/:id/watchlist_items/:id`     | Toggle an item between watched and unwatched.             |
-| `DELETE /groups/:id/watchlist_items/:id`    | Remove an item from the group's watchlist.                |
-| `GET /up`                                   | Public Rails health endpoint.                             |
+| Route                                          | Purpose                                                    |
+| ---------------------------------------------- | ---------------------------------------------------------- |
+| `GET/POST /sign-up`                            | Registration; automatically signs in.                      |
+| `GET/POST /sign-in`                            | Sign-in form and authentication.                           |
+| `DELETE /session`                              | Revoke the current session and sign out.                   |
+| `GET/PATCH /profile`                           | Read profile and update display name.                      |
+| `GET /`, `GET /groups`                         | List the current user's groups.                            |
+| `GET /groups/new`, `POST /groups`              | Create a private group.                                    |
+| `GET/POST /groups/join`                        | Paste an invitation code and join.                         |
+| `GET /groups/:id`                              | Member-only details, with owner-only invitation controls.  |
+| `DELETE /groups/:id`                           | Owner-only deletion of the group and its memberships.      |
+| `POST /groups/:id/invitation/reset`            | Replace the owner's invitation code.                       |
+| `POST /groups/:id/members/:user_id/promote`    | Make an existing member another owner.                     |
+| `DELETE /groups/:id/members/:user_id`          | Remove another member and replace the invitation code.     |
+| `GET /groups/:id/suggestions`                  | Member-only ranked suggestions with the viewer's ratings.  |
+| `POST /groups/:id/suggestions`                 | Suggest a title to the group.                              |
+| `POST /groups/:id/suggestions/:id/watchlist`   | Copy a suggestion to the watchlist without changing votes. |
+| `DELETE /groups/:id/suggestions/:id`           | Remove a title (its suggester or any owner).               |
+| `PUT /groups/:id/suggestions/:id/vote`         | Set or change your rating for a title.                     |
+| `GET /groups/:id/watchlist_items`              | View the group's shared watchlist (members only).          |
+| `POST /groups/:id/watchlist_items`             | Add a title to the group's watchlist.                      |
+| `PATCH /groups/:id/watchlist_items/:id`        | Toggle an item between watched and unwatched.              |
+| `DELETE /groups/:id/watchlist_items/:id`       | Remove an item from the group's watchlist.                 |
+| `GET /groups/:id/catalog/search?q=...`         | Member-only movie and TV autocomplete.                     |
+| `GET /groups/:id/catalog/:media_type/:tmdb_id` | Member-only canonical title preview and age certification. |
+| `GET /up`                                      | Public Rails health endpoint.                              |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
 
@@ -147,4 +160,4 @@ The shared-ownership migration preserves existing data: each group's previous ow
 
 The [deployment guide](docs/deployment.md) covers the production Docker image and Heroku configuration. The frontend is compiled during Rails asset precompilation, and Puma serves the application.
 
-The `main` version is live at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/**. Run this branch locally to review the watchlist until it is merged and deployed.
+The existing live app is at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/**.

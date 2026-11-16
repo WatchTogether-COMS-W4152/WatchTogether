@@ -25,7 +25,10 @@ Rails.application.routes.draw do
     delete "members/:user_id", to: "memberships#destroy", as: :member
 
     # Voting
+    get "catalog/search", to: "catalog#search", as: :catalog_search
+    get "catalog/:media_type/:tmdb_id", to: "catalog#show", as: :catalog_title
     resources :suggestions, only: [ :index, :create, :destroy ] do
+      post :watchlist, on: :member
       resource :vote, only: [ :update ]
     end
     # Watchlist
