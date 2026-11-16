@@ -1,11 +1,13 @@
 class Suggestion < ApplicationRecord
+  include CatalogMetadata
   belongs_to :group
   belongs_to :suggested_by, class_name: "User", optional: true
   has_many :votes, dependent: :delete_all
 
   normalizes :title, with: ->(title) { title.squish }
 
-  validates :title, presence: true, length: { maximum: 120 }
+  validates :title, presence: true, length: { maximum: 120 }, unless: :tmdb_id?
+  validates :title, presence: true, length: { maximum: 500 }, if: :tmdb_id?
   validate :title_unique_in_group
 
   scope :for_group, ->(group) { where(group: group) }
@@ -54,7 +56,8 @@ class Suggestion < ApplicationRecord
 
   def title_unique_in_group
     return if title_key.blank? || group_id.nil?
-    return unless self.class.for_group(group_id).where(title_key: title_key).where.not(id: id).exists?
+    identity = tmdb_id ? { tmdb_id: tmdb_id, media_type: media_type } : { title_key: title_key, tmdb_id: nil }
+    return unless self.class.for_group(group_id).where(identity).where.not(id: id).exists?
 
     errors.add(:title, "has already been suggested in this group")
   end

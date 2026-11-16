@@ -1,29 +1,33 @@
 class WatchlistItemsController < InertiaController
+  include CatalogSelection
+
   before_action :set_group
+  rate_limit to: 30, within: 1.minute, only: :create, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
+    with: -> { render_error(429, "Too many additions. Please try again in a minute.") }
 
   def index
     watchlist_items = @group.watchlist_items.order(created_at: :desc)
 
     render inertia: "watchlist_items/index", props: {
       group: @group.as_json(only: [ :id, :name ]),
-      watchlist_items: watchlist_items.as_json(only: [ :id, :title, :watched ])
+      watchlist_items: watchlist_items.map { |item| item.as_json(only: [ :id, :title, :watched ]).merge(item.catalog_json) }
     }
   end
 
   def create
-    item = @group.watchlist_items.new(
-      title: params.permit(:title)[:title].to_s
-    )
+    item = @group.watchlist_items.new(selected_title_attributes)
 
     if item.save
       redirect_to group_watchlist_items_path(@group),
         notice: "Added to watchlist!",
         status: :see_other
     else
-      redirect_to group_watchlist_items_path(@group),
-        inertia: { errors: { title: item.errors[:title] } },
-        status: :see_other
+      redirect_with_title_errors(item.errors[:title])
     end
+  rescue ActiveRecord::RecordNotUnique
+    redirect_with_title_errors([ "is already on this group's watchlist" ])
+  rescue TmdbClient::Error => error
+    redirect_with_title_errors([ error.message ])
   end
 
   def update
@@ -47,6 +51,11 @@ class WatchlistItemsController < InertiaController
   end
 
   private
+
+  def redirect_with_title_errors(messages)
+    redirect_to group_watchlist_items_path(@group),
+      inertia: { errors: { title: messages } }, status: :see_other
+  end
 
   def set_group
     @group = current_user.groups.find(params[:group_id])
