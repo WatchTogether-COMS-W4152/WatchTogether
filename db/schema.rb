@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_003700) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
   create_table "groups", force: :cascade do |t|
     t.string "name", null: false
     t.string "invite_code", null: false
@@ -48,8 +48,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_003700) do
     t.string "title_key", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["group_id", "title_key"], name: "index_suggestions_on_group_id_and_title_key", unique: true
+    t.bigint "tmdb_id"
+    t.string "media_type"
+    t.text "overview"
+    t.integer "release_year"
+    t.float "tmdb_rating"
+    t.string "age_rating"
+    t.string "poster_path"
+    t.index ["group_id", "media_type", "tmdb_id"], name: "index_suggestions_on_group_id_and_media_type_and_tmdb_id", unique: true, where: "tmdb_id IS NOT NULL"
+    t.index ["group_id", "title_key"], name: "index_suggestions_on_group_id_and_title_key", unique: true, where: "tmdb_id IS NULL"
     t.index ["suggested_by_id"], name: "index_suggestions_on_suggested_by_id"
+    t.check_constraint "(tmdb_id IS NULL AND media_type IS NULL) OR (tmdb_id IS NOT NULL AND tmdb_id > 0 AND media_type IS NOT NULL AND media_type IN ('movie', 'tv'))", name: "suggestions_catalog_identity_check"
   end
 
   create_table "users", force: :cascade do |t|
@@ -78,7 +87,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_003700) do
     t.boolean "watched", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "tmdb_id"
+    t.string "media_type"
+    t.text "overview"
+    t.integer "release_year"
+    t.float "tmdb_rating"
+    t.string "age_rating"
+    t.string "poster_path"
+    t.integer "source_suggestion_id"
+    t.index ["group_id", "media_type", "tmdb_id"], name: "index_watchlist_items_on_group_id_and_media_type_and_tmdb_id", unique: true, where: "tmdb_id IS NOT NULL"
     t.index ["group_id"], name: "index_watchlist_items_on_group_id"
+    t.index ["source_suggestion_id"], name: "index_watchlist_items_on_source_suggestion_id", unique: true
+    t.check_constraint "(tmdb_id IS NULL AND media_type IS NULL) OR (tmdb_id IS NOT NULL AND tmdb_id > 0 AND media_type IS NOT NULL AND media_type IN ('movie', 'tv'))", name: "watchlist_items_catalog_identity_check"
   end
 
   add_foreign_key "memberships", "groups"
@@ -89,4 +109,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_003700) do
   add_foreign_key "votes", "suggestions", on_delete: :cascade
   add_foreign_key "votes", "users", on_delete: :cascade
   add_foreign_key "watchlist_items", "groups"
+  add_foreign_key "watchlist_items", "suggestions", column: "source_suggestion_id", on_delete: :nullify
 end
