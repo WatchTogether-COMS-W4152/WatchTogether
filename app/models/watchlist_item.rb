@@ -4,6 +4,7 @@ class WatchlistItem < ApplicationRecord
   belongs_to :group
   belongs_to :source_suggestion, class_name: "Suggestion", optional: true
   has_many :episode_progresses, dependent: :delete_all
+  has_many :episode_comments, dependent: :delete_all
 
   validates :title, presence: true, length: { maximum: 120 }, unless: :tmdb_id?
   validates :title, presence: true, length: { maximum: 500 }, if: :tmdb_id?

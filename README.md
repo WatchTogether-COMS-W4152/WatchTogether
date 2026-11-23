@@ -49,16 +49,17 @@ Rails authenticates catalogue requests and fetches canonical details for selecte
 
 The implementation uses ordinary Rails controllers, Inertia pages, and eight models:
 
-| Model             | Responsibility                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------------- |
-| `User`            | Display name, normalized unique email, and bcrypt password digest.                                 |
-| `Session`         | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.         |
-| `Group`           | Name and cryptographically random reusable invitation code.                                        |
-| `Membership`      | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.     |
-| `Suggestion`      | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.     |
-| `Vote`            | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member. |
-| `WatchlistItem`   | A title on a group's shared watchlist and its watched/unwatched status.                            |
-| `EpisodeProgress` | The last season and episode one member has watched of a show on their group's watchlist.           |
+| Model             | Responsibility                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `User`            | Display name, normalized unique email, and bcrypt password digest.                                  |
+| `Session`         | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.          |
+| `Group`           | Name and cryptographically random reusable invitation code.                                         |
+| `Membership`      | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.      |
+| `Suggestion`      | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.      |
+| `Vote`            | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member.  |
+| `WatchlistItem`   | A title on a group's shared watchlist and its watched/unwatched status.                             |
+| `EpisodeProgress` | The last season and episode one member has watched of a show on their group's watchlist.            |
+| `EpisodeComment`  | A member's comment on one episode of a show, visible only to members who have reached that episode. |
 
 `GroupProgress` (a plain Ruby object in `app/models`) combines current members' episode progress into the group view: who is furthest ahead, who is caught up, and the next episode everyone can watch.
 
@@ -89,6 +90,10 @@ Visitors must sign in, and outsiders or removed members cannot view or change th
 Each watchlist title has its own page. For TV shows (and plain-text titles, which may be shows), every member can record the last episode they watched as a season and episode number, move on one episode with **Watched next episode**, or clear their progress. Numbers must be whole numbers of at least 1. The page lists every current member furthest ahead first, with **Not started** for anyone who has not recorded progress, and marks the members at the furthest position as **Caught up**.
 
 The group's next episode is the one after the position of whoever is furthest behind; while anyone has not started, it is S1 E1. Episode counts per season are not stored, so the next episode always stays in the same season. Once someone has started a show, the watchlist shows its next episode under the title. Progress from people who have left the group stops counting immediately. Movies have no episode progress.
+
+### Spoiler-safe episode discussion
+
+Each show on the watchlist has its own page with a **Discussion** section. Every comment is tied to a season and episode. A member reads only the comments on episodes they have already watched (according to their episode progress) plus their own; for later episodes they see a count such as "3 comments on S2 E5, unlocked when you get there." The filtering happens in Rails (`EpisodeComment.visible_to` / `.hidden_counts_for`), so hidden comment text and authors never reach the browser. Members can only post about episodes they have reached. The author or any owner can delete a comment. Comments are deleted with their show; if an account is deleted, its comments stay and show as from a former member.
 
 There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving groups, owner demotion, and exclusive ownership transfer are outside this iteration.
 
@@ -124,7 +129,7 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Twenty-six user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
+- [Thirty user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, the discussion stories with `bundle exec cucumber features/episode_discussion.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
 - RSpec checks models, services, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model/service files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other. TMDB tests use fake credentials and deterministic HTTP responses; no real key or live service is needed.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
@@ -134,35 +139,37 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                                             | Purpose                                                    |
-| ------------------------------------------------- | ---------------------------------------------------------- |
-| `GET/POST /sign-up`                               | Registration; automatically signs in.                      |
-| `GET/POST /sign-in`                               | Sign-in form and authentication.                           |
-| `DELETE /session`                                 | Revoke the current session and sign out.                   |
-| `GET/PATCH /profile`                              | Read profile and update display name.                      |
-| `GET /`, `GET /groups`                            | List the current user's groups.                            |
-| `GET /groups/new`, `POST /groups`                 | Create a private group.                                    |
-| `GET/POST /groups/join`                           | Paste an invitation code and join.                         |
-| `GET /groups/:id`                                 | Member-only details, with owner-only invitation controls.  |
-| `DELETE /groups/:id`                              | Owner-only deletion of the group and its memberships.      |
-| `POST /groups/:id/invitation/reset`               | Replace the owner's invitation code.                       |
-| `POST /groups/:id/members/:user_id/promote`       | Make an existing member another owner.                     |
-| `DELETE /groups/:id/members/:user_id`             | Remove another member and replace the invitation code.     |
-| `GET /groups/:id/suggestions`                     | Member-only ranked suggestions with the viewer's ratings.  |
-| `POST /groups/:id/suggestions`                    | Suggest a title to the group.                              |
-| `POST /groups/:id/suggestions/:id/watchlist`      | Copy a suggestion to the watchlist without changing votes. |
-| `DELETE /groups/:id/suggestions/:id`              | Remove a title (its suggester or any owner).               |
-| `PUT /groups/:id/suggestions/:id/vote`            | Set or change your rating for a title.                     |
-| `GET /groups/:id/watchlist_items`                 | View the group's shared watchlist (members only).          |
-| `POST /groups/:id/watchlist_items`                | Add a title to the group's watchlist.                      |
-| `PATCH /groups/:id/watchlist_items/:id`           | Toggle an item between watched and unwatched.              |
-| `DELETE /groups/:id/watchlist_items/:id`          | Remove an item from the group's watchlist.                 |
-| `GET /groups/:id/watchlist_items/:id`             | A title's page with everyone's episode progress.           |
-| `PUT /groups/:id/watchlist_items/:id/progress`    | Set your last watched episode, or advance with `next=1`.   |
-| `DELETE /groups/:id/watchlist_items/:id/progress` | Clear your episode progress for a show.                    |
-| `GET /groups/:id/catalog/search?q=...`            | Member-only movie and TV autocomplete.                     |
-| `GET /groups/:id/catalog/:media_type/:tmdb_id`    | Member-only canonical title preview and age certification. |
-| `GET /up`                                         | Public Rails health endpoint.                              |
+| Route                                                 | Purpose                                                       |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| `GET/POST /sign-up`                                   | Registration; automatically signs in.                         |
+| `GET/POST /sign-in`                                   | Sign-in form and authentication.                              |
+| `DELETE /session`                                     | Revoke the current session and sign out.                      |
+| `GET/PATCH /profile`                                  | Read profile and update display name.                         |
+| `GET /`, `GET /groups`                                | List the current user's groups.                               |
+| `GET /groups/new`, `POST /groups`                     | Create a private group.                                       |
+| `GET/POST /groups/join`                               | Paste an invitation code and join.                            |
+| `GET /groups/:id`                                     | Member-only details, with owner-only invitation controls.     |
+| `DELETE /groups/:id`                                  | Owner-only deletion of the group and its memberships.         |
+| `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                          |
+| `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                        |
+| `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.        |
+| `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.     |
+| `POST /groups/:id/suggestions`                        | Suggest a title to the group.                                 |
+| `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.    |
+| `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).                  |
+| `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                        |
+| `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).             |
+| `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                         |
+| `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                 |
+| `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                    |
+| `GET /groups/:id/watchlist_items/:id`                 | A title's page: episode progress and spoiler-safe discussion. |
+| `PUT /groups/:id/watchlist_items/:id/progress`        | Set your last watched episode, or advance with `next=1`.      |
+| `DELETE /groups/:id/watchlist_items/:id/progress`     | Clear your episode progress for a show.                       |
+| `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                       |
+| `DELETE /groups/:id/watchlist_items/:id/comments/:id` | Delete a comment (its author or any owner).                   |
+| `GET /groups/:id/catalog/search?q=...`                | Member-only movie and TV autocomplete.                        |
+| `GET /groups/:id/catalog/:media_type/:tmdb_id`        | Member-only canonical title preview and age certification.    |
+| `GET /up`                                             | Public Rails health endpoint.                                 |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
 
