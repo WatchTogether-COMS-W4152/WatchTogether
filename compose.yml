@@ -5,6 +5,10 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
+    environment:
+      # Compose reads this from the ignored local .env or the host environment.
+      # Keep the credential on Rails; never use a VITE_ variable for secrets.
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
     volumes:
       - .:/app
       - bundle:/usr/local/bundle

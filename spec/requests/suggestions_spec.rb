@@ -29,9 +29,9 @@ RSpec.describe "Group suggestions", type: :request do
       expect(page_props["member_count"]).to eq(2)
       expect(page_props["suggestions"]).to eq([
         { "id" => up.id, "title" => "Up", "score" => 1, "votes_count" => 1, "my_rating" => nil,
-          "suggested_by" => "Bob", "can_remove" => true },
+          "suggested_by" => "Bob", "can_remove" => true, "in_watchlist" => false },
         { "id" => heat.id, "title" => "Heat", "score" => 0, "votes_count" => 2, "my_rating" => "not_interested",
-          "suggested_by" => "Alice", "can_remove" => false }
+          "suggested_by" => "Alice", "can_remove" => false, "in_watchlist" => false }
       ])
       expect(response.body).not_to include(owner.email, member.password_digest, group.invite_code)
     end

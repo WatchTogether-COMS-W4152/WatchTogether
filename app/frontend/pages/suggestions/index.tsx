@@ -2,9 +2,12 @@ import "../../styles/voting.css";
 import { Link, useForm } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 
-import Field from "../../components/field";
+import AddSuggestionToWatchlist from "../../components/add-suggestion-to-watchlist";
 import Layout, { PageHeader } from "../../components/layout";
+import MediaDetails, { MediaPoster, TmdbAttribution } from "../../components/media-details";
 import RatingButtons from "../../components/rating-buttons";
+import TitleSearch from "../../components/title-search";
+import type { CatalogTitle } from "../../types/catalog";
 import type { Suggestion, VotingGroup } from "../../types/voting";
 
 function formatScore(score: number) {
@@ -21,6 +24,7 @@ export default function Suggestions({
   suggestions: Suggestion[];
 }) {
   const form = useForm({ title: "" });
+  const [selected, setSelected] = useState<CatalogTitle | null>(null);
   const removal = useForm({});
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const cancelRemoval = useRef<HTMLButtonElement | null>(null);
@@ -34,31 +38,50 @@ export default function Suggestions({
       <Link className="back-link" href={`/groups/${group.id}`}>
         ← {group.name}
       </Link>
-      <PageHeader title="What should we watch?" />
+      <PageHeader
+        title="What should we watch?"
+        actions={
+          <Link className="button button-secondary" href={`/groups/${group.id}/watchlist_items`}>
+            Our Watchlist →
+          </Link>
+        }
+      />
       <section aria-labelledby="suggest-title">
         <h2 id="suggest-title" className="visually-hidden">
           Suggest a title
         </h2>
         <form
-          className="suggest-form"
+          className="catalog-add-form"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
+            form.transform((data) =>
+              selected
+                ? { ...data, tmdb_id: selected.tmdb_id, media_type: selected.media_type }
+                : data,
+            );
             form.post(`/groups/${group.id}/suggestions`, {
               preserveScroll: true,
-              onSuccess: () => form.reset(),
+              onSuccess: () => {
+                form.reset();
+                setSelected(null);
+              },
             });
           }}
         >
-          <Field
-            label="Title"
-            name="title"
-            autoComplete="off"
-            required
-            maxLength={120}
-            placeholder="Add a movie or show"
+          <TitleSearch
+            groupId={group.id}
             value={form.data.title}
-            onChange={(event) => form.setData("title", event.target.value)}
+            selected={selected}
+            disabled={form.processing}
+            onChange={(title) => {
+              form.setData("title", title);
+              setSelected(null);
+            }}
+            onSelect={(title) => {
+              form.setData("title", title.title);
+              setSelected(title);
+            }}
             error={form.errors.title}
           />
           <button className="button button-primary" type="submit" disabled={form.processing}>
@@ -87,8 +110,10 @@ export default function Suggestions({
                   <span className="suggestion-rank" aria-hidden="true">
                     {index + 1}
                   </span>
+                  {suggestion.tmdb_id && <MediaPoster {...suggestion} />}
                   <div className="suggestion-identity">
                     <h3>{suggestion.title}</h3>
+                    <MediaDetails media={suggestion} />
                     <p className="muted">
                       {suggestion.suggested_by ? `Suggested by ${suggestion.suggested_by} · ` : ""}
                       {suggestion.votes_count} of {memberCount} rated
@@ -103,17 +128,20 @@ export default function Suggestions({
                 </div>
                 <div className="suggestion-actions">
                   <RatingButtons groupId={group.id} suggestion={suggestion} />
-                  {suggestion.can_remove && confirmingId !== suggestion.id && (
-                    <button
-                      type="button"
-                      className="text-button danger-text suggestion-remove"
-                      aria-label={`Remove ${suggestion.title}`}
-                      disabled={removal.processing}
-                      onClick={() => setConfirmingId(suggestion.id)}
-                    >
-                      Remove
-                    </button>
-                  )}
+                  <div className="suggestion-secondary-actions">
+                    <AddSuggestionToWatchlist groupId={group.id} suggestion={suggestion} />
+                    {suggestion.can_remove && confirmingId !== suggestion.id && (
+                      <button
+                        type="button"
+                        className="text-button danger-text suggestion-remove"
+                        aria-label={`Remove ${suggestion.title}`}
+                        disabled={removal.processing}
+                        onClick={() => setConfirmingId(suggestion.id)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {suggestion.can_remove &&
                   (confirmingId === suggestion.id ? (
@@ -150,6 +178,7 @@ export default function Suggestions({
           </ol>
         )}
       </section>
+      <TmdbAttribution />
     </Layout>
   );
 }
