@@ -24,3 +24,25 @@ module WatchlistHelpers
 end
 
 World(WatchlistHelpers)
+
+module EpisodeProgressHelpers
+  def watchlist_item_path(title, group_name)
+    "#{watchlist_path(group_name)}/#{watchlist_item_id(title, group_name)}"
+  end
+
+  def progress_path(title, group_name)
+    "#{watchlist_item_path(title, group_name)}/progress"
+  end
+
+  def format_position(position)
+    position ? "S#{position.fetch('season')} E#{position.fetch('episode')}" : "Not started"
+  end
+
+  def expect_watchlist_item_page(title, group_name)
+    expect(@response.status).to eq(200)
+    expect(@page.fetch("component")).to eq("watchlist_items/show")
+    expect(props.fetch("item").fetch("id")).to eq(watchlist_item_id(title, group_name))
+  end
+end
+
+World(EpisodeProgressHelpers)

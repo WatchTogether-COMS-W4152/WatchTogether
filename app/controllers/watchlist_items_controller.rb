@@ -1,16 +1,33 @@
 class WatchlistItemsController < InertiaController
   include CatalogSelection
+  include WatchlistItems::ProgressProps
+  include WatchlistItems::DiscussionProps
 
   before_action :set_group
   rate_limit to: 30, within: 1.minute, only: :create, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
     with: -> { render_error(429, "Too many additions. Please try again in a minute.") }
 
   def index
-    watchlist_items = @group.watchlist_items.order(created_at: :desc)
+    watchlist_items = @group.watchlist_items.includes(:episode_progresses).order(created_at: :desc)
+    members = @group.members.to_a
 
     render inertia: "watchlist_items/index", props: {
       group: @group.as_json(only: [ :id, :name ]),
-      watchlist_items: watchlist_items.map { |item| item.as_json(only: [ :id, :title, :watched ]).merge(item.catalog_json) }
+      watchlist_items: watchlist_items.map do |item|
+        item.as_json(only: [ :id, :title, :watched ])
+          .merge(item.catalog_json, "next_episode" => item.next_group_episode(members: members))
+      end
+    }
+  end
+
+  def show
+    item = @group.watchlist_items.find(params[:id])
+
+    render inertia: "watchlist_items/show", props: {
+      group: @group.as_json(only: [ :id, :name ]),
+      item: item.as_json(only: [ :id, :title, :watched ]).merge(item.catalog_json, "episodic" => item.episodic?),
+      **progress_props(item),
+      **discussion_props(item)
     }
   end
 

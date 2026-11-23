@@ -37,7 +37,7 @@ RSpec.describe TmdbClient do
     } ])
     expect(client.search("star wars")).to eq(result)
     expect(http).to have_received(:get).once.with(a_string_including("query=Star+Wars", "include_adult=false"), "Accept" => "application/json")
-    expect(Net::HTTP).to have_received(:start).with("api.themoviedb.org", 443, use_ssl: true, open_timeout: 3, read_timeout: 5, write_timeout: 3)
+    expect(Net::HTTP).to have_received(:start).with("api.themoviedb.org", 443, use_ssl: true, open_timeout: 1, read_timeout: 2, write_timeout: 2)
     expect(result.to_json).not_to include("private-test-key")
   end
 
@@ -173,16 +173,18 @@ RSpec.describe TmdbClient do
     allow(http).to receive(:get).and_return(response)
 
     expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable, TmdbClient::UNAVAILABLE_MESSAGE)
-    expect(Net::HTTP).to have_received(:start).once.with("api.themoviedb.org", 443, use_ssl: true, open_timeout: 3, read_timeout: 5, write_timeout: 3)
+    expect(Net::HTTP).to have_received(:start).once.with("api.themoviedb.org", 443, use_ssl: true, open_timeout: 1, read_timeout: 2, write_timeout: 2)
     expect(http).to have_received(:get).once
   end
 
-  it "recovers immediately when TMDB becomes available instead of caching an error" do
+  it "recovers once the short outage window passes instead of caching an error with the result" do
     http = stub_response("upstream failure", code: "503")
     expect { client.details("movie", 11) }.to raise_error(TmdbClient::Unavailable)
     allow(http).to receive(:get).and_return(response_for(movie))
 
-    expect(client.details("movie", 11)).to include(title: "Star Wars")
+    travel(TmdbClient::OUTAGE_TTL + 1.second) do
+      expect(client.details("movie", 11)).to include(title: "Star Wars")
+    end
     expect(http).to have_received(:get).exactly(2).times
   end
 
@@ -207,6 +209,37 @@ RSpec.describe TmdbClient do
     expect(described_class.poster_url("/poster.jpg")).to eq("https://image.tmdb.org/t/p/w342/poster.jpg")
     [ nil, "//evil.example/image.jpg", "/../../etc/passwd", "https://example.com/a.jpg" ].each do |path|
       expect(described_class.poster_url(path)).to be_nil
+    end
+  end
+
+  describe "after TMDB fails" do
+    it "skips TMDB for a short while, then tries again" do
+      stub_response(nil, code: "503")
+      expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable)
+
+      expect { client.search("Alien") }.to raise_error(TmdbClient::Unavailable, TmdbClient::UNAVAILABLE_MESSAGE)
+      expect(Net::HTTP).to have_received(:start).once
+
+      travel(31.seconds) do
+        stub_response({ "results" => [ movie ] })
+        expect(client.search("Alien").map { |title| title[:title] }).to eq([ "Star Wars" ])
+      end
+    end
+
+    it "treats network errors the same way" do
+      allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
+      expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable)
+      expect { client.details("movie", 11) }.to raise_error(TmdbClient::Unavailable)
+
+      expect(Net::HTTP).to have_received(:start).once
+    end
+
+    it "does not record an outage for a missing title" do
+      stub_response(nil, code: "404")
+      expect { client.details("movie", 11) }.to raise_error(TmdbClient::InvalidSelection)
+
+      stub_response({ "results" => [ movie ] })
+      expect(client.search("Star")).to be_present
     end
   end
 end
