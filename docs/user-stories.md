@@ -1,6 +1,6 @@
 # User stories
 
-This branch delivers twenty-two web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), and TMDB discovery, metadata, transfers, and recovery (US19–US22). Episode-level progress tracking and spoiler-free discussion are outside this iteration. Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
+This branch delivers thirty web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26), and spoiler-safe episode discussion (US27–US30). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
 
 | Story                                        | User need and acceptance criteria                                                                                                                                                                                                                                                                                                                                  | Executable coverage                                                                                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,9 +62,78 @@ Acceptance criteria for **US22**:
 - An unsuccessful selected-title addition creates no incomplete record. The member can retry after recovery or enter a plain-text title in either destination.
 - Saved lists, voting, and suggestion transfers remain usable during a catalogue outage. Failed lookups are not cached as successful titles.
 
+## Episode discussion user stories
+
+Every comment belongs to one episode of a show on the watchlist. A member sees the text of a comment only when their own episode progress has reached that episode (or when they wrote it); for later episodes they see only how many comments are waiting. This rule is enforced on the server: hidden comment text and authors are never sent to the browser.
+
+| Story                                            | User need                                                                                                                                                                           | Executable coverage                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **US27 — Discuss an episode with my group**      | As a member, I can post a comment on a specific episode of a show so friends who have watched it can read my reaction. Comments are grouped by episode, oldest first, with my name. | `@US27`, [episode_discussion.feature](../features/episode_discussion.feature); [EpisodeComment model](../spec/models/episode_comment_spec.rb), [discussion requests](../spec/requests/episode_comments_spec.rb), [component tests](../app/frontend/test/episode-discussion.test.tsx). |
+| **US28 — Read the discussion without spoilers**  | As a member who is behind, I see only comments on episodes I have watched, plus a count for later episodes, so I can join in without spoilers. Catching up unlocks them.            | `@US28`, [episode_discussion.feature](../features/episode_discussion.feature); visibility model specs and request specs asserting hidden text is absent from the response.                                                                                                            |
+| **US29 — Only comment on episodes I've watched** | As a member, I can't post about an episode beyond my own progress, so I can't spoil it for others by mistake. The form starts at my current episode and explains any rejection.     | `@US29`, [episode_discussion.feature](../features/episode_discussion.feature); validation model specs, request specs, and form error component tests.                                                                                                                                 |
+| **US30 — Remove a comment**                      | As the author of a comment, or as a group owner, I can delete it after confirming. Other members cannot delete someone else's comment.                                              | `@US30`, [episode_discussion.feature](../features/episode_discussion.feature); permission request specs and confirmation component tests.                                                                                                                                             |
+
+Acceptance criteria for **US27**:
+
+- Any current member can comment on an episode they have reached. Season and episode are whole numbers of at least 1; the comment is trimmed and must contain 1–1000 characters.
+- Episodes are ordered by season, then episode (S1 E10 comes before S2 E1). Comments within an episode are oldest first and show the author's display name, avatar, and a short time.
+- Outsiders, removed members, and signed-out visitors cannot read or post comments, and a show cannot be reached through another group's URL. Movies have no episode discussion.
+
+Acceptance criteria for **US28**:
+
+- A member with no recorded progress sees no comment text, only counts. A member exactly on an episode can read that episode's comments.
+- For each later episode the page shows "N comments on S2 E5, unlocked when you get there." It contains neither the text nor the author of those comments, in the HTML or the Inertia JSON.
+- Moving progress forward unlocks the comments immediately. A member always sees their own comments.
+
+Acceptance criteria for **US29**:
+
+- Posting on an episode beyond the member's progress is rejected with an explanation naming their current episode; nothing is saved. A member with no progress is told to mark episodes as watched first.
+- Blank and overly long comments are explained and not saved. Posting is rate-limited per member.
+
+Acceptance criteria for **US30**:
+
+- The author and any group owner see a delete control; deletion asks for confirmation and can be cancelled. Other members receive 403 and the comment remains.
+- Deleting a show deletes its comments. If an author's account is deleted, their comments remain and appear as from a former member; if a member is removed from the group, their comments remain under their name.
+
 Run all acceptance stories with `bundle exec cucumber`, one story with `bundle exec cucumber --tags @US19`, or all catalogue stories with `bundle exec cucumber --tags @tmdb`. Cucumber sends real HTTP requests into Rails using separate cookie jars for different viewers. Scenarios are isolated with database transactions and cleared rate-limit state. TMDB scenarios substitute only the external HTTP boundary with deterministic responses and a fake credential; the actual TMDB client, application controllers, and models run normally. No live TMDB account or network is needed. These service acceptance scenarios do not execute JavaScript. React component tests and the manual browser demonstration cover the dropdown, keyboard handling, stale responses, confirmation, and cancellation separately.
 
 RSpec also checks details that are not useful as user-facing story steps: database uniqueness, role constraints and foreign keys, rollback of failed group creation, password/session digests, cookie settings, CSRF handling, throttling, and excluded sensitive fields. The corresponding request suites are [authentication](../spec/requests/authentication_spec.rb), [profiles](../spec/requests/profiles_spec.rb), [groups and invitations](../spec/requests/groups_spec.rb), [membership management](../spec/requests/memberships_spec.rb), [suggestions](../spec/requests/suggestions_spec.rb), [ratings](../spec/requests/votes_spec.rb), and [watchlists](../spec/requests/watchlist_items_spec.rb); model constraints and the voting ranking are tested under [spec/models](../spec/models). TMDB-specific RSpec tests additionally check canonical identities, database constraints independent of validation, safe network failures, cache isolation and expiry, credential non-disclosure, and duplicate transfer races. SimpleCov includes every application controller, model, and service, including unloaded files, and enforces at least 90% line coverage independently for RSpec and Cucumber. Separate reports live in `coverage/rspec/index.html` and `coverage/cucumber/index.html`; [verification.md](verification.md) records measured runs and their scope.
+
+## Episode progress user stories
+
+| Story                                                  | User need                                                                                                                                                              | Executable coverage                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **US23 — Record where I am in a show**                 | As a member, I can record the last season and episode I watched of a show on our watchlist, or move on one episode with a single click, so the group knows where I am. | `@US23`, [episode_progress.feature](../features/episode_progress.feature); [progress requests](../spec/requests/episode_progresses_spec.rb), [EpisodeProgress model](../spec/models/episode_progress_spec.rb), [progress component tests](../app/frontend/test/episode-progress.test.tsx). |
+| **US24 — See who is caught up**                        | As a member, I can see every member's progress, furthest ahead first, and who is caught up, so we know who needs to catch up before the next watch.                    | `@US24`, [episode_progress.feature](../features/episode_progress.feature); [GroupProgress model](../spec/models/group_progress_spec.rb), [progress requests](../spec/requests/episode_progresses_spec.rb), [progress component tests](../app/frontend/test/episode-progress.test.tsx).     |
+| **US25 — Know the next episode we can watch together** | As a member, I can see the next episode the whole group can watch together, on the title page and in the watchlist, so nobody watches ahead of a friend.               | `@US25`, [episode_progress.feature](../features/episode_progress.feature); [GroupProgress model](../spec/models/group_progress_spec.rb), [watchlist hint requests](../spec/requests/episode_progresses_spec.rb).                                                                           |
+| **US26 — Clear my progress**                           | As a member, I can clear my recorded progress, for example after starting a show over, without changing anyone else's.                                                 | `@US26`, [episode_progress.feature](../features/episode_progress.feature); [progress requests](../spec/requests/episode_progresses_spec.rb), [progress component tests](../app/frontend/test/episode-progress.test.tsx).                                                                   |
+
+Acceptance criteria for **US23**:
+
+- Season and episode must be whole numbers of at least 1. Missing, zero, negative, decimal, or non-numeric values are explained next to the field and leave my previous progress unchanged.
+- Saving again replaces my position, including moving backwards; each member has one position per show.
+- **Watched next episode** moves me on one episode within the same season, or to S1 E1 if I had not started.
+- Progress persists and is visible to other members. Movies have no episode progress.
+
+Acceptance criteria for **US24**:
+
+- Every current member appears once, furthest ahead first (season before episode, so S2 E1 is ahead of S1 E10). Members who have not started appear last as **Not started**. Ties are ordered by name.
+- Everyone at the furthest recorded position is marked **Caught up**. Nobody is caught up before anyone has started.
+- Member emails and invitation codes are never included.
+
+Acceptance criteria for **US25**:
+
+- The next episode is the one after the position of the member furthest behind. While any member has not started, it is S1 E1.
+- When everyone is at the same episode, the page says everyone is caught up and names the following episode.
+- Season lengths are unknown, so the next episode stays in the same season; members move to a new season by entering it.
+- When a member leaves or is removed, their progress no longer affects the list, caught-up status, or next episode.
+- The watchlist shows **Next together** for shows someone has started.
+
+Acceptance criteria for **US26**:
+
+- Clearing removes only my progress for that show; other members and other shows are unchanged. Clearing when I have no progress is harmless.
+
+For US23–US26, signed-out visitors must sign in, outsiders and removed members receive not found, and a show cannot be reached through another group's URL.
 
 ## Two-user demonstration
 
@@ -75,6 +144,12 @@ To demonstrate US19–US22, follow the account/group setup below and complete th
 3. In the watchlist, search **Severance** and distinguish the TV show from the same-named movie. Select the TV show, add it, and confirm both the series and movie are present after refreshing. Mark one watched and check the other member sees the new state.
 4. Remove the copied Interstellar suggestion and confirm its watchlist entry and watched state remain. On a second suggestion, remove only its watchlist entry and confirm the voting page offers **Add to watchlist** again.
 5. Edit an input quickly, including trailing spaces, and confirm its dropdown follows the latest text. Check Escape dismissal, missing-poster fallbacks when present, and narrow-screen usability. No-match and outage recovery are deterministic in the tagged acceptance and component tests; the live catalogue's current results and ratings may vary.
+
+To demonstrate US23–US26, add a plain-text show such as **Severance** to Friday Night's watchlist and open its title:
+
+1. **Bob:** Enter season 1, episode 3 and save. Choose **Watched next episode** and confirm Bob is at S1 E4. Try season 0 and confirm the error leaves S1 E4 in place.
+2. **Alice:** Refresh the title. Bob is listed first as **Caught up** and Alice as **Not started**; the next episode for everyone is S1 E1. Record S1 E2 and confirm the next episode becomes S1 E3 and the watchlist shows **Next together: S1 E3**.
+3. **Bob:** Choose **Clear my progress**. **Alice:** Refresh and confirm Bob is **Not started** and Alice is now caught up.
 
 Use the running app in two separate browser profiles or one regular and one private window. Use temporary demo accounts with different email addresses. Do not use a production database for destructive testing.
 

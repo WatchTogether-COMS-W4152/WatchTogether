@@ -8,6 +8,9 @@ class TmdbClient
 
   MEDIA_TYPES = %w[movie tv].freeze
   UNAVAILABLE_MESSAGE = "Movie search is temporarily unavailable. Please try again later or add a title manually."
+  TIMEOUTS = { open_timeout: 1, read_timeout: 2, write_timeout: 2 }.freeze
+  OUTAGE_KEY = [ "tmdb", "outage" ].freeze
+  OUTAGE_TTL = 30.seconds
 
   def initialize(api_key: ENV["TMDB_API_KEY"].presence || Rails.application.credentials.dig(:tmdb, :api_key), cache: Rails.cache)
     @api_key = api_key
@@ -54,11 +57,18 @@ class TmdbClient
   private
 
   def request(path, **query)
-    raise Unavailable, UNAVAILABLE_MESSAGE if @api_key.blank?
+    raise Unavailable, UNAVAILABLE_MESSAGE if @api_key.blank? || @cache.read(OUTAGE_KEY)
 
+    fetch_json(path, **query)
+  rescue Unavailable
+    @cache.write(OUTAGE_KEY, true, expires_in: OUTAGE_TTL) if @api_key.present?
+    raise
+  end
+
+  def fetch_json(path, **query)
     uri = URI("https://api.themoviedb.org/3/#{path}")
     uri.query = URI.encode_www_form(query.merge(language: "en-US", api_key: @api_key))
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 3, read_timeout: 5, write_timeout: 3) do |http|
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, **TIMEOUTS) do |http|
       http.max_retries = 0
       http.get(uri.request_uri, "Accept" => "application/json")
     end
