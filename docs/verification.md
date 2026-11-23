@@ -1,6 +1,33 @@
 # Verification record
 
-The current automated results below apply to `feature/watchlist`, based on commit `26a61f2` plus the watchlist test, story, and coverage improvements. This branch contains group management, voting, and the shared watchlist. Earlier browser and deployment checks are identified separately; they do not imply that the watchlist has been merged or deployed.
+## TMDB integration — November 15, 2026
+
+`tmdb-integration` starts from remote `main` commit `234f8a4`. The integration was checked locally in Docker with Ruby 4.0.9, Node 24.16.0, and SQLite before publication. No deployment was performed; PostgreSQL was not exercised for this change.
+
+| Check                          | Result                                                                                                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RSpec                          | 226 examples passed; 99.77% controller/model/service line coverage (441/442), 99.30% branch coverage (143/144).                                      |
+| React Testing Library / Vitest | 66 tests passed, including debounce, stale search/detail responses, keyboard selection, whitespace edits, metadata, and voting-to-watchlist actions. |
+| TypeScript / frontend lint     | Passed; no lint warnings or errors.                                                                                                                  |
+| RuboCop                        | 89 files inspected; no offenses.                                                                                                                     |
+| Brakeman                       | No errors or security warnings.                                                                                                                      |
+| Bundler audit                  | No vulnerabilities after updating Puma from 8.0.2 to 8.0.3 for newly published advisories.                                                           |
+
+The final Cucumber run passed **79 scenarios and 945 steps**, including 16 TMDB scenarios tagged US19–US22. Coverage is 95.92% controller/model/service lines (424/442) and 81.94% branches (118/144). Acceptance tests use deterministic HTTP fixtures, never real credentials, and exercise the actual TMDB client, controllers, and models. They cover both movie and TV selection, canonical metadata replacing forged fields, remakes and duplicate identities, manual titles, missing metadata, no matches, upstream outages, private group access, and offline suggestion copying with votes preserved. RSpec additionally covers the duplicate-validation race during concurrent watchlist additions.
+
+Coverage now explicitly includes services as well as controllers and models; the earlier 99.46% RSpec / 95.41% Cucumber figures excluded services. Each suite still independently enforces a 90% line minimum. The TMDB client itself has **100% RSpec line and branch coverage** (71/71 lines, 56/56 branches), and **98.59% Cucumber line coverage** (70/71; 43/56 branches). The suites run with `TMDB_API_KEY` empty and stub only the external TMDB HTTP boundary where integration behavior is tested.
+
+The expanded tests found and fixed two defects: an empty successful TMDB response could expose a parser exception, and SQLite's suggestion-table rebuild could cascade-delete existing votes. The migration now controls the transaction boundary so SQLite foreign keys are disabled before rebuilding tables, validates all foreign keys before commit, and restores enforcement. Two isolated tests exercise the actual Rails migrator against populated data and a late injected failure; both preservation and complete rollback pass. PostgreSQL retains transactional DDL with foreign keys enabled, but has not been rerun for this branch. The two affected older local-development votes were restored from their committed SQL-log values after taking an ignored database backup; newer activity was preserved.
+
+The production asset build passed with `TMDB_API_KEY` explicitly empty during the preceding integration check. The frontend is unchanged by this test expansion. Repository-wide frontend formatting, RuboCop, and `git diff --check` passed after the additions. The earlier credential scan checked 394 source, generated asset, and log files with zero matches.
+
+Live browser verification used a separate **TMDB Integration Preview** group in the development database. Keyboard search/selection added _Interstellar_ to voting with a poster, description, 2014 release year, TMDB score, and US PG-13 certification. Rating it and transferring it to the watchlist preserved the suggestion and +2 score; the button changed to **On watchlist**. Watchlist search distinguished the _Severance_ TV series from same-named movies and saved its US TV-MA certification. Updated pages loaded without browser warning/error logs. A narrow viewport check found no horizontal overflow. The preview group remains available locally for review.
+
+The supplied credential is stored only in ignored local `.env` and injected into the Rails runtime. Source files, generated browser assets, and application logs were scanned for the actual value without printing it. The official TMDB logo is bundled unmodified with its source recorded in `public/tmdb-logo-source.txt`.
+
+## Earlier watchlist verification
+
+The historical results below apply to `feature/watchlist`, based on commit `26a61f2` plus the watchlist test, story, and coverage improvements. Earlier browser and deployment checks are identified separately.
 
 ## Automated checks
 

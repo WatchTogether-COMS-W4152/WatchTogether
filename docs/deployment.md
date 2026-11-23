@@ -24,6 +24,16 @@ Production uses a single PostgreSQL database, read from `DATABASE_URL`. The app 
 
 ## Heroku
 
+### TMDB runtime secret
+
+Set `TMDB_API_KEY` in Heroku's Settings → Config Vars before deploying this integration. Use the private key value there; do not put it in Git, a build argument, frontend code, a `VITE_` variable, or screenshots. For other hosts, inject the same environment variable into the Rails process at runtime. Encrypted Rails credentials under `tmdb.api_key` are also supported. Rotate the key in TMDB and update the runtime secret if it is ever exposed.
+
+The local `.env` file is ignored by Git and Docker build contexts. Docker Compose passes only `TMDB_API_KEY` to the Rails container; `bin/dev` loads it through Foreman. The blank `.env.example` documents the setting. Production asset compilation and tests require no TMDB credential.
+
+The metadata migration preserves existing titles, votes, and watched states. For SQLite, it handles table rebuilding inside an atomic transaction with foreign keys disabled before the transaction begins, validates integrity before committing, and restores enforcement afterward. Regression tests run the actual Rails migrator against populated data and verify rollback on failure. PostgreSQL keeps foreign-key enforcement enabled throughout its transaction. Existing plain-text titles remain unlinked to TMDB. Selected movie/TV entries store a snapshot of their metadata; list pages and voting-to-watchlist transfers do not depend on a live TMDB request. The app authenticates and rate-limits catalogue lookups, uses bounded HTTPS requests and caching, and returns safe error messages if TMDB is unavailable. Age ratings currently use US certifications and explicitly show when none is provided.
+
+### App configuration
+
 The app runs on one Basic web dyno with a Heroku Postgres `essential-0` database, which sets `DATABASE_URL`. Buildpacks run **Node before Ruby**, so Node is available when Rails asset precompilation builds the frontend with Vite. The `Procfile` runs `rails db:prepare` in the release phase, so migrations apply on every deploy, and then starts Puma.
 
 The setup, for reference or for recreating the app:
