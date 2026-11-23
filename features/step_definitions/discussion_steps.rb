@@ -1,9 +1,6 @@
-# Progress is recorded through the model here; the progress page has its own stories.
+# Records progress the way a member does, through the episode progress endpoint.
 Given("{string} has watched up to season {int} episode {int} of {string} in {string}") do |viewer, season, episode, title, group_name|
-  progress = EpisodeProgress.find_or_initialize_by(
-    watchlist_item_id: watchlist_item_id(title, group_name), user_id: @accounts.fetch(viewer)
-  )
-  progress.update!(season: season, episode: episode)
+  step %("#{viewer}" has watched "#{title}" up to season #{season} episode #{episode} in "#{group_name}")
 end
 
 Given("{string} commented {string} on season {int} episode {int} of {string} in {string}") do |viewer, body, season, episode, title, group_name|
@@ -16,10 +13,6 @@ end
 
 When("I comment {string} on season {int} episode {int} of {string} in {string}") do |body, season, episode, title, group_name|
   visit_page(:post, comments_path(title, group_name), season: season, episode: episode, body: body)
-end
-
-When("I view {string} in {string}") do |title, group_name|
-  visit_page(:get, watchlist_item_path(title, group_name))
 end
 
 When("I delete the comment {string} on {string} in {string}") do |body, title, group_name|
