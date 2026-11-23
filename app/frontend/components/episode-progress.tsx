@@ -1,7 +1,14 @@
 import { router, useForm, usePage } from "@inertiajs/react";
+import { useState } from "react";
 
-import { formatEpisode, type EpisodeProgressData } from "../types/episodes";
+import {
+  formatEpisode,
+  type EpisodePosition,
+  type EpisodeProgressData,
+  type MemberProgress,
+} from "../types/episodes";
 import Avatar from "./avatar";
+import EpisodeCode from "./episode-code";
 import Field from "./field";
 
 type ProgressPageProps = {
@@ -32,115 +39,185 @@ export function EpisodeProgressPanel({
   currentUserId?: number;
 }) {
   const mine = progress.my_position;
+  const next = progress.next_episode;
   const form = useForm({
     season: mine ? String(mine.season) : "1",
     episode: mine ? String(mine.episode) : "",
   });
+  const [exactOpen, setExactOpen] = useState(false);
+  const [savingExact, setSavingExact] = useState(false);
   const started = progress.members.some((member) => member.position);
   const advanceTo = mine ? { season: mine.season, episode: mine.episode + 1 } : null;
-
-  function save(data: { season: string; episode: string }) {
-    form.transform(() => data);
-    form.put(path, { preserveScroll: true });
-  }
+  const showExact = exactOpen || Object.keys(form.errors).length > 0;
 
   return (
-    <section className="panel episode-progress" aria-labelledby="episode-progress-title">
-      <h2 id="episode-progress-title">Episode progress</h2>
-      <p className="progress-next">
-        {!started
-          ? "Nobody has started yet. Start together with S1 E1."
-          : progress.everyone_caught_up
-            ? `Everyone is caught up. Next up together: ${formatEpisode(progress.next_episode)}.`
-            : `Next episode for everyone: ${formatEpisode(progress.next_episode)}`}
-      </p>
+    <section className="card" aria-labelledby="episode-progress-title">
+      <h2 id="episode-progress-title">
+        {!started ? (
+          <>
+            Nobody has started yet. Start together with <EpisodeCode position={next} next />.
+          </>
+        ) : progress.everyone_caught_up ? (
+          <>
+            Everyone is caught up. Next up together: <EpisodeCode position={next} next />.
+          </>
+        ) : (
+          <>
+            Next episode for everyone: <EpisodeCode position={next} next />
+          </>
+        )}
+      </h2>
 
-      <ul className="member-list" aria-label="Where everyone is">
+      <SeasonStrip members={progress.members} next={next} />
+
+      <ul className="rows" aria-label="Where everyone is">
         {progress.members.map((member) => (
-          <li key={member.id} className="member-row">
+          <li key={member.id} className="person-row">
             <Avatar name={member.display_name} />
-            <div className="member-identity">
-              <span className="member-name">
-                {member.display_name}
-                {member.id === currentUserId && <span className="muted"> (you)</span>}
-              </span>
-              {member.caught_up && <span className="badge">Caught up</span>}
-            </div>
-            <span className={member.position ? "progress-position" : "progress-position muted"}>
-              {member.position ? formatEpisode(member.position) : "Not started"}
+            <span className="who">
+              {member.display_name}
+              {member.id === currentUserId && <span className="muted"> (you)</span>}
+              {member.caught_up && <span className="chip">Caught up</span>}
             </span>
+            {member.position ? (
+              <EpisodeCode position={member.position} />
+            ) : (
+              <span className="chip chip-outline">Not started</span>
+            )}
           </li>
         ))}
       </ul>
 
-      <form
-        className="progress-form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          save(form.data);
-        }}
-      >
-        <h3>Your progress</h3>
-        <p className="muted">
-          {mine ? `You've watched up to ${formatEpisode(mine)}.` : "You haven't started yet."}
-        </p>
-        <div className="progress-fields">
-          <Field
-            label="Season"
-            name="season"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            required
-            value={form.data.season}
-            onChange={(event) => form.setData("season", event.target.value)}
-            error={form.errors.season}
-          />
-          <Field
-            label="Episode"
-            name="episode"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            required
-            value={form.data.episode}
-            onChange={(event) => form.setData("episode", event.target.value)}
-            error={form.errors.episode}
-          />
-        </div>
-        <div className="form-actions progress-actions">
-          <button className="button button-primary" type="submit" disabled={form.processing}>
-            Save progress
-          </button>
-          <button
-            className="button button-secondary"
-            type="button"
-            disabled={form.processing}
-            onClick={() => {
-              const next = advanceTo ?? { season: 1, episode: 1 };
-              form.setData({ season: String(next.season), episode: String(next.episode) });
-              form.transform(() => ({ next: "1" }));
-              form.put(path, { preserveScroll: true });
-            }}
-          >
-            Watched next episode{advanceTo ? ` (${formatEpisode(advanceTo)})` : " (S1 E1)"}
-          </button>
-          {mine && (
-            <button
-              className="text-button danger-text"
-              type="button"
-              disabled={form.processing}
-              onClick={() => {
-                form.setData({ season: "1", episode: "" });
-                router.delete(path, { preserveScroll: true });
-              }}
-            >
-              Clear my progress
+      <div className="row">
+        <button
+          className="btn btn-primary"
+          type="button"
+          disabled={form.processing}
+          onClick={() => {
+            const target = advanceTo ?? { season: 1, episode: 1 };
+            form.setData({ season: String(target.season), episode: String(target.episode) });
+            form.transform(() => ({ next: "1" }));
+            setSavingExact(false);
+            form.put(path, { preserveScroll: true });
+          }}
+        >
+          Watched next episode ({formatEpisode(advanceTo ?? { season: 1, episode: 1 })})
+        </button>
+        <button
+          className="btn btn-quiet"
+          type="button"
+          aria-expanded={showExact}
+          aria-controls="exact-progress"
+          onClick={() => setExactOpen(!showExact)}
+        >
+          Set exact episode
+        </button>
+      </div>
+
+      {showExact && (
+        <form
+          id="exact-progress"
+          className="form"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            form.transform((data) => data);
+            setSavingExact(true);
+            form.put(path, { preserveScroll: true, onSuccess: () => setExactOpen(false) });
+          }}
+        >
+          <div className="field-pair">
+            <Field
+              label="Season"
+              name="season"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              required
+              value={form.data.season}
+              onChange={(event) => form.setData("season", event.target.value)}
+              error={form.errors.season}
+            />
+            <Field
+              label="Episode"
+              name="episode"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              required
+              value={form.data.episode}
+              onChange={(event) => form.setData("episode", event.target.value)}
+              error={form.errors.episode}
+            />
+          </div>
+          <div className="row">
+            <button className="btn btn-secondary btn-sm" type="submit" disabled={form.processing}>
+              {form.processing && savingExact ? "Saving…" : "Save progress"}
             </button>
-          )}
-        </div>
-      </form>
+            {mine && (
+              <button
+                className="btn btn-quiet btn-sm is-danger"
+                type="button"
+                disabled={form.processing}
+                onClick={() => {
+                  form.setData({ season: "1", episode: "" });
+                  router.delete(path, { preserveScroll: true });
+                }}
+              >
+                Clear my progress
+              </button>
+            )}
+          </div>
+        </form>
+      )}
     </section>
+  );
+}
+
+function SeasonStrip({ members, next }: { members: MemberProgress[]; next: EpisodePosition }) {
+  const furthest = Math.max(
+    0,
+    ...members.flatMap((member) =>
+      member.position?.season === next.season ? [member.position.episode] : [],
+    ),
+  );
+  const episodes = Array.from(
+    { length: Math.max(furthest + 1, next.episode) },
+    (_, index) => index + 1,
+  );
+  return (
+    <>
+      <ol className="strip" aria-label={`Season ${next.season}`}>
+        {episodes.map((episode) =>
+          episode < next.episode ? (
+            <li
+              key={episode}
+              className="cell cell-watched"
+              aria-label={`E${episode}, everyone has watched`}
+            >
+              {episode}
+            </li>
+          ) : episode === next.episode ? (
+            <li
+              key={episode}
+              className="cell cell-next"
+              aria-label={`E${episode}, next episode for everyone`}
+            >
+              {episode}
+            </li>
+          ) : (
+            <li key={episode} className="cell cell-ahead" aria-label={`E${episode}`}>
+              {episode}
+            </li>
+          ),
+        )}
+      </ol>
+      {next.episode > 1 && (
+        <p className="meta">
+          Everyone has watched up to{" "}
+          {formatEpisode({ season: next.season, episode: next.episode - 1 })}.
+        </p>
+      )}
+    </>
   );
 }

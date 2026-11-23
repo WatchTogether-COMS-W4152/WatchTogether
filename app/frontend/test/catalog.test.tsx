@@ -104,7 +104,7 @@ afterEach(() => {
 });
 
 describe("TMDB title search", () => {
-  it("debounces current input and shows poster, year, type, score, and descriptions", async () => {
+  it("debounces current input and shows poster, year, type, and score", async () => {
     render(<Harness />);
     fireEvent.focus(screen.getByRole("combobox"));
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "Du" } });
@@ -119,14 +119,13 @@ describe("TMDB title search", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe("/groups/7/catalog/search?q=Dune");
     expect(screen.getAllByRole("option")).toHaveLength(2);
-    expect(screen.getByRole("img", { name: "Dune poster" })).toHaveAttribute(
+    expect(screen.getAllByRole("option")[0].querySelector("img")).toHaveAttribute(
       "src",
       dune.poster_url,
     );
     expect(screen.getByText("2021")).toBeVisible();
     expect(screen.getByText("TV show")).toBeVisible();
-    expect(screen.getByText("TMDB 7.8/10")).toBeVisible();
-    expect(screen.getByText(dune.overview!)).toBeVisible();
+    expect(screen.getByText("TMDB 7.8")).toBeVisible();
   });
 
   it("ignores stale searches even if the old transport finishes after the new result", async () => {
@@ -252,7 +251,7 @@ describe("catalog titles in voting and watchlist", () => {
       });
       fireEvent.click(
         screen.getByRole("button", {
-          name: area === "voting" ? "Add suggestion" : "Add to Watchlist",
+          name: area === "voting" ? "Add suggestion" : "Add to watchlist",
         }),
       );
       expect(postRequest).toHaveBeenLastCalledWith(
@@ -263,19 +262,17 @@ describe("catalog titles in voting and watchlist", () => {
       fireEvent.change(screen.getByRole("combobox"), { target: { value: "My custom title" } });
       fireEvent.click(
         screen.getByRole("button", {
-          name: area === "voting" ? "Add suggestion" : "Add to Watchlist",
+          name: area === "voting" ? "Add suggestion" : "Add to watchlist",
         }),
       );
       expect(postRequest.mock.calls[1][1]).toEqual({ title: "My custom title" });
     },
   );
 
-  it("renders full metadata and keeps group score separate from TMDB rating", () => {
+  it("renders TMDB metadata and keeps group score separate from TMDB rating", () => {
     render(<Suggestions group={group} member_count={2} suggestions={[suggestion]} />);
-    expect(screen.getByText("TMDB 7.8/10")).toBeVisible();
+    expect(screen.getByText("TMDB 7.8")).toBeVisible();
     expect(screen.getByText("+3")).toHaveTextContent("Score +3");
-    expect(screen.getByText("PG-13 (US)")).toBeVisible();
-    expect(screen.getByText(dune.overview!)).toBeVisible();
     expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
   });
 
@@ -300,8 +297,8 @@ describe("catalog titles in voting and watchlist", () => {
         suggestions={[{ ...suggestion, in_watchlist: true }]}
       />,
     );
-    expect(screen.getByRole("button", { name: "Dune is on the watchlist" })).toBeDisabled();
-    expect(screen.getByText("On watchlist ✓")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Add Dune to watchlist" })).not.toBeInTheDocument();
+    expect(screen.getByText("On watchlist")).toHaveClass("chip");
   });
 
   it("shows metadata and graceful missing-data/poster fallbacks in the watchlist", () => {
@@ -315,12 +312,16 @@ describe("catalog titles in voting and watchlist", () => {
       />,
     );
     const rows = screen.getAllByRole("listitem");
-    expect(within(rows[0]).getByText("PG-13 (US)")).toBeVisible();
-    fireEvent.error(within(rows[0]).getByRole("img"));
-    expect(within(rows[0]).getByLabelText("No poster available")).toBeVisible();
-    expect(within(rows[1]).getByText("No description available.")).toBeVisible();
-    expect(within(rows[1]).getByText("US age rating unavailable")).toBeVisible();
+    expect(within(rows[0]).getByText("Movie")).toBeVisible();
+    expect(within(rows[0]).getByText("2021")).toBeVisible();
+    const poster = rows[0].querySelector("img");
+    expect(poster).toHaveAttribute("src", dune.poster_url);
+    fireEvent.error(poster!);
+    expect(rows[0].querySelector("img")).toBeNull();
+    expect(rows[0].querySelector(".poster-blank")).toHaveTextContent("Dune");
+    expect(within(rows[1]).getByText("Year unavailable")).toBeVisible();
     expect(within(rows[1]).getByText("Not yet rated")).toBeVisible();
-    expect(within(rows[1]).getByText("Watched ✓")).toBeVisible();
+    expect(within(rows[1]).getByText("Watched")).toBeVisible();
+    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
   });
 });

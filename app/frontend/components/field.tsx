@@ -34,7 +34,7 @@ export default function Field({ label, name, error, hint, ...input }: FieldProps
 
 export function FormError({ errors }: { errors: Record<string, string[] | undefined> }) {
   return errors.base?.length ? (
-    <p className="banner banner-error" role="alert">
+    <p className="field-error" role="alert">
       {errors.base.join(". ")}
     </p>
   ) : null;

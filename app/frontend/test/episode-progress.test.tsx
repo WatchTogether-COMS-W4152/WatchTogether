@@ -56,19 +56,45 @@ beforeEach(() => {
 describe("seeing where everyone is", () => {
   it("lists each member's position, who is caught up, and the next episode", () => {
     renderPanel();
-    expect(screen.getByRole("heading", { name: "Episode progress" })).toBeVisible();
-    expect(screen.getByText("Next episode for everyone: S1 E1")).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "Next episode for everyone: Season 1, Episode 1",
+      }),
+    ).toBeVisible();
     const rows = within(screen.getByRole("list", { name: "Where everyone is" })).getAllByRole(
       "listitem",
     );
     expect(rows.map((row) => row.textContent)).toEqual([
-      "AAliceCaught upS2 E4",
-      "BBob (you)S2 E1",
+      "AAliceCaught upS2 E4Season 2, Episode 4",
+      "BBob (you)S2 E1Season 2, Episode 1",
       "CCarolNot started",
     ]);
     expect(memberRow("Alice").getByText("Caught up")).toBeVisible();
     expect(memberRow("Carol").queryByText("Caught up")).not.toBeInTheDocument();
-    expect(screen.getByText("You've watched up to S2 E1.")).toBeVisible();
+    expect(memberRow("Carol").getByText("Not started")).toHaveClass("chip-outline");
+  });
+
+  it("draws the season strip from the group's progress", () => {
+    renderPanel({
+      members: [
+        { id: 1, display_name: "Alice", position: { season: 1, episode: 5 }, caught_up: true },
+        { id: 2, display_name: "Bob", position: { season: 1, episode: 2 }, caught_up: false },
+      ],
+      my_position: { season: 1, episode: 2 },
+      next_episode: { season: 1, episode: 3 },
+      everyone_caught_up: false,
+    });
+    const cells = within(screen.getByRole("list", { name: "Season 1" })).getAllByRole("listitem");
+    expect(cells.map((cell) => cell.className.replace("cell ", ""))).toEqual([
+      "cell-watched",
+      "cell-watched",
+      "cell-next",
+      "cell-ahead",
+      "cell-ahead",
+      "cell-ahead",
+    ]);
+    expect(cells[2]).toHaveAccessibleName("E3, next episode for everyone");
+    expect(screen.getByText("Everyone has watched up to S1 E2.")).toBeVisible();
   });
 
   it("explains when nobody has started", () => {
@@ -78,14 +104,16 @@ describe("seeing where everyone is", () => {
       next_episode: { season: 1, episode: 1 },
       everyone_caught_up: false,
     });
-    expect(screen.getByText("Nobody has started yet. Start together with S1 E1.")).toBeVisible();
-    expect(screen.getByText("You haven't started yet.")).toBeVisible();
-    expect(screen.getByLabelText("Season")).toHaveValue(1);
-    expect(screen.getByLabelText("Episode")).toHaveValue(null);
-    expect(screen.queryByRole("button", { name: "Clear my progress" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Nobody has started yet. Start together with Season 1, Episode 1.",
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText(/Everyone has watched up to/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("listitem", { name: /E1/ })).toHaveLength(1);
   });
 
-  it("celebrates when everyone is caught up", () => {
+  it("says when everyone is caught up", () => {
     renderPanel({
       members: [
         { id: 1, display_name: "Alice", position: { season: 1, episode: 5 }, caught_up: true },
@@ -95,16 +123,31 @@ describe("seeing where everyone is", () => {
       next_episode: { season: 1, episode: 6 },
       everyone_caught_up: true,
     });
-    expect(screen.getByText("Everyone is caught up. Next up together: S1 E6.")).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "Everyone is caught up. Next up together: Season 1, Episode 6.",
+      }),
+    ).toBeVisible();
   });
 });
 
 describe("recording my progress", () => {
+  it("keeps the exact-episode fields behind Set exact episode", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    const toggle = screen.getByRole("button", { name: "Set exact episode" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText("Season")).not.toBeInTheDocument();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Season")).toHaveValue(2);
+    expect(screen.getByLabelText("Episode")).toHaveValue(1);
+  });
+
   it("saves the season and episode I enter", async () => {
     const user = userEvent.setup();
     renderPanel();
-    expect(screen.getByLabelText("Season")).toHaveValue(2);
-    expect(screen.getByLabelText("Episode")).toHaveValue(1);
+    await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     await user.clear(screen.getByLabelText("Episode"));
     await user.type(screen.getByLabelText("Episode"), "6");
     await user.click(screen.getByRole("button", { name: "Save progress" }));
@@ -114,13 +157,14 @@ describe("recording my progress", () => {
     expect(data).toEqual({ season: "2", episode: "6" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
-    expect(screen.getByRole("button", { name: "Save progress" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Saving…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Watched next episode/ })).toBeDisabled();
   });
 
   it("shows server validation next to the field", async () => {
     const user = userEvent.setup();
     renderPanel();
+    await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     await user.clear(screen.getByLabelText("Season"));
     await user.type(screen.getByLabelText("Season"), "0");
     await user.click(screen.getByRole("button", { name: "Save progress" }));
@@ -137,11 +181,14 @@ describe("recording my progress", () => {
   it("advances one episode with a single click", async () => {
     const user = userEvent.setup();
     renderPanel();
-    await user.click(screen.getByRole("button", { name: "Watched next episode (S2 E2)" }));
+    const advance = screen.getByRole("button", { name: "Watched next episode (S2 E2)" });
+    expect(advance).toHaveClass("btn-primary");
+    await user.click(advance);
 
     const [url, data] = putRequest.mock.calls[0];
     expect(url).toBe(PATH);
     expect(data).toEqual({ next: "1" });
+    await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     expect(screen.getByLabelText("Season")).toHaveValue(2);
     expect(screen.getByLabelText("Episode")).toHaveValue(2);
   });
@@ -151,12 +198,15 @@ describe("recording my progress", () => {
     renderPanel({ ...progress, my_position: null });
     await user.click(screen.getByRole("button", { name: "Watched next episode (S1 E1)" }));
     expect(putRequest.mock.calls[0][1]).toEqual({ next: "1" });
+    await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     expect(screen.getByLabelText("Episode")).toHaveValue(1);
+    expect(screen.queryByRole("button", { name: "Clear my progress" })).not.toBeInTheDocument();
   });
 
   it("clears my progress", async () => {
     const user = userEvent.setup();
     renderPanel();
+    await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     await user.click(screen.getByRole("button", { name: "Clear my progress" }));
     expect(deleteRequest).toHaveBeenCalledWith(PATH, { preserveScroll: true });
     expect(screen.getByLabelText("Episode")).toHaveValue(null);
@@ -192,7 +242,9 @@ describe("the watchlist item page section", () => {
         ]}
       />,
     );
-    expect(screen.getByText("Next together: S1 E3")).toBeVisible();
-    expect(screen.getAllByText(/Next together/)).toHaveLength(1);
+    const marker = screen.getByText("S1 E3").closest<HTMLElement>(".ep");
+    expect(marker).toHaveClass("ep-next");
+    expect(screen.getByRole("link", { name: /Severance/ })).toContainElement(marker);
+    expect(screen.getAllByText(/S\d+ E\d+/)).toHaveLength(1);
   });
 });

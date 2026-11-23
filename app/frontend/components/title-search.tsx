@@ -1,8 +1,7 @@
-import "../styles/catalog.css";
 import { useEffect, useId, useRef, useState } from "react";
 
 import type { CatalogTitle } from "../types/catalog";
-import MediaDetails, { MediaPoster } from "./media-details";
+import { MediaMeta, SmallPoster } from "./media-details";
 
 type SearchResponse = { results: CatalogTitle[] };
 type DetailResponse = { title: CatalogTitle };
@@ -133,106 +132,107 @@ export default function TitleSearch({
     >
       <div className="field">
         <label htmlFor={id}>Title</label>
-        <input
-          id={id}
-          ref={input}
-          name="title"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={expanded}
-          aria-controls={expanded ? listId : undefined}
-          aria-activedescendant={expanded && active >= 0 ? `${id}-option-${active}` : undefined}
-          aria-invalid={Boolean(error?.length)}
-          aria-describedby={`${id}-hint${error?.length ? ` ${id}-error` : ""}`}
-          autoComplete="off"
-          required
-          maxLength={120}
-          disabled={disabled}
-          placeholder="Search movies and TV shows"
-          value={value}
-          onFocus={() => setOpen(true)}
-          onChange={(event) => {
-            ++searchVersion.current;
-            ++selectionVersion.current;
-            detailRequest.current?.abort();
-            setDetailsLoading(false);
-            setDetailsError(false);
-            setSearch(null);
-            setActive(-1);
-            setOpen(true);
-            onChange(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing) return;
-            if (event.key === "Escape") {
-              event.preventDefault();
-              setOpen(false);
+        <div className="combo">
+          <input
+            id={id}
+            ref={input}
+            name="title"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={expanded}
+            aria-controls={expanded ? listId : undefined}
+            aria-activedescendant={expanded && active >= 0 ? `${id}-option-${active}` : undefined}
+            aria-invalid={Boolean(error?.length)}
+            aria-describedby={`${id}-hint${error?.length ? ` ${id}-error` : ""}`}
+            autoComplete="off"
+            required
+            maxLength={120}
+            disabled={disabled}
+            placeholder="Search movies and TV shows"
+            value={value}
+            onFocus={() => setOpen(true)}
+            onChange={(event) => {
+              ++searchVersion.current;
+              ++selectionVersion.current;
+              detailRequest.current?.abort();
+              setDetailsLoading(false);
+              setDetailsError(false);
+              setSearch(null);
               setActive(-1);
-            } else if ((event.key === "ArrowDown" || event.key === "ArrowUp") && results.length) {
-              event.preventDefault();
               setOpen(true);
-              setActive((current) =>
-                event.key === "ArrowDown"
-                  ? (current + 1) % results.length
-                  : current <= 0
-                    ? results.length - 1
-                    : current - 1,
-              );
-            } else if (event.key === "Enter" && expanded && active >= 0) {
-              event.preventDefault();
-              void selectTitle(results[active]);
-            }
-          }}
-        />
-        {expanded && (
-          <div className="search-dropdown">
-            {/* Rich poster options need an ARIA listbox; a native datalist cannot render these details. */}
-            <div
-              id={listId}
-              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Rich posters and descriptions cannot be rendered in a native datalist.
-              role="listbox"
-              aria-label="Movies and TV shows"
-              className="search-results"
-              ref={resultList}
-            >
-              {results.map((title, index) => (
-                <div
-                  id={`${id}-option-${index}`}
-                  key={`${title.media_type}-${title.tmdb_id}`}
-                  // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Rich combobox options are navigated from the text input.
-                  role="option"
-                  tabIndex={-1}
-                  aria-selected={active === index}
-                  className="search-option"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onMouseMove={() => setActive(index)}
-                  onClick={() => void selectTitle(title)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      void selectTitle(title);
-                    }
-                  }}
-                >
-                  <MediaPoster {...title} />
-                  <div className="media-copy">
-                    <strong>{title.title}</strong>
-                    <MediaDetails media={title} compact />
+              onChange(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing) return;
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setOpen(false);
+                setActive(-1);
+              } else if ((event.key === "ArrowDown" || event.key === "ArrowUp") && results.length) {
+                event.preventDefault();
+                setOpen(true);
+                setActive((current) =>
+                  event.key === "ArrowDown"
+                    ? (current + 1) % results.length
+                    : current <= 0
+                      ? results.length - 1
+                      : current - 1,
+                );
+              } else if (event.key === "Enter" && expanded && active >= 0) {
+                event.preventDefault();
+                void selectTitle(results[active]);
+              }
+            }}
+          />
+          {expanded && (
+            <div className="popover">
+              <div
+                id={listId}
+                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Rich posters and descriptions cannot be rendered in a native datalist.
+                role="listbox"
+                aria-label="Movies and TV shows"
+                className="options"
+                ref={resultList}
+              >
+                {results.map((title, index) => (
+                  <div
+                    id={`${id}-option-${index}`}
+                    key={`${title.media_type}-${title.tmdb_id}`}
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Rich combobox options are navigated from the text input.
+                    role="option"
+                    tabIndex={-1}
+                    aria-selected={active === index}
+                    className="option"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onMouseMove={() => setActive(index)}
+                    onClick={() => void selectTitle(title)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void selectTitle(title);
+                      }
+                    }}
+                  >
+                    <SmallPoster poster_url={title.poster_url} />
+                    <div className="option-text">
+                      <strong>{title.title}</strong>
+                      <MediaMeta media={title} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <output className="popover-status">
+                {status === "loading"
+                  ? "Searching TMDB…"
+                  : status === "error"
+                    ? "Search is unavailable. Try again, or add the title manually."
+                    : status === "ready" && !results.length
+                      ? "No matches found. Try another title, or add it manually."
+                      : `${results.length} results. Use ↑ and ↓ to browse, Enter to select.`}
+              </output>
             </div>
-            <output className="search-status">
-              {status === "loading"
-                ? "Searching TMDB…"
-                : status === "error"
-                  ? "Search is unavailable. Try again, or add the title manually."
-                  : status === "ready" && !results.length
-                    ? "No matches found. Try another title, or add it manually."
-                    : `${results.length} results. Use ↑ and ↓ to browse, Enter to select.`}
-            </output>
-          </div>
-        )}
+          )}
+        </div>
         {error?.length ? (
           <p className="field-error" role="alert" id={`${id}-error`}>
             {error.join(". ")}
@@ -243,11 +243,12 @@ export default function TitleSearch({
         </p>
       </div>
       {selected && (
-        <div className="selected-title" aria-label="Selected title">
-          <MediaPoster {...selected} />
-          <div className="media-copy">
+        <div className="well selected-title" aria-label="Selected title">
+          <SmallPoster poster_url={selected.poster_url} />
+          <div className="option-text">
             <strong>{selected.title}</strong>
-            <MediaDetails media={selected} />
+            <MediaMeta media={selected} withAgeRating />
+            <p className="meta">{selected.overview || "No description available."}</p>
             {detailsLoading && <output className="field-hint">Loading age rating…</output>}
             {detailsError && (
               <output className="field-hint">

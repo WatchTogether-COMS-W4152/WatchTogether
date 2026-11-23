@@ -1,9 +1,11 @@
 import { Link, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 
+import { AvatarStack } from "../../components/avatar";
 import GroupMembers, { type MemberPanel } from "../../components/group-members";
 import Layout, { PageHeader } from "../../components/layout";
-import type { GroupDetails } from "../../types";
+import { useToast } from "../../components/toast-context";
+import { memberCount, type GroupDetails } from "../../types";
 
 export default function Group({ group }: { group: GroupDetails }) {
   const { auth } = usePage().props;
@@ -11,71 +13,38 @@ export default function Group({ group }: { group: GroupDetails }) {
   const [memberPanel, setMemberPanel] = useState<MemberPanel | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [copyMessage, setCopyMessage] = useState("");
-  const [copyError, setCopyError] = useState("");
-  const isOwner = group.is_owner;
-  const resetCancel = useRef<HTMLButtonElement | null>(null);
   const deleteCancel = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (confirmReset) resetCancel.current?.focus();
     if (confirmDelete) deleteCancel.current?.focus();
-  }, [confirmReset, confirmDelete]);
-
-  function finishMemberAction() {
-    setMemberPanel(null);
-    setCopyMessage("");
-    setCopyError("");
-  }
-
-  async function copyInvitation() {
-    setCopyMessage("");
-    setCopyError("");
-    try {
-      if (!navigator.clipboard || !group.invitation_code) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(group.invitation_code);
-      setCopyMessage("Invitation code copied.");
-    } catch {
-      setCopyError("Couldn't copy the code. Select and copy it manually.");
-    }
-  }
-
-  async function shareInvitation() {
-    setCopyMessage("");
-    setCopyError("");
-    try {
-      await navigator.share({
-        title: `Join ${group.name} on WatchTogether`,
-        text: `Join my WatchTogether group, ${group.name}. Sign in and enter this invitation code: ${group.invitation_code}`,
-        url: `${window.location.origin}/groups/join`,
-      });
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        setCopyError("Sharing isn't available right now. Copy the invitation code instead.");
-      }
-    }
-  }
+  }, [confirmDelete]);
 
   return (
-    <Layout title={group.name}>
-      <Link className="back-link" href="/groups">
-        ← Groups
-      </Link>
+    <Layout title={group.name} section="groups">
       <PageHeader
         title={group.name}
-        description={`${group.members.length} ${group.members.length === 1 ? "member" : "members"}`}
+        back={{ href: "/groups", label: "Groups" }}
+        meta={
+          <>
+            <AvatarStack
+              names={group.members.map((member) => member.display_name)}
+              count={group.members.length}
+            />
+            <span>{memberCount(group.members.length)}</span>
+          </>
+        }
         actions={
           <>
-            <Link className="button button-primary" href={`/groups/${group.id}/suggestions`}>
-              What should we watch?
+            <Link className="btn btn-secondary" href={`/groups/${group.id}/watchlist_items`}>
+              Watchlist
             </Link>
-            <Link className="button button-secondary" href={`/groups/${group.id}/watchlist_items`}>
-              Our Watchlist
+            <Link className="btn btn-primary" href={`/groups/${group.id}/suggestions`}>
+              What should we watch?
             </Link>
           </>
         }
       />
-      <div className="details-grid">
+      <div className="group-layout">
         <GroupMembers
           group={group}
           currentUserId={auth.user?.id}
@@ -89,122 +58,56 @@ export default function Group({ group }: { group: GroupDetails }) {
           onPromote={(memberId) =>
             action.post(`/groups/${group.id}/members/${memberId}/promote`, {
               preserveScroll: true,
-              onSuccess: finishMemberAction,
+              onSuccess: () => setMemberPanel(null),
             })
           }
           onRemove={(memberId) =>
             action.delete(`/groups/${group.id}/members/${memberId}`, {
               preserveScroll: true,
-              onSuccess: finishMemberAction,
+              onSuccess: () => setMemberPanel(null),
             })
           }
         />
-        {isOwner && group.invitation_code ? (
-          <section className="panel invitation-card" aria-labelledby="invitation-title">
-            <h2 id="invitation-title">Invite people</h2>
-            <p className="muted">Anyone with this code can join the group.</p>
-            <p className="code-label">Invitation code</p>
-            <code className="invite-code">{group.invitation_code}</code>
-            <div className="invite-actions">
-              <button
-                className="button button-secondary"
-                type="button"
-                disabled={action.processing}
-                onClick={() => void copyInvitation()}
-              >
-                Copy code
-              </button>
-              {typeof navigator.share === "function" && (
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  disabled={action.processing}
-                  onClick={() => void shareInvitation()}
-                >
-                  Share
-                </button>
-              )}
-            </div>
-            {copyMessage && <output className="inline-success">{copyMessage}</output>}
-            {copyError && (
-              <p className="field-error" role="alert">
-                {copyError}
-              </p>
-            )}
-            <div className="reset-invitation">
-              {confirmReset ? (
-                <div className="confirmation">
-                  <p>
-                    Replace this invitation code? The old code will stop working. Current members
-                    will stay in the group.
-                  </p>
-                  <div className="invite-actions">
-                    <button
-                      type="button"
-                      className="button button-danger"
-                      disabled={action.processing}
-                      onClick={() =>
-                        action.post(`/groups/${group.id}/invitation/reset`, {
-                          preserveScroll: true,
-                          onSuccess: () => {
-                            setConfirmReset(false);
-                            setCopyMessage("");
-                            setCopyError("");
-                          },
-                        })
-                      }
-                    >
-                      {action.processing ? "Replacing…" : "Replace code"}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-button"
-                      ref={resetCancel}
-                      disabled={action.processing}
-                      onClick={() => setConfirmReset(false)}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="text-button"
-                  type="button"
-                  disabled={action.processing}
-                  onClick={() => {
-                    setConfirmReset(true);
-                    setConfirmDelete(false);
-                    setMemberPanel(null);
-                  }}
-                >
-                  Replace invitation code
-                </button>
-              )}
-            </div>
-          </section>
+        {group.is_owner && group.invitation_code ? (
+          <InviteCard
+            group={group}
+            code={group.invitation_code}
+            processing={action.processing}
+            confirming={confirmReset}
+            onConfirmingChange={(confirming) => {
+              setConfirmReset(confirming);
+              setConfirmDelete(false);
+              setMemberPanel(null);
+            }}
+            onReset={() =>
+              action.post(`/groups/${group.id}/invitation/reset`, {
+                preserveScroll: true,
+                onSuccess: () => setConfirmReset(false),
+              })
+            }
+          />
         ) : (
-          <aside className="panel invitation-card member-note">
-            <h2>Invite people</h2>
+          <section className="card" aria-labelledby="invitation-title">
+            <h2 id="invitation-title">Invite people</h2>
             <p className="muted">Ask a group owner for the invitation code.</p>
-          </aside>
+          </section>
         )}
       </div>
-      {isOwner && (
-        <section className="group-danger" aria-labelledby="delete-group-title">
+      {group.is_owner && (
+        <section className="danger-zone" aria-labelledby="delete-group-title">
           <h2 id="delete-group-title" className="visually-hidden">
             Delete this group
           </h2>
           {confirmDelete ? (
-            <div className="confirmation">
-              <p className="delete-warning">
+            <div className="confirm">
+              <p>
                 Delete “{group.name}”? Everyone will lose access and its invitation code will stop
                 working. This cannot be undone.
               </p>
-              <div className="invite-actions">
+              <div className="row">
                 <button
                   type="button"
-                  className="button button-danger"
+                  className="btn btn-danger btn-sm"
                   disabled={action.processing}
                   onClick={() => action.delete(`/groups/${group.id}`)}
                 >
@@ -212,7 +115,7 @@ export default function Group({ group }: { group: GroupDetails }) {
                 </button>
                 <button
                   type="button"
-                  className="text-button"
+                  className="btn btn-quiet btn-sm"
                   ref={deleteCancel}
                   disabled={action.processing}
                   onClick={() => setConfirmDelete(false)}
@@ -224,7 +127,7 @@ export default function Group({ group }: { group: GroupDetails }) {
           ) : (
             <button
               type="button"
-              className="text-button danger-text delete-trigger"
+              className="btn btn-quiet btn-sm is-danger"
               disabled={action.processing}
               onClick={() => {
                 setConfirmDelete(true);
@@ -238,5 +141,118 @@ export default function Group({ group }: { group: GroupDetails }) {
         </section>
       )}
     </Layout>
+  );
+}
+
+function InviteCard({
+  group,
+  code,
+  processing,
+  confirming,
+  onConfirmingChange,
+  onReset,
+}: {
+  group: GroupDetails;
+  code: string;
+  processing: boolean;
+  confirming: boolean;
+  onConfirmingChange: (confirming: boolean) => void;
+  onReset: () => void;
+}) {
+  const toast = useToast();
+  const cancel = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (confirming) cancel.current?.focus();
+  }, [confirming]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast({ message: "Invitation code copied.", tone: "success" });
+    } catch {
+      toast({ message: "Couldn't copy the code. Select and copy it manually.", tone: "error" });
+    }
+  }
+
+  async function share() {
+    try {
+      await navigator.share({
+        title: `Join ${group.name} on WatchTogether`,
+        text: `Join my WatchTogether group, ${group.name}. Sign in and enter this invitation code: ${code}`,
+        url: `${window.location.origin}/groups/join`,
+      });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        toast({
+          message: "Sharing isn't available right now. Copy the invitation code instead.",
+          tone: "error",
+        });
+      }
+    }
+  }
+
+  return (
+    <section className="card" aria-labelledby="invitation-title">
+      <h2 id="invitation-title">Invite people</h2>
+      <p className="muted">Anyone with this code can join the group.</p>
+      <code className="code-well">{code}</code>
+      {confirming ? (
+        <div className="confirm">
+          <p>
+            Replace this invitation code? The old code will stop working. Current members will stay
+            in the group.
+          </p>
+          <div className="row">
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              disabled={processing}
+              onClick={onReset}
+            >
+              {processing ? "Replacing…" : "Yes, replace code"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-quiet btn-sm"
+              ref={cancel}
+              disabled={processing}
+              onClick={() => onConfirmingChange(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="row">
+          <button
+            className="btn btn-secondary btn-sm"
+            type="button"
+            disabled={processing}
+            onClick={() => void copy()}
+          >
+            Copy code
+          </button>
+          {typeof navigator.share === "function" && (
+            <button
+              className="btn btn-quiet btn-sm"
+              type="button"
+              disabled={processing}
+              onClick={() => void share()}
+            >
+              Share
+            </button>
+          )}
+          <button
+            className="btn btn-quiet btn-sm"
+            type="button"
+            disabled={processing}
+            onClick={() => onConfirmingChange(true)}
+          >
+            Replace code
+          </button>
+        </div>
+      )}
+    </section>
   );
 }
