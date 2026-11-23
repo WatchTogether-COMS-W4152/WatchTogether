@@ -71,7 +71,7 @@ describe("seeing where everyone is", () => {
     ]);
     expect(memberRow("Alice").getByText("Caught up")).toBeVisible();
     expect(memberRow("Carol").queryByText("Caught up")).not.toBeInTheDocument();
-    expect(memberRow("Carol").getByText("Not started")).toHaveClass("chip-outline");
+    expect(memberRow("Carol").getByText("Not started")).toHaveClass("chip-quiet");
   });
 
   it("draws the season strip from the group's progress", () => {
