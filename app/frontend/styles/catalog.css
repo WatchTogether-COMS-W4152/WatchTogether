@@ -222,3 +222,35 @@
 .watchlist-item-header .page-header {
   margin-bottom: 8px;
 }
+
+.episode-progress {
+  display: grid;
+  gap: 12px;
+}
+.progress-next {
+  font-weight: 600;
+}
+.progress-position {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.progress-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.progress-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 8rem));
+  gap: 12px;
+}
+.progress-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.watchlist-next {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
