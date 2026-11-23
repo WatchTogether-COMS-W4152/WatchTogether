@@ -22,8 +22,8 @@ RSpec.describe "Watchlist items", type: :request do
       expect(inertia).to render_component("watchlist_items/index")
       expect(page_props["group"]).to eq("id" => group.id, "name" => "Movie night")
       expect(page_props["watchlist_items"]).to eq([
-        { "id" => newer.id, "title" => "Barbie", "watched" => false },
-        { "id" => older.id, "title" => "Titanic", "watched" => true }
+        { "id" => newer.id, "title" => "Barbie", "watched" => false, "next_episode" => nil },
+        { "id" => older.id, "title" => "Titanic", "watched" => true, "next_episode" => nil }
       ])
       expect(response.body).not_to include("Private film", owner.email, group.invite_code)
     end
