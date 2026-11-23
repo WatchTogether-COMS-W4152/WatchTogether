@@ -25,13 +25,12 @@
 }
 
 .btn-secondary {
-  background: var(--surface);
-  border-color: var(--line-control);
+  background: var(--sunk);
   color: var(--ink);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--sunk);
+  background: var(--sunk-hover);
 }
 
 .btn-quiet {
@@ -83,9 +82,9 @@
 .field input,
 .field textarea {
   width: 100%;
-  background: var(--surface);
+  background: var(--sunk);
   color: var(--ink);
-  border: 2px solid var(--line-control);
+  border: 2px solid transparent;
   border-radius: var(--radius-md);
 }
 
@@ -166,9 +165,9 @@
   white-space: nowrap;
 }
 
-.chip-outline {
+.chip-quiet {
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--line-control);
+  padding: 0;
   color: var(--ink-muted);
 }
 
@@ -527,7 +526,6 @@
 
 .cell-ahead {
   color: var(--ink-muted);
-  box-shadow: inset 0 0 0 1px var(--line-control);
 }
 
 .rating {

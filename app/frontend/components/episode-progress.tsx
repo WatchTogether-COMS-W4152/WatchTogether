@@ -82,7 +82,7 @@ export function EpisodeProgressPanel({
             {member.position ? (
               <EpisodeCode position={member.position} />
             ) : (
-              <span className="chip chip-outline">Not started</span>
+              <span className="chip chip-quiet">Not started</span>
             )}
           </li>
         ))}
