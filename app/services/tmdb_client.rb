@@ -8,9 +8,7 @@ class TmdbClient
 
   MEDIA_TYPES = %w[movie tv].freeze
   UNAVAILABLE_MESSAGE = "Movie search is temporarily unavailable. Please try again later or add a title manually."
-  # Short timeouts keep a slow TMDB from tying up Puma's few request threads.
   TIMEOUTS = { open_timeout: 1, read_timeout: 2, write_timeout: 2 }.freeze
-  # After a failure, skip TMDB for a while instead of making every search wait on it again.
   OUTAGE_KEY = [ "tmdb", "outage" ].freeze
   OUTAGE_TTL = 30.seconds
 

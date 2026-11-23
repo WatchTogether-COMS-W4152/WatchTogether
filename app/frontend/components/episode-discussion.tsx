@@ -24,8 +24,6 @@ function hiddenLabel({ season, episode, hidden_count: count }: DiscussionEpisode
   return `${comments} on ${formatEpisode({ season, episode })}, unlocked when you get there.`;
 }
 
-// Spoiler-safe discussion for a show on the watchlist. The server sends only the
-// comments this member may read, plus counts for later episodes.
 export default function EpisodeDiscussionSection(_props: Record<string, unknown>) {
   const { group, item, discussion } = usePage<DiscussionPageProps>().props;
   if (!discussion) return null;

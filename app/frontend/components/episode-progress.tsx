@@ -10,7 +10,6 @@ type ProgressPageProps = {
   episode_progress?: EpisodeProgressData;
 };
 
-// Episode progress section of the watchlist item page.
 export default function EpisodeProgressSection(_props: Record<string, unknown>) {
   const { props } = usePage<ProgressPageProps>();
   if (!props.episode_progress) return null;

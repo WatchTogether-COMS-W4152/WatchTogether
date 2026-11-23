@@ -1,4 +1,3 @@
-# Props for the episode progress section of the watchlist item page.
 module WatchlistItems
   module ProgressProps
     private

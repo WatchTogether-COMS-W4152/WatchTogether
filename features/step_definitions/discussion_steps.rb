@@ -1,4 +1,3 @@
-# Records progress the way a member does, through the episode progress endpoint.
 Given("{string} has watched up to season {int} episode {int} of {string} in {string}") do |viewer, season, episode, title, group_name|
   step %("#{viewer}" has watched "#{title}" up to season #{season} episode #{episode} in "#{group_name}")
 end
