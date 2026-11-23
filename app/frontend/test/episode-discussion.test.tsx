@@ -75,7 +75,7 @@ function renderSection(data: Discussion | null = discussion()) {
 }
 
 function episode(label: string) {
-  const element = screen.getByRole("heading", { name: label, level: 3 }).closest("li");
+  const element = screen.getByText(label).closest("li");
   if (!element) throw new Error(`No episode ${label}`);
   return within(element);
 }
@@ -98,10 +98,11 @@ describe("reading the discussion", () => {
     expect(screen.getByRole("heading", { name: "Discussion", level: 2 })).toBeVisible();
     expect(screen.getByText("6 comments")).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
-      "S1 E2",
-      "S1 E8",
-      "S2 E1",
+      "S1 E2Season 1, Episode 2",
+      "S1 E8Season 1, Episode 8",
+      "S2 E1Season 2, Episode 1",
     ]);
+    expect(screen.getByRole("heading", { name: "Season 1, Episode 2", level: 3 })).toBeVisible();
     const early = episode("S1 E2");
     expect(early.getAllByRole("listitem").map((li) => li.querySelector("p")?.textContent)).toEqual([
       "The goats!",
@@ -109,11 +110,14 @@ describe("reading the discussion", () => {
     ]);
     expect(early.getByText("David")).toBeVisible();
     expect(early.getByText("Larissa (you)")).toBeVisible();
+    expect(early.getByText("Larissa (you)").closest("li")).toHaveClass("is-mine");
+    expect(early.getByText("David").closest("li")).not.toHaveClass("is-mine");
     expect(early.getByText("5m ago")).toHaveAttribute("datetime", "2026-11-23T11:55:00Z");
     expect(early.getByText("just now")).toBeVisible();
     expect(
       episode("S1 E8").getByText("3 comments on S1 E8, unlocked when you get there."),
     ).toBeVisible();
+    expect(episode("S1 E8").queryByRole("listitem")).not.toBeInTheDocument();
     expect(
       episode("S2 E1").getByText("1 comment on S2 E1, unlocked when you get there."),
     ).toBeVisible();
@@ -172,11 +176,12 @@ describe("posting a comment", () => {
 
     expect(screen.getByLabelText("Season")).toHaveValue(1);
     expect(screen.getByLabelText("Episode")).toHaveValue(4);
-    expect(screen.getByLabelText("Comment")).toHaveAttribute("maxlength", "1000");
+    expect(screen.getByLabelText("Comment on S1 E4")).toHaveAttribute("maxlength", "1000");
     expect(screen.getByText("You can comment on any episode up to S1 E4.")).toBeVisible();
     await user.clear(screen.getByLabelText("Episode"));
     await user.type(screen.getByLabelText("Episode"), "3");
-    await user.type(screen.getByLabelText("Comment"), "Mark's office!");
+    expect(screen.getByLabelText("Comment on S1 E3")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Comment on S1 E3"), "Mark's office!");
     await user.click(screen.getByRole("button", { name: "Post comment" }));
 
     const [url, data, options] = postRequest.mock.calls[0];
@@ -189,14 +194,14 @@ describe("posting a comment", () => {
       options?.onSuccess?.(nextPage);
       options?.onFinish?.(visit);
     });
-    expect(screen.getByLabelText("Comment")).toHaveValue("");
+    expect(screen.getByLabelText(/^Comment/)).toHaveValue("");
     expect(screen.getByLabelText("Episode")).toHaveValue(3);
   });
 
   it("shows the server's explanation for an episode beyond the viewer's progress", async () => {
     const user = userEvent.setup();
     renderSection();
-    await user.type(screen.getByLabelText("Comment"), "Spoiler");
+    await user.type(screen.getByLabelText(/^Comment/), "Spoiler");
     await user.click(screen.getByRole("button", { name: "Post comment" }));
     const options = postRequest.mock.calls[0][2];
 
@@ -209,8 +214,8 @@ describe("posting a comment", () => {
     });
 
     expect(screen.getByLabelText("Episode")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText("Comment")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText("Comment")).toHaveValue("Spoiler");
+    expect(screen.getByLabelText(/^Comment/)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/^Comment/)).toHaveValue("Spoiler");
     expect(screen.getAllByRole("alert").map((alert) => alert.textContent)).toEqual([
       "You're on S1 E4, so you can't comment on S1 E5.",
       "Write something before posting.",
@@ -226,7 +231,9 @@ describe("deleting a comment", () => {
     expect(screen.getAllByRole("button", { name: /Delete comment/ })).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "Delete comment by Larissa" }));
     expect(screen.getByText("Delete this comment?")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Delete comment by Larissa" })).toHaveFocus();
     expect(deleteRequest).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Delete comment by Larissa" }));

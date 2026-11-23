@@ -92,7 +92,8 @@ describe("group ranking", () => {
     expect(titles).toEqual(["Paddington", "Up", "Cats"]);
     expect(item("Paddington").getByText("+3")).toBeInTheDocument();
     expect(item("Up").getByText("0")).toBeInTheDocument();
-    expect(item("Cats").getByText("-2")).toHaveClass("is-negative");
+    expect(item("Up").getByText("0")).toHaveClass("is-zero");
+    expect(item("Cats").getByText("−2")).toHaveClass("is-negative");
   });
 
   it("shows how many members rated each title and who suggested it", () => {

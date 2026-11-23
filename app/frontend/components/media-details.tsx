@@ -1,60 +1,72 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-import type { MediaMetadata } from "../types/catalog";
+import { mediaFacts, type MediaMetadata } from "../types/catalog";
 
-export function MediaPoster({ title, poster_url }: MediaMetadata & { title: string }) {
+function usePosterImage(url?: string | null) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  return poster_url && failedUrl !== poster_url ? (
-    <img
-      className="media-poster"
-      src={poster_url}
-      alt={`${title} poster`}
-      loading="lazy"
-      onError={() => setFailedUrl(poster_url)}
-    />
-  ) : (
-    <span className="media-poster media-poster-placeholder" aria-label="No poster available">
-      <span aria-hidden="true">No poster</span>
+  return { src: url && failedUrl !== url ? url : null, onError: () => setFailedUrl(url ?? null) };
+}
+
+export function Poster({
+  title,
+  poster_url,
+  children,
+}: {
+  title: string;
+  poster_url?: string | null;
+  children?: ReactNode;
+}) {
+  const { src, onError } = usePosterImage(poster_url);
+  return (
+    <span className="poster">
+      {src ? (
+        <img src={src} alt="" loading="lazy" onError={onError} />
+      ) : (
+        <span className="poster-blank" aria-hidden="true">
+          {title}
+        </span>
+      )}
+      {children}
     </span>
   );
 }
 
-export default function MediaDetails({
+export function SmallPoster({ poster_url }: { poster_url?: string | null }) {
+  const { src, onError } = usePosterImage(poster_url);
+  return src ? (
+    <img className="poster-sm" src={src} alt="" loading="lazy" onError={onError} />
+  ) : (
+    <span className="poster-sm" aria-hidden="true" />
+  );
+}
+
+export function MediaMeta({
   media,
-  compact = false,
+  withAgeRating = false,
 }: {
   media: MediaMetadata;
-  compact?: boolean;
+  withAgeRating?: boolean;
 }) {
-  if (!media.tmdb_id) return null;
+  const facts = mediaFacts(media, withAgeRating);
+  if (!facts.length) return null;
   return (
-    <>
-      <div className="media-metadata">
-        <span>{media.media_type === "tv" ? "TV show" : "Movie"}</span>
-        <span>{media.release_year || "Year unavailable"}</span>
-        <span>
-          {media.tmdb_rating != null ? `TMDB ${media.tmdb_rating.toFixed(1)}/10` : "Not yet rated"}
-        </span>
-        {!compact && (
-          <span className="media-certification">
-            {media.age_rating ? `${media.age_rating} (US)` : "US age rating unavailable"}
-          </span>
-        )}
-      </div>
-      <p className={`media-overview${compact ? " media-overview-compact" : ""}`}>
-        {media.overview || "No description available."}
-      </p>
-    </>
+    <span className="poster-meta">
+      {facts.map((fact) => (
+        <span key={fact}>{fact}</span>
+      ))}
+    </span>
   );
 }
 
 export function TmdbAttribution() {
   return (
-    <footer className="tmdb-attribution">
+    <footer className="tmdb">
       <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">
-        <img className="tmdb-logo" src="/tmdb-logo.svg" alt="TMDB" /> Movie and TV data
+        <img src="/tmdb-logo.svg" alt="TMDB" width={72} />
       </a>
-      <p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+      <p className="meta">
+        This product uses the TMDB API but is not endorsed or certified by TMDB.
+      </p>
     </footer>
   );
 }
