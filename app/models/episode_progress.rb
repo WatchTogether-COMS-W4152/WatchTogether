@@ -1,4 +1,3 @@
-# The last episode a member has watched of a show on their group's watchlist.
 class EpisodeProgress < ApplicationRecord
   belongs_to :watchlist_item
   belongs_to :user
@@ -8,7 +7,6 @@ class EpisodeProgress < ApplicationRecord
   validate :user_belongs_to_group
   validate :watchlist_item_is_episodic
 
-  # Positions compare season first, then episode: S1E10 is before S2E1.
   def self.compare(a, b)
     [ a.fetch(:season), a.fetch(:episode) ] <=> [ b.fetch(:season), b.fetch(:episode) ]
   end
@@ -17,7 +15,6 @@ class EpisodeProgress < ApplicationRecord
     { season: season, episode: episode }
   end
 
-  # True when this member has watched up to (and including) the given episode.
   def reached?(season:, episode:)
     self.class.compare(position, { season: season, episode: episode }) >= 0
   end

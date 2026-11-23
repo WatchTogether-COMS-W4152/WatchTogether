@@ -1,13 +1,7 @@
-# A member's comment about one episode of a show on their group's watchlist.
-#
-# Comments are spoiler-gated: a member can read a comment only once their own
-# EpisodeProgress has reached its episode (or if they wrote it). Everything else
-# is reduced to a per-episode count so the text and author never leave the server.
 class EpisodeComment < ApplicationRecord
   MAX_BODY_LENGTH = 1000
 
   belongs_to :watchlist_item
-  # Optional only so comments survive account deletion; new comments need an author.
   belongs_to :user, optional: true
 
   normalizes :body, with: ->(body) { body.strip }
@@ -23,13 +17,10 @@ class EpisodeComment < ApplicationRecord
 
   scope :in_episode_order, -> { order(:season, :episode, :created_at, :id) }
 
-  # Comments on episodes up to and including `position` ({ season:, episode: }).
   scope :up_to, ->(position) {
     where("season < :season OR (season = :season AND episode <= :episode)", position.slice(:season, :episode))
   }
 
-  # The comments on `item` that `user` may read: those on episodes they have
-  # watched, plus their own. A member who has watched nothing sees only their own.
   def self.visible_to(user, item)
     comments = item.episode_comments.where(user: user)
     progress = progress_for(user, item)
@@ -37,8 +28,6 @@ class EpisodeComment < ApplicationRecord
     comments.in_episode_order
   end
 
-  # Episodes whose comments `user` may not read yet, with how many comments each
-  # holds: [{ season:, episode:, count: }] in episode order. No text or authors.
   def self.hidden_counts_for(user, item)
     item.episode_comments
       .where.not(id: visible_to(user, item).select(:id))

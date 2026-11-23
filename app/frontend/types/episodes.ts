@@ -27,8 +27,6 @@ export type EpisodeComment = {
   can_delete: boolean;
 };
 
-// One episode in the discussion. `comments` holds only what the viewer may read;
-// `hidden_count` counts comments beyond their progress (no text is ever sent).
 export type DiscussionEpisode = EpisodePosition & {
   comments: EpisodeComment[];
   hidden_count: number;
@@ -44,7 +42,6 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-// Short relative time for recent comments, then a short date.
 export function formatCommentTime(iso: string, now: Date = new Date()) {
   const time = new Date(iso);
   const elapsed = now.getTime() - time.getTime();

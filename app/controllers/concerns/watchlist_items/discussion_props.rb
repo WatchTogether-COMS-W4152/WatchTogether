@@ -1,8 +1,3 @@
-# Props for the spoiler-safe discussion section of the watchlist item page.
-#
-# Only comments the viewer may read (EpisodeComment.visible_to) are serialized.
-# Episodes beyond the viewer's progress contribute a count and nothing else, so
-# their text and authors never reach the browser.
 module WatchlistItems
   module DiscussionProps
     private

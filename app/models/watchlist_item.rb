@@ -10,19 +10,14 @@ class WatchlistItem < ApplicationRecord
   validates :title, presence: true, length: { maximum: 500 }, if: :tmdb_id?
   validate :catalog_title_unique_in_group
 
-  # Shows have episodes to track. Titles typed in by hand might be shows, so they
-  # count too; only TMDB movies are excluded.
   def episodic?
     media_type != "movie"
   end
 
-  # Each current member's progress and the group's next episode. See GroupProgress.
   def group_progress(members: group.members.to_a)
     GroupProgress.new(self, members: members)
   end
 
-  # The next episode the whole group can watch, or nil for movies and for
-  # shows nobody has started yet.
   def next_group_episode(members: group.members.to_a)
     return unless episodic?
 

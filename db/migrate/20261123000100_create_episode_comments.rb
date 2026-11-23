@@ -2,8 +2,6 @@ class CreateEpisodeComments < ActiveRecord::Migration[8.1]
   def change
     create_table :episode_comments do |t|
       t.references :watchlist_item, null: false, index: false, foreign_key: { on_delete: :cascade }
-      # Comments outlive a deleted account (the author shows as a former member),
-      # like suggestions do, so the rest of the group's conversation still reads well.
       t.references :user, null: true, foreign_key: { on_delete: :nullify }
       t.integer :season, null: false
       t.integer :episode, null: false

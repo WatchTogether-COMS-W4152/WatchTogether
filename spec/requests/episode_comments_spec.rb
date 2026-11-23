@@ -67,8 +67,6 @@ RSpec.describe "Episode discussion", type: :request do
         headers: { "X-Inertia" => "true", "X-Inertia-Version" => InertiaRails.configuration.version.to_s }
       expect(response.media_type).to eq("application/json")
       expect(response.body).not_to include("Secret season two twist")
-      # Member names are listed elsewhere on the page (episode progress), but the
-      # discussion never says who wrote a hidden comment.
       expect(response.parsed_body.dig("props", "discussion").to_json).not_to include("David")
       expect(response.parsed_body.dig("props", "discussion", "episodes")).to eq([
         { "season" => 2, "episode" => 1, "hidden_count" => 1, "comments" => [] }

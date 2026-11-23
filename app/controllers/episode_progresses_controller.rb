@@ -1,4 +1,3 @@
-# Lets a member record, advance, or clear the last episode they watched of a show.
 class EpisodeProgressesController < InertiaController
   ERROR_MESSAGES = {
     season: "Enter a season number of 1 or more.",
@@ -10,7 +9,6 @@ class EpisodeProgressesController < InertiaController
 
   before_action :set_item
 
-  # PUT with season and episode sets the position; PUT with next=1 advances one episode.
   def update
     attempts = 0
     begin
@@ -18,7 +16,6 @@ class EpisodeProgressesController < InertiaController
       progress.assign_attributes(next_position(progress))
       saved = progress.save
     rescue ActiveRecord::RecordNotUnique
-      # A concurrent first save from the same member won the insert; update that row instead.
       retry if (attempts += 1) < 2
       raise
     end
