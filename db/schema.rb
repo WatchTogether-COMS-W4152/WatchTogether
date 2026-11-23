@@ -10,7 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_000000) do
+  create_table "episode_progresses", force: :cascade do |t|
+    t.integer "watchlist_item_id", null: false
+    t.integer "user_id", null: false
+    t.integer "season", null: false
+    t.integer "episode", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_episode_progresses_on_user_id"
+    t.index ["watchlist_item_id", "user_id"], name: "index_episode_progresses_on_watchlist_item_id_and_user_id", unique: true
+    t.index ["watchlist_item_id"], name: "index_episode_progresses_on_watchlist_item_id"
+    t.check_constraint "season >= 1 AND episode >= 1", name: "episode_progresses_position_check"
+  end
+
   create_table "groups", force: :cascade do |t|
     t.string "name", null: false
     t.string "invite_code", null: false
@@ -101,6 +114,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
     t.check_constraint "(tmdb_id IS NULL AND media_type IS NULL) OR (tmdb_id IS NOT NULL AND tmdb_id > 0 AND media_type IS NOT NULL AND media_type IN ('movie', 'tv'))", name: "watchlist_items_catalog_identity_check"
   end
 
+  add_foreign_key "episode_progresses", "users", on_delete: :cascade
+  add_foreign_key "episode_progresses", "watchlist_items", on_delete: :cascade
   add_foreign_key "memberships", "groups"
   add_foreign_key "memberships", "users"
   add_foreign_key "sessions", "users"

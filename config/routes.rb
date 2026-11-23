@@ -32,6 +32,10 @@ Rails.application.routes.draw do
       resource :vote, only: [ :update ]
     end
     # Watchlist
-    resources :watchlist_items, only: [ :index, :create, :update, :destroy ]
+    resources :watchlist_items, only: [ :index, :create, :show, :update, :destroy ] do
+      # Episode progress (one per member) and spoiler-safe episode comments
+      resource :progress, only: [ :update, :destroy ], controller: "episode_progresses"
+      resources :comments, only: [ :create, :destroy ], controller: "episode_comments"
+    end
   end
 end
