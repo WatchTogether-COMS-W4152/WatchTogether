@@ -212,3 +212,13 @@
     padding: 8px 10px;
   }
 }
+
+.watchlist-item-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+.watchlist-item-header .page-header {
+  margin-bottom: 8px;
+}

@@ -104,7 +104,11 @@ export default function Watchlist({
               <li key={item.id} className="watchlist-entry">
                 {item.tmdb_id && <MediaPoster {...item} />}
                 <div className="media-copy">
-                  <h3>{item.title}</h3>
+                  <h3>
+                    <Link href={`/groups/${group.id}/watchlist_items/${item.id}`}>
+                      {item.title}
+                    </Link>
+                  </h3>
                   <MediaDetails media={item} />
                   <span className={`watchlist-state${item.watched ? " is-watched" : ""}`}>
                     {item.watched ? "Watched ✓" : "Not watched"}
