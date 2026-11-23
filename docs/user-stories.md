@@ -1,6 +1,6 @@
 # User stories
 
-This branch delivers twenty-two web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), and TMDB discovery, metadata, transfers, and recovery (US19–US22). Episode-level progress tracking and spoiler-free discussion are outside this iteration. Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
+This branch delivers twenty-two web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), and TMDB discovery, metadata, transfers, and recovery (US19–US22). Spoiler-safe episode discussion (US32–US35) is described in its own section below. Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
 
 | Story                                        | User need and acceptance criteria                                                                                                                                                                                                                                                                                                                                  | Executable coverage                                                                                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,6 +61,39 @@ Acceptance criteria for **US22**:
 - Authentication, rate-limit, network, malformed-response, and deleted-title failures produce useful feedback without exposing credentials or raw upstream errors.
 - An unsuccessful selected-title addition creates no incomplete record. The member can retry after recovery or enter a plain-text title in either destination.
 - Saved lists, voting, and suggestion transfers remain usable during a catalogue outage. Failed lookups are not cached as successful titles.
+
+## Episode discussion user stories
+
+Every comment belongs to one episode of a show on the watchlist. A member sees the text of a comment only when their own episode progress has reached that episode (or when they wrote it); for later episodes they see only how many comments are waiting. This rule is enforced on the server: hidden comment text and authors are never sent to the browser.
+
+| Story                                            | User need                                                                                                                                                                           | Executable coverage                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **US32 — Discuss an episode with my group**      | As a member, I can post a comment on a specific episode of a show so friends who have watched it can read my reaction. Comments are grouped by episode, oldest first, with my name. | `@US32`, [episode_discussion.feature](../features/episode_discussion.feature); [EpisodeComment model](../spec/models/episode_comment_spec.rb), [discussion requests](../spec/requests/episode_comments_spec.rb), [component tests](../app/frontend/test/episode-discussion.test.tsx). |
+| **US33 — Read the discussion without spoilers**  | As a member who is behind, I see only comments on episodes I have watched, plus a count for later episodes, so I can join in without spoilers. Catching up unlocks them.            | `@US33`, [episode_discussion.feature](../features/episode_discussion.feature); visibility model specs and request specs asserting hidden text is absent from the response.                                                                                                            |
+| **US34 — Only comment on episodes I've watched** | As a member, I can't post about an episode beyond my own progress, so I can't spoil it for others by mistake. The form starts at my current episode and explains any rejection.     | `@US34`, [episode_discussion.feature](../features/episode_discussion.feature); validation model specs, request specs, and form error component tests.                                                                                                                                 |
+| **US35 — Remove a comment**                      | As the author of a comment, or as a group owner, I can delete it after confirming. Other members cannot delete someone else's comment.                                              | `@US35`, [episode_discussion.feature](../features/episode_discussion.feature); permission request specs and confirmation component tests.                                                                                                                                             |
+
+Acceptance criteria for **US32**:
+
+- Any current member can comment on an episode they have reached. Season and episode are whole numbers of at least 1; the comment is trimmed and must contain 1–1000 characters.
+- Episodes are ordered by season, then episode (S1 E10 comes before S2 E1). Comments within an episode are oldest first and show the author's display name, avatar, and a short time.
+- Outsiders, removed members, and signed-out visitors cannot read or post comments, and a show cannot be reached through another group's URL. Movies have no episode discussion.
+
+Acceptance criteria for **US33**:
+
+- A member with no recorded progress sees no comment text, only counts. A member exactly on an episode can read that episode's comments.
+- For each later episode the page shows "N comments on S2 E5, unlocked when you get there." It contains neither the text nor the author of those comments, in the HTML or the Inertia JSON.
+- Moving progress forward unlocks the comments immediately. A member always sees their own comments.
+
+Acceptance criteria for **US34**:
+
+- Posting on an episode beyond the member's progress is rejected with an explanation naming their current episode; nothing is saved. A member with no progress is told to mark episodes as watched first.
+- Blank and overly long comments are explained and not saved. Posting is rate-limited per member.
+
+Acceptance criteria for **US35**:
+
+- The author and any group owner see a delete control; deletion asks for confirmation and can be cancelled. Other members receive 403 and the comment remains.
+- Deleting a show deletes its comments. If an author's account is deleted, their comments remain and appear as from a former member; if a member is removed from the group, their comments remain under their name.
 
 Run all acceptance stories with `bundle exec cucumber`, one story with `bundle exec cucumber --tags @US19`, or all catalogue stories with `bundle exec cucumber --tags @tmdb`. Cucumber sends real HTTP requests into Rails using separate cookie jars for different viewers. Scenarios are isolated with database transactions and cleared rate-limit state. TMDB scenarios substitute only the external HTTP boundary with deterministic responses and a fake credential; the actual TMDB client, application controllers, and models run normally. No live TMDB account or network is needed. These service acceptance scenarios do not execute JavaScript. React component tests and the manual browser demonstration cover the dropdown, keyboard handling, stale responses, confirmation, and cancellation separately.
 
