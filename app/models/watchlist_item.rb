@@ -10,6 +10,8 @@ class WatchlistItem < ApplicationRecord
   validates :title, presence: true, length: { maximum: 500 }, if: :tmdb_id?
   validate :catalog_title_unique_in_group
 
+  scope :episodic, -> { where.not(media_type: "movie").or(where(media_type: nil)) }
+
   def episodic?
     media_type != "movie"
   end

@@ -46,8 +46,35 @@ RSpec.describe "Groups and invitations", type: :request do
     Group.create_with_owner!(owner: create_user, name: "Other private group")
     sign_in(member)
     get groups_path
-    expect(page_props["groups"]).to eq([ { "id" => joined.id, "name" => "Friday films", "is_owner" => false, "member_count" => 2 } ])
+    expect(page_props["groups"]).to eq([ {
+      "id" => joined.id, "name" => "Friday films", "is_owner" => false, "member_count" => 2,
+      "member_names" => [ "Member", "Owner" ], "show_in_progress" => nil
+    } ])
     expect(page_props.to_json).not_to include(joined.invite_code)
+  end
+
+  it "lists the first members and the show the group is furthest into, without per-group queries" do
+    group.memberships.create!(user: member)
+    show = group.watchlist_items.create!(title: "Severance")
+    started_by_one = group.watchlist_items.create!(title: "The Bear")
+    group.watchlist_items.create!(title: "Up", tmdb_id: 14_160, media_type: "movie")
+    finished = group.watchlist_items.create!(title: "Andor", watched: true)
+    show.episode_progresses.create!(user: owner, season: 1, episode: 4)
+    show.episode_progresses.create!(user: member, season: 1, episode: 2)
+    started_by_one.episode_progresses.create!(user: owner, season: 2, episode: 1)
+    finished.episode_progresses.create!(user: owner, season: 1, episode: 9)
+    other = Group.create_with_owner!(owner: owner, name: "Other films")
+    3.times { |index| other.memberships.create!(user: create_user(display_name: "Friend #{index}")) }
+    sign_in(owner)
+
+    queries = 0
+    counter = ->(*, payload) { queries += 1 unless payload[:name] == "SCHEMA" }
+    ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { get groups_path }
+
+    friday, others = page_props["groups"]
+    expect(friday["show_in_progress"]).to eq("title" => "Severance", "next_episode" => { "season" => 1, "episode" => 3 })
+    expect(others).to include("member_count" => 4, "member_names" => [ "Friend 0", "Friend 1", "Friend 2" ], "show_in_progress" => nil)
+    expect(queries).to be <= 8
   end
 
   it "shows members' names while keeping their emails and secrets private" do

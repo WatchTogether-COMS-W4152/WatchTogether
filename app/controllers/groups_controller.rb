@@ -3,10 +3,15 @@ class GroupsController < InertiaController
     with: -> { render_error(429, "Too many invitation attempts. Please try again in a minute.") }
 
   def index
-    groups = current_user.groups.includes(:memberships).order(:name, :id).map do |group|
+    groups = current_user.groups.includes(memberships: :user).order(:name, :id).to_a
+    shows = shows_in_progress(groups)
+    groups = groups.map do |group|
+      members = group.memberships.map(&:user).sort_by { |user| [ user.display_name.downcase, user.id ] }
       group.as_json(only: [ :id, :name ]).merge(
         member_count: group.memberships.size,
-        is_owner: group.memberships.any? { |membership| membership.user_id == current_user.id && membership.owner? }
+        is_owner: group.memberships.any? { |membership| membership.user_id == current_user.id && membership.owner? },
+        member_names: members.first(3).map(&:display_name),
+        show_in_progress: shows[group.id]
       )
     end
     render inertia: "groups/index", props: { groups: groups }
@@ -66,6 +71,23 @@ class GroupsController < InertiaController
   end
 
   private
+
+  def shows_in_progress(groups)
+    members = groups.to_h { |group| [ group.id, group.memberships.map(&:user) ] }
+    WatchlistItem.episodic.where(group_id: members.keys, watched: false)
+      .where(id: EpisodeProgress.select(:watchlist_item_id))
+      .includes(:episode_progresses)
+      .group_by(&:group_id)
+      .transform_values { |items| latest_show_in_progress(items, members) }
+  end
+
+  def latest_show_in_progress(items, members)
+    item, progress = items
+      .map { |entry| [ entry, entry.group_progress(members: members[entry.group_id]) ] }
+      .select { |_, entry_progress| entry_progress.started? }
+      .max_by { |entry, entry_progress| [ entry_progress.entries.count(&:started?), entry.episode_progresses.map(&:updated_at).max ] }
+    { title: item.title, next_episode: progress.next_episode } if item
+  end
 
   def invalid_invitation
     redirect_to join_groups_path, inertia: { errors: { code: [ "This invitation code is invalid or has been replaced." ] } }, status: :see_other
