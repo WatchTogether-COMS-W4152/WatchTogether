@@ -50,7 +50,7 @@ RSpec.describe "Watchlist items", type: :request do
       expect(response).to have_http_status(:see_other)
       expect(response).to redirect_to(group_watchlist_items_path(group))
       follow_redirect!
-      expect(page_props.dig("flash", "notice")).to eq("Added to watchlist!")
+      expect(page_props.dig("flash", "notice")).to eq("Added to watchlist.")
       expect(page_props["watchlist_items"].map { |item| item["title"] }).to eq([ "Titanic" ])
     end
 
@@ -99,7 +99,7 @@ RSpec.describe "Watchlist items", type: :request do
         expect(response).to have_http_status(:see_other)
         expect(response).to redirect_to(group_watchlist_items_path(group))
         follow_redirect!
-        expect(page_props.dig("flash", "notice")).to eq("Watchlist updated!")
+        expect(page_props.dig("flash", "notice")).to eq("Watchlist updated.")
         expect(page_props["watchlist_items"].sole).to include("id" => item.id, "watched" => watched)
       end
     end
@@ -137,7 +137,7 @@ RSpec.describe "Watchlist items", type: :request do
         expect(response).to have_http_status(:see_other)
         expect(response).to redirect_to(group_watchlist_items_path(group))
         follow_redirect!
-        expect(page_props.dig("flash", "notice")).to eq("Removed from watchlist!")
+        expect(page_props.dig("flash", "notice")).to eq("Removed from watchlist.")
         expect(page_props["watchlist_items"].map { |entry| entry["id"] }).to eq([ retained.id ])
       end
     end

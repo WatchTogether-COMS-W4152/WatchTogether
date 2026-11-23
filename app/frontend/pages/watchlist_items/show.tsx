@@ -1,4 +1,4 @@
-import { router, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
 import EpisodeDiscussionSection from "../../components/episode-discussion";
@@ -33,11 +33,13 @@ export default function WatchlistItemPage({
 
   return (
     <Layout title={`${item.title} · ${group.name}`} section="groups">
+      <Link className="back title-back" href={`/groups/${group.id}/watchlist_items`}>
+        ← Watchlist
+      </Link>
       <div className="title-header">
         <Poster title={item.title} poster_url={item.poster_url} />
         <PageHeader
           title={item.title}
-          back={{ href: `/groups/${group.id}/watchlist_items`, label: "Watchlist" }}
           meta={
             facts.length > 0 || item.watched ? (
               <>

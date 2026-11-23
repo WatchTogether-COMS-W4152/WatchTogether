@@ -40,7 +40,6 @@ export default function GroupMembers({
       <h2 id="members-title" ref={listTitle} tabIndex={-1}>
         Members
       </h2>
-      {group.is_owner && <p className="meta">Owners can invite and remove people.</p>}
       <ul className="rows">
         {group.members.map((member) => {
           const isActive = panel?.memberId === member.id;

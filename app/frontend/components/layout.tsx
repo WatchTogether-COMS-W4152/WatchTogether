@@ -93,7 +93,7 @@ export default function Layout({
               <Link href="/sign-in" className="btn btn-quiet btn-sm">
                 Sign in
               </Link>
-              <Link href="/sign-up" className="btn btn-primary btn-sm">
+              <Link href="/sign-up" className="btn btn-secondary btn-sm">
                 Sign up
               </Link>
             </div>

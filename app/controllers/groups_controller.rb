@@ -23,7 +23,7 @@ class GroupsController < InertiaController
 
   def create
     group = Group.create_with_owner!(owner: current_user, name: params.permit(:name)[:name])
-    redirect_to group_path(group), notice: "Your group is ready. Invite a friend!", status: :see_other
+    redirect_to group_path(group), notice: "Your group is ready.", status: :see_other
   rescue ActiveRecord::RecordInvalid => error
     redirect_to new_group_path, inertia: { errors: error.record.errors }, status: :see_other
   end

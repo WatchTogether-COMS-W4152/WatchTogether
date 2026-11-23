@@ -274,3 +274,13 @@
     align-items: start;
   }
 }
+
+.page > .title-back {
+  align-self: flex-start;
+  padding-top: var(--space-6);
+}
+
+.page > .title-back + .title-header {
+  margin-top: var(--space-3);
+  padding-top: 0;
+}

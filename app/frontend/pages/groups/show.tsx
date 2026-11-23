@@ -127,7 +127,7 @@ export default function Group({ group }: { group: GroupDetails }) {
           ) : (
             <button
               type="button"
-              className="btn btn-quiet btn-sm is-danger"
+              className="btn btn-quiet btn-sm is-danger is-flush"
               disabled={action.processing}
               onClick={() => {
                 setConfirmDelete(true);

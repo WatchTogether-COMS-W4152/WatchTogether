@@ -190,6 +190,7 @@ function Comment({ comment, path }: { comment: EpisodeComment; path: string }) {
         {comment.can_delete && (
           <div className="bubble-actions">
             <InlineConfirm
+              flush
               label="Delete"
               accessibleLabel={`Delete comment by ${name}`}
               question="Delete this comment?"
