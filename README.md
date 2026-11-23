@@ -49,15 +49,16 @@ Rails authenticates catalogue requests and fetches canonical details for selecte
 
 The implementation uses ordinary Rails controllers, Inertia pages, and seven models:
 
-| Model           | Responsibility                                                                                     |
-| --------------- | -------------------------------------------------------------------------------------------------- |
-| `User`          | Display name, normalized unique email, and bcrypt password digest.                                 |
-| `Session`       | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.         |
-| `Group`         | Name and cryptographically random reusable invitation code.                                        |
-| `Membership`    | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.     |
-| `Suggestion`    | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.     |
-| `Vote`          | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member. |
-| `WatchlistItem` | A title on a group's shared watchlist and its watched/unwatched status.                            |
+| Model            | Responsibility                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `User`           | Display name, normalized unique email, and bcrypt password digest.                                  |
+| `Session`        | A hashed opaque session token, user, and 30-day expiry. Logout revokes the server session.          |
+| `Group`          | Name and cryptographically random reusable invitation code.                                         |
+| `Membership`     | User/group relationship and member/owner role, with foreign keys and a unique pair constraint.      |
+| `Suggestion`     | A title suggested to one group, unique per group ignoring case and spacing, and its suggester.      |
+| `Vote`           | One member's private rating of a suggestion: `love`, `maybe`, or `not_interested`, one per member.  |
+| `WatchlistItem`  | A title on a group's shared watchlist and its watched/unwatched status.                             |
+| `EpisodeComment` | A member's comment on one episode of a show, visible only to members who have reached that episode. |
 
 The browser receives its session token in a signed, HttpOnly, SameSite cookie, with the Secure flag in production. Rails protects form submissions against CSRF. Authentication and invitation attempts are throttled. Passwords and tokens are filtered from logs.
 
@@ -80,6 +81,10 @@ The group ranking orders titles by total score, then by number of Love it rating
 Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Plain-text titles must contain 1–120 characters; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
 
 Visitors must sign in, and outsiders or removed members cannot view or change the list. An item's ID only works within its own group. Deleting a group deletes its watchlist while preserving other groups and their items.
+
+### Spoiler-safe episode discussion
+
+Each show on the watchlist has its own page with a **Discussion** section. Every comment is tied to a season and episode. A member reads only the comments on episodes they have already watched (according to their episode progress) plus their own; for later episodes they see a count such as "3 comments on S2 E5, unlocked when you get there." The filtering happens in Rails (`EpisodeComment.visible_to` / `.hidden_counts_for`), so hidden comment text and authors never reach the browser. Members can only post about episodes they have reached. The author or any owner can delete a comment. Comments are deleted with their show; if an account is deleted, its comments stay and show as from a former member.
 
 There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving groups, owner demotion, and exclusive ownership transfer are outside this iteration.
 
@@ -125,32 +130,35 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                                          | Purpose                                                    |
-| ---------------------------------------------- | ---------------------------------------------------------- |
-| `GET/POST /sign-up`                            | Registration; automatically signs in.                      |
-| `GET/POST /sign-in`                            | Sign-in form and authentication.                           |
-| `DELETE /session`                              | Revoke the current session and sign out.                   |
-| `GET/PATCH /profile`                           | Read profile and update display name.                      |
-| `GET /`, `GET /groups`                         | List the current user's groups.                            |
-| `GET /groups/new`, `POST /groups`              | Create a private group.                                    |
-| `GET/POST /groups/join`                        | Paste an invitation code and join.                         |
-| `GET /groups/:id`                              | Member-only details, with owner-only invitation controls.  |
-| `DELETE /groups/:id`                           | Owner-only deletion of the group and its memberships.      |
-| `POST /groups/:id/invitation/reset`            | Replace the owner's invitation code.                       |
-| `POST /groups/:id/members/:user_id/promote`    | Make an existing member another owner.                     |
-| `DELETE /groups/:id/members/:user_id`          | Remove another member and replace the invitation code.     |
-| `GET /groups/:id/suggestions`                  | Member-only ranked suggestions with the viewer's ratings.  |
-| `POST /groups/:id/suggestions`                 | Suggest a title to the group.                              |
-| `POST /groups/:id/suggestions/:id/watchlist`   | Copy a suggestion to the watchlist without changing votes. |
-| `DELETE /groups/:id/suggestions/:id`           | Remove a title (its suggester or any owner).               |
-| `PUT /groups/:id/suggestions/:id/vote`         | Set or change your rating for a title.                     |
-| `GET /groups/:id/watchlist_items`              | View the group's shared watchlist (members only).          |
-| `POST /groups/:id/watchlist_items`             | Add a title to the group's watchlist.                      |
-| `PATCH /groups/:id/watchlist_items/:id`        | Toggle an item between watched and unwatched.              |
-| `DELETE /groups/:id/watchlist_items/:id`       | Remove an item from the group's watchlist.                 |
-| `GET /groups/:id/catalog/search?q=...`         | Member-only movie and TV autocomplete.                     |
-| `GET /groups/:id/catalog/:media_type/:tmdb_id` | Member-only canonical title preview and age certification. |
-| `GET /up`                                      | Public Rails health endpoint.                              |
+| Route                                                 | Purpose                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------- |
+| `GET/POST /sign-up`                                   | Registration; automatically signs in.                      |
+| `GET/POST /sign-in`                                   | Sign-in form and authentication.                           |
+| `DELETE /session`                                     | Revoke the current session and sign out.                   |
+| `GET/PATCH /profile`                                  | Read profile and update display name.                      |
+| `GET /`, `GET /groups`                                | List the current user's groups.                            |
+| `GET /groups/new`, `POST /groups`                     | Create a private group.                                    |
+| `GET/POST /groups/join`                               | Paste an invitation code and join.                         |
+| `GET /groups/:id`                                     | Member-only details, with owner-only invitation controls.  |
+| `DELETE /groups/:id`                                  | Owner-only deletion of the group and its memberships.      |
+| `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                       |
+| `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                     |
+| `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.     |
+| `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.  |
+| `POST /groups/:id/suggestions`                        | Suggest a title to the group.                              |
+| `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes. |
+| `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).               |
+| `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                     |
+| `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).          |
+| `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                      |
+| `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.              |
+| `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                 |
+| `GET /groups/:id/watchlist_items/:id`                 | A title's page, with its spoiler-safe episode discussion.  |
+| `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                    |
+| `DELETE /groups/:id/watchlist_items/:id/comments/:id` | Delete a comment (its author or any owner).                |
+| `GET /groups/:id/catalog/search?q=...`                | Member-only movie and TV autocomplete.                     |
+| `GET /groups/:id/catalog/:media_type/:tmdb_id`        | Member-only canonical title preview and age certification. |
+| `GET /up`                                             | Public Rails health endpoint.                              |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
 
