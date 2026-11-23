@@ -15,6 +15,20 @@ class WatchlistItem < ApplicationRecord
     media_type != "movie"
   end
 
+  # Each current member's progress and the group's next episode. See GroupProgress.
+  def group_progress(members: group.members.to_a)
+    GroupProgress.new(self, members: members)
+  end
+
+  # The next episode the whole group can watch, or nil for movies and for
+  # shows nobody has started yet.
+  def next_group_episode(members: group.members.to_a)
+    return unless episodic?
+
+    progress = group_progress(members: members)
+    progress.next_episode if progress.started?
+  end
+
   private
 
   def catalog_title_unique_in_group

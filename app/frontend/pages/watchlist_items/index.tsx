@@ -5,11 +5,13 @@ import Layout, { PageHeader } from "../../components/layout";
 import MediaDetails, { MediaPoster, TmdbAttribution } from "../../components/media-details";
 import TitleSearch from "../../components/title-search";
 import type { CatalogTitle, MediaMetadata } from "../../types/catalog";
+import { formatEpisode, type EpisodePosition } from "../../types/episodes";
 
 type WatchlistItem = MediaMetadata & {
   id: number;
   title: string;
   watched: boolean;
+  next_episode?: EpisodePosition | null;
 };
 
 type Group = {
@@ -110,6 +112,11 @@ export default function Watchlist({
                     </Link>
                   </h3>
                   <MediaDetails media={item} />
+                  {item.next_episode && (
+                    <span className="watchlist-next">
+                      Next together: {formatEpisode(item.next_episode)}
+                    </span>
+                  )}
                   <span className={`watchlist-state${item.watched ? " is-watched" : ""}`}>
                     {item.watched ? "Watched ✓" : "Not watched"}
                   </span>

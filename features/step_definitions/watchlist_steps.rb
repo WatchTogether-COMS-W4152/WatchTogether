@@ -71,7 +71,7 @@ end
 Then("watchlist details contain no emails or invitation codes") do
   expect(props.fetch("group").keys).to match_array(%w[id name])
   props.fetch("watchlist_items").each do |item|
-    expect(item.keys).to match_array(%w[id title watched])
+    expect(item.keys).to match_array(%w[id title watched next_episode])
   end
   expect(nested_keys(props.except("auth"))).not_to include("email", "invitation_code", "invite_code")
 end
