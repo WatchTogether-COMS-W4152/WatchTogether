@@ -13,7 +13,7 @@ WatchTogether helps friends organize what they watch together. This web-first it
 
 **Live app (`main`):** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/. The watchlist is currently on `feature/watchlist` and has not been merged into `main` or deployed.
 
-Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.9, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
+Rails serves React + TypeScript pages through [Inertia](https://inertia-rails.dev). Vite builds the frontend. The application uses Ruby 4.0.10, Rails 8.1, Node 24, SQLite for development/tests, and PostgreSQL in production. Ruby and JavaScript dependencies have committed lockfiles.
 
 ## Run locally
 
