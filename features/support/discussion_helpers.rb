@@ -1,8 +1,4 @@
 module DiscussionHelpers
-  def watchlist_item_path(title, group_name)
-    "#{watchlist_path(group_name)}/#{watchlist_item_id(title, group_name)}"
-  end
-
   def comments_path(title, group_name)
     "#{watchlist_item_path(title, group_name)}/comments"
   end
