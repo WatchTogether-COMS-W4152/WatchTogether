@@ -2,7 +2,7 @@
 
 This branch serves a Rails/Inertia/React web app. Vite builds browser assets during `rails assets:precompile`; Puma serves the application. A separate React Native app and public JSON API are future work.
 
-The `main` version is deployed on Heroku at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/** (app name `watchtogether-w4152`). The watchlist is currently on `feature/watchlist`, has not been merged into `main`, and is available for local review. Its absence from the deployed app is expected until the team merges and deploys it.
+The `main` branch is deployed on Heroku at **https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/** (app name `watchtogether-w4152`).
 
 ## Before deployment
 
@@ -36,7 +36,9 @@ heroku addons:create heroku-postgresql:essential-0 -a watchtogether-w4152
 heroku config:set SECRET_KEY_BASE=$(openssl rand -hex 64) -a watchtogether-w4152
 ```
 
-To deploy, push `main` to Heroku. Ask the app owner to add you as a collaborator first:
+Deploys are automatic: Heroku's GitHub integration deploys every push to `main` (including merged pull requests) once the GitHub Actions checks pass. If CI fails, the commit is not deployed. Watch progress under the app's **Activity** tab or with `heroku releases -a watchtogether-w4152`.
+
+To deploy by hand (for example, to redeploy without a new commit), a collaborator on the Heroku app can push `main` directly:
 
 ```sh
 git remote add heroku https://git.heroku.com/watchtogether-w4152.git
