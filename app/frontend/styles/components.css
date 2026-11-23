@@ -50,6 +50,10 @@
   color: var(--danger);
 }
 
+.btn-quiet.is-flush {
+  margin-inline-start: calc(-1 * var(--space-3));
+}
+
 .btn-danger {
   background: var(--danger);
   color: var(--on-danger);

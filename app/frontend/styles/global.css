@@ -54,7 +54,7 @@
   --shadow-pop: 0 12px 32px -12px #18191c40, 0 0 0 1px #e4e4e7;
 
   --page-width: 1080px;
-  --read-width: 640px;
+  --read-width: 720px;
   --bar-height: 64px;
   --control-height: 48px;
 
@@ -65,7 +65,7 @@
   :root {
     --ground: #111214;
     --surface: #1a1b1e;
-    --sunk: #0c0d0f;
+    --sunk: #232428;
     --ink: #ececef;
     --ink-muted: #9da0a8;
     --line: #2a2b30;

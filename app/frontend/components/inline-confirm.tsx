@@ -8,6 +8,7 @@ export default function InlineConfirm({
   pendingLabel,
   pending,
   onConfirm,
+  flush = false,
 }: {
   label: string;
   accessibleLabel?: string;
@@ -16,6 +17,7 @@ export default function InlineConfirm({
   pendingLabel: string;
   pending: boolean;
   onConfirm: () => void;
+  flush?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -54,7 +56,7 @@ export default function InlineConfirm({
   ) : (
     <button
       type="button"
-      className="btn btn-quiet btn-sm is-danger"
+      className={`btn btn-quiet btn-sm is-danger${flush ? " is-flush" : ""}`}
       ref={trigger}
       aria-label={accessibleLabel}
       disabled={pending}

@@ -36,7 +36,7 @@ class WatchlistItemsController < InertiaController
 
     if item.save
       redirect_to group_watchlist_items_path(@group),
-        notice: "Added to watchlist!",
+        notice: "Added to watchlist.",
         status: :see_other
     else
       redirect_with_title_errors(item.errors[:title])
@@ -53,7 +53,7 @@ class WatchlistItemsController < InertiaController
     item.update!(watched: !item.watched)
 
     redirect_to group_watchlist_items_path(@group),
-      notice: "Watchlist updated!",
+      notice: "Watchlist updated.",
       status: :see_other
   end
 
@@ -63,7 +63,7 @@ class WatchlistItemsController < InertiaController
     item.destroy!
 
     redirect_to group_watchlist_items_path(@group),
-      notice: "Removed from watchlist!",
+      notice: "Removed from watchlist.",
       status: :see_other
   end
 
