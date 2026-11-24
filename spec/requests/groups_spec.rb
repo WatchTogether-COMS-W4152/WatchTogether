@@ -21,7 +21,7 @@ RSpec.describe "Groups and invitations", type: :request do
       post groups_path, params: { name: " Weekend movies ", owner_id: member.id, owner_ids: [ member.id ], role: "member", invite_code: "A" * 16 }
     }.to change(Group, :count).by(1).and change(Membership, :count).by(1)
     created = Group.last
-    expect(response).to redirect_to(group_path(created))
+    expect(response).to redirect_to(group_members_path(created))
     expect(created.name).to eq("Weekend movies")
     expect(created.owners).to contain_exactly(owner)
     expect(created.members).to contain_exactly(owner)
@@ -80,7 +80,7 @@ RSpec.describe "Groups and invitations", type: :request do
   it "shows members' names while keeping their emails and secrets private" do
     group.memberships.create!(user: member)
     sign_in(member)
-    get group_path(group)
+    get group_members_path(group)
     details = page_props["group"]
     expect(details["members"]).to contain_exactly(
       { "id" => owner.id, "display_name" => "Owner", "role" => "owner" },
@@ -94,9 +94,31 @@ RSpec.describe "Groups and invitations", type: :request do
 
   it "shows invitation controls data only to the owner" do
     sign_in(owner)
-    get group_path(group)
+    get group_members_path(group)
     expect(page_props.dig("group", "invitation_code")).to eq(group.invite_code)
     expect(page_props.dig("group", "is_owner")).to be(true)
+  end
+
+  it "opens a group on its watchlist and keeps members on their own page" do
+    sign_in(owner)
+    get group_path(group)
+    expect(response).to redirect_to(group_watchlist_items_path(group))
+    get group_members_path(group)
+    expect(inertia).to render_component("groups/members")
+    expect(page_props.dig("group", "name")).to eq("Friday films")
+  end
+
+  it "fills in the code from an invite link, after signing in if needed" do
+    get join_link_path(group.invite_code.downcase)
+    expect(response).to redirect_to(sign_in_path)
+    post sign_in_path, params: { email: member.email, password: "password123" }
+    expect(response).to redirect_to(join_link_path(group.invite_code.downcase))
+    follow_redirect!
+    expect(inertia).to render_component("groups/join")
+    expect(page_props["code"]).to eq(group.invite_code)
+    expect(group.memberships.exists?(user: member)).to be(false)
+    get join_groups_path
+    expect(page_props["code"]).to eq("")
   end
 
   it "returns the same not-found page for inaccessible and missing groups" do
@@ -114,7 +136,7 @@ RSpec.describe "Groups and invitations", type: :request do
   it "joins using a code with different case and surrounding whitespace" do
     sign_in(member)
     post join_groups_path, params: { code: " #{group.invite_code.downcase} ", role: "owner", is_owner: true }
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_watchlist_items_path(group))
     expect(group.members).to contain_exactly(owner, member)
     expect(group.owner?(member)).to be(false)
   end
@@ -124,7 +146,7 @@ RSpec.describe "Groups and invitations", type: :request do
     code = group.invite_code
     2.times do
       post join_groups_path, params: { code: code }
-      expect(response).to redirect_to(group_path(group))
+      expect(response).to redirect_to(group_watchlist_items_path(group))
     end
     expect(group.memberships.where(user: member).count).to eq(1)
   end
@@ -132,7 +154,7 @@ RSpec.describe "Groups and invitations", type: :request do
   it "allows an owner to join their own group without duplicating their membership" do
     sign_in(owner)
     post join_groups_path, params: { code: group.invite_code }
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_watchlist_items_path(group))
     expect(group.memberships.count).to eq(1)
   end
 
@@ -167,7 +189,7 @@ RSpec.describe "Groups and invitations", type: :request do
     old_code = group.invite_code
     sign_in(owner)
     post group_reset_invitation_path(group)
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_members_path(group))
     expect(group.reload.invite_code).not_to eq(old_code)
     expect(group.members).to contain_exactly(owner, member)
     delete session_path
@@ -177,7 +199,7 @@ RSpec.describe "Groups and invitations", type: :request do
     expect(response).to redirect_to(join_groups_path)
     expect(outsider.memberships).to be_empty
     post join_groups_path, params: { code: group.invite_code }
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_watchlist_items_path(group))
     expect(group.members.reload).to include(outsider)
   end
 
@@ -207,7 +229,7 @@ RSpec.describe "Groups and invitations", type: :request do
     delete session_path
     sign_in(owner)
     post join_groups_path, params: { code: group.invite_code }
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_watchlist_items_path(group))
   end
 
   describe "deleting a group" do

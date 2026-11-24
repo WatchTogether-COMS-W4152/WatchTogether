@@ -26,7 +26,7 @@ export default function RatingButtons({
               aria-pressed={active}
               disabled={pending}
               onClick={() => {
-                const path = `/groups/${groupId}/suggestions/${suggestion.id}/vote`;
+                const path = `/groups/${groupId}/picks/${suggestion.id}/vote`;
                 const options = {
                   preserveScroll: true,
                   onStart: () => {

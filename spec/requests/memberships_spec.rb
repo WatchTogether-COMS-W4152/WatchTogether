@@ -15,7 +15,7 @@ RSpec.describe "Group ownership and member management", type: :request do
         post group_member_promote_path(group, member)
       }.not_to change(Membership, :count)
       expect(response).to have_http_status(:see_other)
-      expect(response).to redirect_to(group_path(group))
+      expect(response).to redirect_to(group_members_path(group))
     end
 
     expect(group.owners).to contain_exactly(owner, member)
@@ -36,12 +36,12 @@ RSpec.describe "Group ownership and member management", type: :request do
 
     get groups_path
     expect(page_props["groups"].first["is_owner"]).to be(true)
-    get group_path(group)
+    get group_members_path(group)
     expect(page_props.dig("group", "is_owner")).to be(true)
     expect(page_props.dig("group", "invitation_code")).to eq(group.invite_code)
     original_code = group.invite_code
     post group_reset_invitation_path(group)
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_members_path(group))
     expect(group.reload.invite_code).not_to eq(original_code)
 
     post group_member_promote_path(group, third_member)
@@ -61,7 +61,7 @@ RSpec.describe "Group ownership and member management", type: :request do
     }.to change(Membership, :count).by(-1)
 
     expect(response).to have_http_status(:see_other)
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_members_path(group))
     expect(group.reload.invite_code).not_to eq(original_code)
     expect(group.members).to contain_exactly(owner)
     expect(member.reload.groups).to contain_exactly(other_group)
@@ -72,13 +72,13 @@ RSpec.describe "Group ownership and member management", type: :request do
 
     delete session_path
     sign_in(member)
-    get group_path(group)
+    get group_members_path(group)
     expect(response).to have_http_status(:not_found)
     post join_groups_path, params: { code: original_code }
     expect(response).to redirect_to(join_groups_path)
     expect(group.memberships.exists?(user: member)).to be(false)
     post join_groups_path, params: { code: group.invite_code, role: "owner" }
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_watchlist_items_path(group))
     expect(group.memberships.find_by!(user: member)).to be_member
   end
 
@@ -87,7 +87,7 @@ RSpec.describe "Group ownership and member management", type: :request do
     sign_in(member)
     delete group_member_path(group, owner)
 
-    expect(response).to redirect_to(group_path(group))
+    expect(response).to redirect_to(group_members_path(group))
     expect(group.owners).to contain_exactly(member)
     expect(group.members).to contain_exactly(member)
     expect(User.exists?(owner.id)).to be(true)
@@ -114,7 +114,7 @@ RSpec.describe "Group ownership and member management", type: :request do
       expect {
         delete group_member_path(group, owner)
       }.not_to change(Membership, :count)
-      expect(response).to redirect_to(group_path(group))
+      expect(response).to redirect_to(group_members_path(group))
       follow_redirect!
       expect(page_props.dig("flash", "alert")).to eq("Use Leave group to leave.")
       expect(group.owner?(owner)).to be(true)

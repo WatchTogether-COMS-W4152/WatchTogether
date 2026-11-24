@@ -1,7 +1,6 @@
 .watch-providers {
   display: grid;
   gap: var(--space-4, 16px);
-  margin-block: var(--space-4, 16px);
   padding: var(--space-5, 24px);
   background: var(--surface, Canvas);
   color: var(--ink, CanvasText);

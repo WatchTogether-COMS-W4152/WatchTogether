@@ -19,7 +19,7 @@ export default function AddSuggestionToWatchlist({
         disabled={form.processing}
         aria-label={`Add ${suggestion.title} to watchlist`}
         onClick={() =>
-          form.post(`/groups/${groupId}/suggestions/${suggestion.id}/watchlist`, {
+          form.post(`/groups/${groupId}/picks/${suggestion.id}/watchlist`, {
             preserveScroll: true,
           })
         }

@@ -1,14 +1,13 @@
-import { Link, useForm } from "@inertiajs/react";
+import { useForm } from "@inertiajs/react";
 import { useState } from "react";
 
 import AddSuggestionToWatchlist from "../../components/add-suggestion-to-watchlist";
+import AddTitleForm from "../../components/add-title-form";
+import GroupHeader from "../../components/group-header";
 import InlineConfirm from "../../components/inline-confirm";
-import Layout, { PageHeader } from "../../components/layout";
+import Layout from "../../components/layout";
 import { MediaMeta, SmallPoster } from "../../components/media-details";
-import MediaKind from "../../components/media-kind";
 import RatingButtons from "../../components/rating-buttons";
-import TitleSearch from "../../components/title-search";
-import type { CatalogTitle } from "../../types/catalog";
 import type { Suggestion, VotingGroup } from "../../types/voting";
 
 function formatScore(score: number) {
@@ -24,76 +23,35 @@ export default function Suggestions({
   member_count: number;
   suggestions: Suggestion[];
 }) {
-  const form = useForm({ title: "", manual_media_type: "" });
-  const [selected, setSelected] = useState<CatalogTitle | null>(null);
+  const [adding, setAdding] = useState(suggestions.length === 0);
   const removal = useForm({});
 
   return (
-    <Layout title={`What should we watch? · ${group.name}`} section="groups">
-      <PageHeader
-        title="What should we watch?"
-        back={{ href: `/groups/${group.id}`, label: group.name }}
+    <Layout title={`Picks · ${group.name}`} section="groups">
+      <GroupHeader
+        group={group}
+        current="picks"
         actions={
-          <Link className="btn btn-secondary" href={`/groups/${group.id}/watchlist_items`}>
-            Watchlist
-          </Link>
+          !adding && (
+            <button
+              className="btn btn-primary btn-sm"
+              type="button"
+              onClick={() => setAdding(true)}
+            >
+              Suggest a title
+            </button>
+          )
         }
       />
       <div className="read-width stack-sections">
-        <section className="card" aria-labelledby="suggest-title">
-          <h2 id="suggest-title">Suggest a title</h2>
-          <form
-            className="form"
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault();
-              form.transform((data) =>
-                selected
-                  ? {
-                      title: data.title,
-                      tmdb_id: selected.tmdb_id,
-                      media_type: selected.media_type,
-                    }
-                  : data,
-              );
-              form.post(`/groups/${group.id}/suggestions`, {
-                preserveScroll: true,
-                onSuccess: () => {
-                  form.reset();
-                  setSelected(null);
-                },
-              });
-            }}
-          >
-            <TitleSearch
-              groupId={group.id}
-              value={form.data.title}
-              selected={selected}
-              disabled={form.processing}
-              onChange={(title) => {
-                form.setData("title", title);
-                setSelected(null);
-              }}
-              onSelect={(title) => {
-                form.setData("title", title.title);
-                setSelected(title);
-              }}
-              error={form.errors.title}
-            />
-            {!selected && form.data.title.trim() && (
-              <MediaKind
-                value={form.data.manual_media_type}
-                disabled={form.processing}
-                onChange={(kind) => form.setData("manual_media_type", kind)}
-              />
-            )}
-            <div className="row">
-              <button className="btn btn-primary" type="submit" disabled={form.processing}>
-                {form.processing ? "Adding…" : "Add suggestion"}
-              </button>
-            </div>
-          </form>
-        </section>
+        {adding && (
+          <AddTitleForm
+            groupId={group.id}
+            action={`/groups/${group.id}/picks`}
+            submitLabel="Add suggestion"
+            onClose={suggestions.length > 0 ? () => setAdding(false) : undefined}
+          />
+        )}
         <div className="ranking">
           <section className="card" aria-labelledby="ranking-title">
             <h2 id="ranking-title">Ranking</h2>
@@ -135,7 +93,7 @@ export default function Suggestions({
                           pendingLabel="Removing…"
                           pending={removal.processing}
                           onConfirm={() =>
-                            removal.delete(`/groups/${group.id}/suggestions/${suggestion.id}`, {
+                            removal.delete(`/groups/${group.id}/picks/${suggestion.id}`, {
                               preserveScroll: true,
                             })
                           }

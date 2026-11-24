@@ -4,25 +4,25 @@ end
 
 Given("{string} joined {string} using an invitation") do |viewer, group_name|
   as_viewer(viewer) do
-    visit_page(:post, "/groups/join", code: @invitation_codes.fetch(group_name))
+    join_with(@invitation_codes.fetch(group_name))
     expect(props.fetch("group").fetch("id")).to eq(group_id(group_name))
   end
 end
 
 When("I join {string} using its shared invitation") do |name|
-  visit_page(:post, "/groups/join", code: @invitation_codes.fetch(name))
+  join_with(@invitation_codes.fetch(name))
 end
 
 When("I join {string} using a lowercase invitation with surrounding spaces") do |name|
-  visit_page(:post, "/groups/join", code: "  #{@invitation_codes.fetch(name).downcase}  ")
+  join_with("  #{@invitation_codes.fetch(name).downcase}  ")
 end
 
 When("I join {string} using its previous invitation") do |name|
-  visit_page(:post, "/groups/join", code: @previous_invitation_codes.fetch(name))
+  join_with(@previous_invitation_codes.fetch(name))
 end
 
 When("I join using invitation code {string}") do |code|
-  visit_page(:post, "/groups/join", code: code)
+  join_with(code)
 end
 
 When("I reset the invitation for {string}") do |name|

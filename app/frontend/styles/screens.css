@@ -275,14 +275,71 @@
   }
 }
 
-.page > .title-back {
-  align-self: flex-start;
+.group-header {
+  display: grid;
+  gap: var(--space-4);
   padding-top: var(--space-6);
 }
 
-.page > .title-back + .title-header {
-  margin-top: var(--space-3);
+.group-name {
+  justify-self: start;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.group-name:hover {
+  color: var(--accent-text);
+}
+
+.group-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+.group-tabs {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.group-tab {
+  padding: var(--space-3) 0;
+  color: var(--ink-muted);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.group-tab:hover {
+  color: var(--ink);
+}
+
+.group-tab[aria-current] {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.group-bar > .row {
+  padding-bottom: var(--space-2);
+}
+
+.page > .group-header + * {
+  margin-top: var(--space-6);
+}
+
+.page > .group-header + .title-header {
   padding-top: 0;
+}
+
+.title-actions {
+  margin-top: var(--space-2);
 }
 
 .danger-zone {

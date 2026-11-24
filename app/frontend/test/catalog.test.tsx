@@ -254,7 +254,7 @@ describe("catalog titles in voting and watchlist", () => {
         }),
       );
       expect(postRequest).toHaveBeenLastCalledWith(
-        `/groups/7/${area === "voting" ? "suggestions" : "watchlist_items"}`,
+        `/groups/7/${area === "voting" ? "picks" : "watchlist"}`,
         { title: "Dune", tmdb_id: 438631, media_type: "movie" },
         expect.objectContaining({ preserveScroll: true }),
       );
@@ -283,7 +283,7 @@ describe("catalog titles in voting and watchlist", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Add Dune to watchlist" }));
     const [url, data, options] = postRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/suggestions/11/watchlist");
+    expect(url).toBe("/groups/7/picks/11/watchlist");
     expect(data).toEqual({});
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Inertia callbacks do not inspect transport metadata.
     act(() => options?.onStart?.({} as Parameters<NonNullable<typeof options.onStart>>[0]));

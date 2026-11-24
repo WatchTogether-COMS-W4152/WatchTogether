@@ -15,25 +15,25 @@ Rails.application.routes.draw do
   post "sign-in", to: "sessions#create"
   delete "session", to: "sessions#destroy"
   resource :profile, only: [ :show, :update ]
+  get "join/:code", to: "groups#join_form", as: :join_link
   resources :groups, only: [ :index, :new, :create, :show, :destroy ] do
     collection do
       get "join", action: :join_form
       post "join", action: :join
     end
+    get "members", to: "groups#members", as: :members
     post "invitation/reset", to: "invitations#reset", as: :reset_invitation
     post "members/:user_id/promote", to: "memberships#promote", as: :member_promote
     delete "members/:user_id", to: "memberships#destroy", as: :member
     delete "membership", to: "memberships#leave", as: :leave
 
-    # Voting
     get "catalog/search", to: "catalog#search", as: :catalog_search
     get "catalog/:media_type/:tmdb_id", to: "catalog#show", as: :catalog_title
-    resources :suggestions, only: [ :index, :create, :destroy ] do
+    resources :suggestions, path: "picks", only: [ :index, :create, :destroy ] do
       post :watchlist, on: :member
       resource :vote, only: [ :update, :destroy ]
     end
-    # Watchlist
-    resources :watchlist_items, only: [ :index, :create, :show, :update, :destroy ] do
+    resources :watchlist_items, path: "watchlist", only: [ :index, :create, :show, :update, :destroy ] do
       resource :progress, only: [ :update, :destroy ], controller: "episode_progresses"
       resources :comments, only: [ :create, :destroy ], controller: "episode_comments"
     end

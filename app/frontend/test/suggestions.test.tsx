@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
-import Group from "../pages/groups/show";
+import Group from "../pages/groups/members";
 import Suggestions from "../pages/suggestions/index";
 import type { SharedProps } from "../types";
 import type { Suggestion, VotingGroup } from "../types/voting";
@@ -109,11 +109,24 @@ describe("group ranking", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
-  it("links back to the group", () => {
+  it("shows the group's tabs with this page selected", () => {
     renderPage();
-    expect(screen.getByRole("link", { name: "← Friday Film Club" })).toHaveAttribute(
+    const tabs = screen.getByRole("navigation", { name: "Friday Film Club" });
+    expect(within(tabs).getByRole("link", { name: "Watchlist" })).toHaveAttribute(
       "href",
-      "/groups/7",
+      "/groups/7/watchlist",
+    );
+    expect(within(tabs).getByRole("link", { name: "Picks" })).toHaveAttribute(
+      "href",
+      "/groups/7/picks",
+    );
+    expect(within(tabs).getByRole("link", { name: "Members" })).toHaveAttribute(
+      "href",
+      "/groups/7/members",
+    );
+    expect(within(tabs).getByRole("link", { current: "page" })).toHaveAttribute(
+      "href",
+      "/groups/7/picks",
     );
   });
 });
@@ -122,10 +135,11 @@ describe("suggesting a title", () => {
   it("submits the title, disables the button while pending, and clears the field on success", async () => {
     const user = userEvent.setup();
     renderPage();
+    await user.click(screen.getByRole("button", { name: "Suggest a title" }));
     await user.type(screen.getByLabelText("Title"), "Spirited Away");
     await user.click(screen.getByRole("button", { name: "Add suggestion" }));
     const [url, data, options] = postRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/suggestions");
+    expect(url).toBe("/groups/7/picks");
     expect(data).toEqual({ title: "Spirited Away", manual_media_type: "" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
@@ -140,6 +154,7 @@ describe("suggesting a title", () => {
   it("shows a server error beside the title field", async () => {
     const user = userEvent.setup();
     renderPage();
+    await user.click(screen.getByRole("button", { name: "Suggest a title" }));
     await user.type(screen.getByLabelText("Title"), "paddington");
     await user.click(screen.getByRole("button", { name: "Add suggestion" }));
     const options = postRequest.mock.calls[0][2];
@@ -169,7 +184,7 @@ describe("rating", () => {
     renderPage();
     await user.click(item("Up").getByRole("button", { name: "Love it" }));
     const [url, data, options] = putRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/suggestions/12/vote");
+    expect(url).toBe("/groups/7/picks/12/vote");
     expect(data).toEqual({ rating: "love" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
@@ -188,7 +203,7 @@ describe("rating", () => {
     renderPage();
     await user.click(item("Paddington").getByRole("button", { name: "Maybe" }));
     expect(putRequest).not.toHaveBeenCalled();
-    expect(deleteRequest.mock.calls[0][0]).toMatch(/\/suggestions\/\d+\/vote$/);
+    expect(deleteRequest.mock.calls[0][0]).toMatch(/\/picks\/\d+\/vote$/);
   });
 
   it("shows a rating error next to that title", async () => {
@@ -233,7 +248,7 @@ describe("removing a suggestion", () => {
     await user.click(screen.getByRole("button", { name: "Remove Up" }));
     await user.click(screen.getByRole("button", { name: "Yes, remove" }));
     const [url, options] = deleteRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/suggestions/12");
+    expect(url).toBe("/groups/7/picks/12");
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
@@ -254,9 +269,6 @@ describe("group page", () => {
         }}
       />,
     );
-    expect(screen.getByRole("link", { name: "What should we watch?" })).toHaveAttribute(
-      "href",
-      "/groups/7/suggestions",
-    );
+    expect(screen.getByRole("link", { name: "Picks" })).toHaveAttribute("href", "/groups/7/picks");
   });
 });

@@ -66,16 +66,27 @@ module WebHelpers
     "/groups/#{group_id(name)}"
   end
 
+  def members_path(name)
+    "#{group_path(name)}/members"
+  end
+
   def share_invitation(owner, group_name)
     as_viewer(owner) do
-      visit_page(:get, group_path(group_name))
+      visit_page(:get, members_path(group_name))
       code = props.fetch("group").fetch("invitation_code")
       expect(code).to be_present
       @invitation_codes[group_name] = code
     end
   end
 
-  def membership_for(viewer, group_name)
+  def join_with(code)
+    visit_page(:post, "/groups/join", code: code)
+    return unless @page.fetch("component") == "watchlist_items/index"
+
+    visit_page(:get, "/groups/#{props.fetch("group").fetch("id")}/members")
+  end
+
+    def membership_for(viewer, group_name)
     Membership.where(user_id: @accounts.fetch(viewer), group_id: group_id(group_name))
   end
 

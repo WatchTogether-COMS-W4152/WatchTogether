@@ -178,7 +178,7 @@ describe("posting a comment", () => {
     await user.click(screen.getByRole("button", { name: "Post comment" }));
 
     const [url, data, options] = postRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/watchlist_items/11/comments");
+    expect(url).toBe("/groups/7/watchlist/11/comments");
     expect(data).toEqual({ season: "1", episode: "3", body: "Mark's office!" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
@@ -232,7 +232,7 @@ describe("deleting a comment", () => {
     await user.click(screen.getByRole("button", { name: "Delete comment by Larissa" }));
     await user.click(screen.getByRole("button", { name: "Yes, delete" }));
     const [url, options] = deleteRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/watchlist_items/11/comments/32");
+    expect(url).toBe("/groups/7/watchlist/11/comments/32");
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();

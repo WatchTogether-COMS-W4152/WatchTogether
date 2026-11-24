@@ -77,23 +77,23 @@ The browser receives its session token in a signed, HttpOnly, SameSite cookie, w
 
 Group creation and the creator's owner membership are one transaction. Only members can view a group. Member lists contain display names and roles, not email addresses. All owners can see or reset the invitation code. Resetting invalidates the previous code while preserving existing members. Joining repeatedly, including joining your own group, does not duplicate membership or change an existing role. New members always join as ordinary members.
 
-Owners can make existing members owners. Ownership is shared: the original owner remains an owner, and every owner has the same permissions to invite friends, manage members, and delete the group. Each other member's **Manage** control opens the available actions; promotion asks for confirmation and explains these permissions.
+Owners can make existing members owners. Ownership is shared: the original owner remains an owner, and every owner has the same permissions to invite friends, manage members, and delete the group. On the **Members** tab, each other member's **Manage** control opens the available actions; promotion asks for confirmation and explains these permissions.
 
 Owners can remove another member, including another owner. Removal asks for confirmation, removes access to that group, and replaces its invitation code in the same transaction so a saved code cannot restore access. Existing members stay in the group; member accounts and memberships in other groups are kept. An owner cannot remove themselves; they use **Leave group** instead. Removal is not a permanent ban: someone with a newly shared invitation can join again as an ordinary member.
 
-Any member can leave a group from the bottom of its page after confirming. Leaving ends their access, and their ratings and episode progress stop counting for the group; their discussion comments stay. The last owner must make someone else an owner first, and a group's only member is asked to delete the group instead, so every group always keeps an owner.
+Any member can leave a group from the bottom of its **Members** tab after confirming. Leaving ends their access, and their ratings and episode progress stop counting for the group; their discussion comments stay. The last owner must make someone else an owner first, and a group's only member is asked to delete the group instead, so every group always keeps an owner.
 
 An owner can delete a group after confirming in the web interface. Deletion removes the group and all its memberships, invalidates its invitation code, and returns the owner to their group list. Member accounts and unrelated groups are kept. Ordinary members and outsiders cannot delete the group.
 
 ### Voting
 
-Any member can suggest a title to their group from **What should we watch?** on the group page. Blank titles and duplicates (ignoring letter case and extra spaces) are rejected. Each member privately rates each title with exactly one of three options: **Love it** (+2), **Maybe** (+1), or **Not interested** (−2). A member can change their rating at any time, or clear it by choosing their current rating again.
+Any member can suggest a title from the group's **Picks** tab. Blank titles and duplicates (ignoring letter case and extra spaces) are rejected. Each member privately rates each title with exactly one of three options: **Love it** (+2), **Maybe** (+1), or **Not interested** (−2). A member can change their rating at any time, or clear it by choosing their current rating again.
 
 The group ranking orders titles by total score, then by number of Love it ratings, then by the oldest suggestion. Unrated titles score 0, so one dislike cancels one Love without acting as a veto. Only current members' ratings count: when someone is removed from the group, their ratings stop affecting the ranking. Members see each title's total score, how many members have rated it, and their own rating, but never who chose which rating. The suggester or any owner can remove a title, which deletes its ratings. Deleting a group deletes its suggestions and ratings; deleting an account deletes that person's ratings and keeps their suggestions.
 
 ### Watchlist
 
-Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Typed-in titles must contain 1–120 characters and be marked as a movie or a TV show; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
+Opening a group shows its **Watchlist** tab. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Typed-in titles must contain 1–120 characters and be marked as a movie or a TV show; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
 
 Visitors must sign in, and outsiders or removed members cannot view or change the list. An item's ID only works within its own group. Deleting a group deletes its watchlist while preserving other groups and their items.
 
@@ -151,39 +151,41 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                                                 | Purpose                                                                               |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `GET/POST /sign-up`                                   | Registration; automatically signs in.                                                 |
-| `GET/POST /sign-in`                                   | Sign-in form and authentication.                                                      |
-| `DELETE /session`                                     | Revoke the current session and sign out.                                              |
-| `GET/PATCH /profile`                                  | Read profile and update display name.                                                 |
-| `GET /`, `GET /groups`                                | List the current user's groups.                                                       |
-| `GET /groups/new`, `POST /groups`                     | Create a private group.                                                               |
-| `GET/POST /groups/join`                               | Paste an invitation code and join.                                                    |
-| `GET /groups/:id`                                     | Member-only details, with owner-only invitation controls.                             |
-| `DELETE /groups/:id`                                  | Owner-only deletion of the group and its memberships.                                 |
-| `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                                                  |
-| `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                                                |
-| `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.                                |
-| `DELETE /groups/:id/membership`                       | Leave the group.                                                                      |
-| `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.                             |
-| `POST /groups/:id/suggestions`                        | Suggest a title to the group.                                                         |
-| `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.                            |
-| `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).                                          |
-| `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                                                |
-| `DELETE /groups/:id/suggestions/:id/vote`             | Clear your rating for a title.                                                        |
-| `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).                                     |
-| `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                                                 |
-| `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                                         |
-| `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                                            |
-| `GET /groups/:id/watchlist_items/:id`                 | A title's page: streaming availability, episode progress and spoiler-safe discussion. |
-| `PUT /groups/:id/watchlist_items/:id/progress`        | Set your last watched episode, or advance with `next=1`.                              |
-| `DELETE /groups/:id/watchlist_items/:id/progress`     | Clear your episode progress for a show.                                               |
-| `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                                               |
-| `DELETE /groups/:id/watchlist_items/:id/comments/:id` | Delete a comment (its author or any owner).                                           |
-| `GET /groups/:id/catalog/search?q=...`                | Member-only movie and TV autocomplete.                                                |
-| `GET /groups/:id/catalog/:media_type/:tmdb_id`        | Member-only canonical title preview and age certification.                            |
-| `GET /up`                                             | Public Rails health endpoint.                                                         |
+| Route                                           | Purpose                                                                               |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET/POST /sign-up`                             | Registration; automatically signs in.                                                 |
+| `GET/POST /sign-in`                             | Sign-in form and authentication.                                                      |
+| `DELETE /session`                               | Revoke the current session and sign out.                                              |
+| `GET/PATCH /profile`                            | Read profile and update display name.                                                 |
+| `GET /`, `GET /groups`                          | List the current user's groups.                                                       |
+| `GET /groups/new`, `POST /groups`               | Create a private group.                                                               |
+| `GET/POST /groups/join`                         | Paste an invitation code and join.                                                    |
+| `GET /join/:code`                               | Invite link; opens the join form with the code filled in.                             |
+| `GET /groups/:id`                               | Opens the group's watchlist.                                                          |
+| `GET /groups/:id/members`                       | Members, with owner-only invitation and management controls.                          |
+| `DELETE /groups/:id`                            | Owner-only deletion of the group and its memberships.                                 |
+| `POST /groups/:id/invitation/reset`             | Replace the owner's invitation code.                                                  |
+| `POST /groups/:id/members/:user_id/promote`     | Make an existing member another owner.                                                |
+| `DELETE /groups/:id/members/:user_id`           | Remove another member and replace the invitation code.                                |
+| `DELETE /groups/:id/membership`                 | Leave the group.                                                                      |
+| `GET /groups/:id/picks`                         | Member-only ranked suggestions with the viewer's ratings.                             |
+| `POST /groups/:id/picks`                        | Suggest a title to the group.                                                         |
+| `POST /groups/:id/picks/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.                            |
+| `DELETE /groups/:id/picks/:id`                  | Remove a title (its suggester or any owner).                                          |
+| `PUT /groups/:id/picks/:id/vote`                | Set or change your rating for a title.                                                |
+| `DELETE /groups/:id/picks/:id/vote`             | Clear your rating for a title.                                                        |
+| `GET /groups/:id/watchlist`                     | View the group's shared watchlist (members only).                                     |
+| `POST /groups/:id/watchlist`                    | Add a title to the group's watchlist.                                                 |
+| `PATCH /groups/:id/watchlist/:id`               | Toggle an item between watched and unwatched.                                         |
+| `DELETE /groups/:id/watchlist/:id`              | Remove an item from the group's watchlist.                                            |
+| `GET /groups/:id/watchlist/:id`                 | A title's page: streaming availability, episode progress and spoiler-safe discussion. |
+| `PUT /groups/:id/watchlist/:id/progress`        | Set your last watched episode, or advance with `next=1`.                              |
+| `DELETE /groups/:id/watchlist/:id/progress`     | Clear your episode progress for a show.                                               |
+| `POST /groups/:id/watchlist/:id/comments`       | Comment on an episode you have watched.                                               |
+| `DELETE /groups/:id/watchlist/:id/comments/:id` | Delete a comment (its author or any owner).                                           |
+| `GET /groups/:id/catalog/search?q=...`          | Member-only movie and TV autocomplete.                                                |
+| `GET /groups/:id/catalog/:media_type/:tmdb_id`  | Member-only canonical title preview and age certification.                            |
+| `GET /up`                                       | Public Rails health endpoint.                                                         |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
 
