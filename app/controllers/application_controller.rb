@@ -30,7 +30,7 @@ class ApplicationController < ActionController::Base
   def require_authentication
     return if current_user
 
-    message = cookies[:session_token].present? ? "Your session has expired. Please sign in again." : "Please sign in to continue."
+    message = cookies[:session_token].present? ? "Your session expired. Sign in again." : "Sign in to continue."
     cookies.delete(:session_token)
     redirect_to sign_in_path, alert: message, status: :see_other, inertia: { clear_history: true }
   end

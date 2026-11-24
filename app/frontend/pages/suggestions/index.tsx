@@ -83,14 +83,10 @@ export default function Suggestions({
           </form>
         </section>
         <div className="ranking">
-          <p className="meta">
-            Love it adds 2, Maybe adds 1, and Not interested subtracts 2. Ratings are private;
-            everyone sees only the totals.
-          </p>
           <section className="card" aria-labelledby="ranking-title">
             <h2 id="ranking-title">Ranking</h2>
             {suggestions.length === 0 ? (
-              <p className="muted">No suggestions yet. Add something above.</p>
+              <p className="muted">No suggestions yet.</p>
             ) : (
               <ol className="rows">
                 {suggestions.map((suggestion, index) => (
@@ -122,7 +118,7 @@ export default function Suggestions({
                         <InlineConfirm
                           label="Remove"
                           accessibleLabel={`Remove ${suggestion.title}`}
-                          question={`Remove “${suggestion.title}”? Everyone's ratings for it will be deleted.`}
+                          question={`Remove “${suggestion.title}”? Its ratings will be deleted.`}
                           confirmLabel="Yes, remove"
                           pendingLabel="Removing…"
                           pending={removal.processing}

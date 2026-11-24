@@ -6,6 +6,6 @@ class InvitationsController < InertiaController
 
       group.reset_invitation!
     end
-    redirect_to group_path(group), notice: "Invitation replaced. The previous code no longer works.", status: :see_other
+    redirect_to group_path(group), notice: "Invitation code replaced.", status: :see_other
   end
 end

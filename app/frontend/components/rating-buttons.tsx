@@ -36,7 +36,8 @@ export default function RatingButtons({
                       setPending(true);
                       setError("");
                     },
-                    onError: (errors) => setError(errors.rating?.join(". ") ?? "Please try again."),
+                    onError: (errors) =>
+                      setError(errors.rating?.join(". ") ?? "Couldn't save your rating."),
                     onFinish: () => setPending(false),
                   },
                 );

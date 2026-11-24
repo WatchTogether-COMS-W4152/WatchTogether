@@ -94,7 +94,6 @@ describe("seeing where everyone is", () => {
       "cell-ahead",
     ]);
     expect(cells[2]).toHaveAccessibleName("E3, next episode for everyone");
-    expect(screen.getByText("Everyone has watched up to S1 E2.")).toBeVisible();
   });
 
   it("explains when nobody has started", () => {
@@ -106,10 +105,9 @@ describe("seeing where everyone is", () => {
     });
     expect(
       screen.getByRole("heading", {
-        name: "Nobody has started yet. Start together with Season 1, Episode 1.",
+        name: "Start with Season 1, Episode 1",
       }),
     ).toBeVisible();
-    expect(screen.queryByText(/Everyone has watched up to/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("listitem", { name: /E1/ })).toHaveLength(1);
   });
 
@@ -125,7 +123,7 @@ describe("seeing where everyone is", () => {
     });
     expect(
       screen.getByRole("heading", {
-        name: "Everyone is caught up. Next up together: Season 1, Episode 6.",
+        name: "Next episode for everyone: Season 1, Episode 6",
       }),
     ).toBeVisible();
   });

@@ -1,6 +1,6 @@
 class GroupsController < InertiaController
   rate_limit to: 20, within: 1.minute, only: :join, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many invitation attempts. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many invitation attempts. Try again in a minute.") }
 
   def index
     groups = current_user.groups.includes(memberships: :user).order(:name, :id).to_a
@@ -48,7 +48,7 @@ class GroupsController < InertiaController
 
       group.destroy!
     end
-    redirect_to groups_path, notice: "The group was deleted.", status: :see_other
+    redirect_to groups_path, notice: "Group deleted.", status: :see_other
   end
 
   def join_form
@@ -67,7 +67,7 @@ class GroupsController < InertiaController
 
       group.memberships.find_or_create_by!(user: current_user)
     end
-    redirect_to group_path(group), notice: "You are a member of #{group.name}.", status: :see_other
+    redirect_to group_path(group), notice: "You joined #{group.name}.", status: :see_other
   end
 
   private

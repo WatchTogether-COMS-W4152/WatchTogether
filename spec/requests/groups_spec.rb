@@ -228,7 +228,7 @@ RSpec.describe "Groups and invitations", type: :request do
       expect(User.where(id: [ owner.id, member.id ]).count).to eq(2)
       expect(other_group.reload.members).to contain_exactly(owner)
       follow_redirect!
-      expect(page_props.dig("flash", "notice")).to eq("The group was deleted.")
+      expect(page_props.dig("flash", "notice")).to eq("Group deleted.")
       expect(page_props["groups"].map { |item| item["id"] }).to eq([ other_group.id ])
     end
 

@@ -5,7 +5,7 @@ class WatchlistItemsController < InertiaController
 
   before_action :set_group
   rate_limit to: 30, within: 1.minute, only: :create, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many additions. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many additions. Try again in a minute.") }
 
   def index
     watchlist_items = @group.watchlist_items.includes(:episode_progresses).order(created_at: :desc)

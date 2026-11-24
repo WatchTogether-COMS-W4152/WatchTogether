@@ -126,10 +126,10 @@ describe("accounts", () => {
   it("explains an expired session on the signed-out page", () => {
     page.props = {
       auth: { user: null },
-      flash: { alert: "Your session has expired. Please sign in again." },
+      flash: { alert: "Your session expired. Sign in again." },
     };
     render(<SignIn />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Your session has expired");
+    expect(screen.getByRole("alert")).toHaveTextContent("Your session expired");
     expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   });
@@ -205,7 +205,6 @@ describe("group flows", () => {
     expect(within(card).getByText("Severance")).toBeVisible();
     expect(within(card).getByText("S1 E3").closest(".ep")).toHaveClass("ep-next");
     expect(screen.getByText("1 member")).toBeVisible();
-    expect(screen.getByText("No shows in progress.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Groups" })).toHaveAttribute("aria-current", "page");
   });
 
@@ -271,7 +270,7 @@ describe("group flows", () => {
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Permission denied"));
     render(<Group group={group} />);
     await user.click(screen.getByRole("button", { name: "Copy code" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Select and copy it manually");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't copy the code.");
     expect(screen.getByText(group.invitation_code!)).toBeVisible();
   });
 
@@ -350,7 +349,7 @@ describe("group flows", () => {
       }),
     );
     act(() => options?.onFinish?.(visit));
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByRole("button", { name: "Yes, delete group" })).toBeEnabled();
     expect(screen.getByText(/Delete “Friday Film Club”/)).toBeVisible();
   });
@@ -429,7 +428,7 @@ describe("member management", () => {
     await user.click(screen.getByRole("button", { name: "Remove from group" }));
     expect(screen.getByRole("heading", { name: "Remove Alice from the group?" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Remove Alice from the group?" })).toHaveTextContent(
-      "lose their owner permissions",
+      "They'll lose access",
     );
     expect(deleteRequest).not.toHaveBeenCalled();
   });
@@ -442,8 +441,6 @@ describe("member management", () => {
     expect(screen.getByRole("heading", { name: "Remove Bob from the group?" })).toBeVisible();
     const confirmation = screen.getByRole("region", { name: "Remove Bob from the group?" });
     expect(confirmation).toHaveTextContent("invitation code will change");
-    expect(confirmation).toHaveTextContent("Their account will be kept");
-    expect(confirmation).toHaveTextContent("Other members will stay");
     expect(deleteRequest).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("button", { name: "Confirm removal" })).not.toBeInTheDocument();
@@ -485,7 +482,7 @@ describe("member management", () => {
       }),
     );
     act(() => options?.onFinish?.(visit));
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByRole("heading", { name: "Remove Bob from the group?" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Confirm removal" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Confirm removal" }));
@@ -554,7 +551,7 @@ describe("recovery", () => {
     });
     fireEvent(document, event);
     expect(event.defaultPrevented).toBe(true);
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByLabelText("Group name")).toHaveValue("Friday Film Club");
     expect(screen.getByRole("button", { name: "Create group" })).toBeEnabled();
   });

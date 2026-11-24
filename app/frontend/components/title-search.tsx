@@ -143,7 +143,7 @@ export default function TitleSearch({
             aria-controls={expanded ? listId : undefined}
             aria-activedescendant={expanded && active >= 0 ? `${id}-option-${active}` : undefined}
             aria-invalid={Boolean(error?.length)}
-            aria-describedby={`${id}-hint${error?.length ? ` ${id}-error` : ""}`}
+            aria-describedby={error?.length ? `${id}-error` : undefined}
             autoComplete="off"
             required
             maxLength={120}
@@ -238,9 +238,6 @@ export default function TitleSearch({
             {error.join(". ")}
           </p>
         ) : null}
-        <p className="field-hint" id={`${id}-hint`}>
-          Choose a TMDB result for details, or add your own title.
-        </p>
       </div>
       {selected && (
         <div className="well selected-title" aria-label="Selected title">
@@ -248,13 +245,9 @@ export default function TitleSearch({
           <div className="option-text">
             <strong>{selected.title}</strong>
             <MediaMeta media={selected} withAgeRating />
-            <p className="meta">{selected.overview || "No description available."}</p>
+            {selected.overview && <p className="meta">{selected.overview}</p>}
             {detailsLoading && <output className="field-hint">Loading age rating…</output>}
-            {detailsError && (
-              <output className="field-hint">
-                Additional details are unavailable. We'll try again when you add this title.
-              </output>
-            )}
+            {detailsError && <output className="field-hint">Age rating unavailable.</output>}
           </div>
         </div>
       )}

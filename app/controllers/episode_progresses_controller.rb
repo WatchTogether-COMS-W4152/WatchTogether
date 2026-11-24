@@ -5,7 +5,7 @@ class EpisodeProgressesController < InertiaController
   }.freeze
 
   rate_limit to: 60, within: 1.minute, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many progress updates. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many progress updates. Try again in a minute.") }
 
   before_action :set_item
 
@@ -22,7 +22,7 @@ class EpisodeProgressesController < InertiaController
 
     if saved
       redirect_to group_watchlist_item_path(@group, @item),
-        notice: "Saved. You've watched up to #{format_position(progress.position)}.", status: :see_other
+        notice: "Watched up to #{format_position(progress.position)}.", status: :see_other
     else
       redirect_to group_watchlist_item_path(@group, @item),
         inertia: { errors: friendly_errors(progress) }, status: :see_other
@@ -32,7 +32,7 @@ class EpisodeProgressesController < InertiaController
   def destroy
     @item.episode_progresses.where(user: current_user).delete_all
 
-    redirect_to group_watchlist_item_path(@group, @item), notice: "Your progress was cleared.", status: :see_other
+    redirect_to group_watchlist_item_path(@group, @item), notice: "Progress cleared.", status: :see_other
   end
 
   private

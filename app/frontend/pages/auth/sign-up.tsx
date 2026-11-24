@@ -28,7 +28,6 @@ export default function SignUp() {
           value={form.data.display_name}
           onChange={(event) => form.setData("display_name", event.target.value)}
           error={form.errors.display_name}
-          hint="Shown to people in your groups."
         />
         <Field
           label="Email"
@@ -50,7 +49,7 @@ export default function SignUp() {
           value={form.data.password}
           onChange={(event) => form.setData("password", event.target.value)}
           error={form.errors.password}
-          hint="Use at least 8 characters."
+          hint="At least 8 characters."
         />
         <Field
           label="Confirm password"

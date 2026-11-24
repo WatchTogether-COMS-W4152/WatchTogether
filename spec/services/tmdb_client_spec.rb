@@ -190,7 +190,7 @@ RSpec.describe TmdbClient do
 
   it "handles missing/deleted titles and adult titles" do
     stub_response("private-test-key", code: "404")
-    expect { client.details("movie", 11) }.to raise_error(TmdbClient::InvalidSelection, /could not be found/)
+    expect { client.details("movie", 11) }.to raise_error(TmdbClient::InvalidSelection, /couldn't be found/)
     stub_response(movie.merge("adult" => true))
     expect { client.details("movie", 11) }.to raise_error(TmdbClient::InvalidSelection, /unavailable/)
   end

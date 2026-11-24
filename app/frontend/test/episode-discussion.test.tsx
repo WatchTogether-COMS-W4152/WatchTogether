@@ -114,13 +114,9 @@ describe("reading the discussion", () => {
     expect(early.getByText("David").closest("li")).not.toHaveClass("is-mine");
     expect(early.getByText("5m ago")).toHaveAttribute("datetime", "2026-11-23T11:55:00Z");
     expect(early.getByText("just now")).toBeVisible();
-    expect(
-      episode("S1 E8").getByText("3 comments on S1 E8, unlocked when you get there."),
-    ).toBeVisible();
+    expect(episode("S1 E8").getByText("3 comments hidden until you watch it")).toBeVisible();
     expect(episode("S1 E8").queryByRole("listitem")).not.toBeInTheDocument();
-    expect(
-      episode("S2 E1").getByText("1 comment on S2 E1, unlocked when you get there."),
-    ).toBeVisible();
+    expect(episode("S2 E1").getByText("1 comment hidden until you watch it")).toBeVisible();
   });
 
   it("shows an own comment and a locked count on the same episode, and former members", () => {
@@ -149,7 +145,7 @@ describe("reading the discussion", () => {
     expect(screen.getByText("3 comments")).toBeVisible();
     expect(screen.getByText("Former member")).toBeVisible();
     expect(screen.getByText("3d ago")).toBeVisible();
-    expect(screen.getByText("2 comments on S3 E1, unlocked when you get there.")).toBeVisible();
+    expect(screen.getByText("2 comments hidden until you watch it")).toBeVisible();
   });
 
   it("explains an empty discussion and how to join without progress", () => {
@@ -157,9 +153,7 @@ describe("reading the discussion", () => {
 
     expect(screen.getByText("0 comments")).toBeVisible();
     expect(screen.getByText("No comments yet.")).toBeVisible();
-    expect(
-      screen.getByText("Mark the episodes you've watched to join the conversation."),
-    ).toBeVisible();
+    expect(screen.getByText("Mark an episode as watched to comment.")).toBeVisible();
     expect(screen.queryByRole("button", { name: "Post comment" })).not.toBeInTheDocument();
   });
 
@@ -177,7 +171,6 @@ describe("posting a comment", () => {
     expect(screen.getByLabelText("Season")).toHaveValue(1);
     expect(screen.getByLabelText("Episode")).toHaveValue(4);
     expect(screen.getByLabelText("Comment on S1 E4")).toHaveAttribute("maxlength", "1000");
-    expect(screen.getByText("You can comment on any episode up to S1 E4.")).toBeVisible();
     await user.clear(screen.getByLabelText("Episode"));
     await user.type(screen.getByLabelText("Episode"), "3");
     expect(screen.getByLabelText("Comment on S1 E3")).toBeInTheDocument();

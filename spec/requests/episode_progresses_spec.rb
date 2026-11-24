@@ -75,7 +75,7 @@ RSpec.describe "Episode progress", type: :request do
       expect(response).to redirect_to(group_watchlist_item_path(group, show))
       expect(response).to have_http_status(:see_other)
       follow_redirect!
-      expect(page_props.dig("flash", "notice")).to eq("Saved. You've watched up to S2 E3.")
+      expect(page_props.dig("flash", "notice")).to eq("Watched up to S2 E3.")
       expect(page_props.dig("episode_progress", "my_position")).to eq("season" => 2, "episode" => 3)
 
       expect { put path, params: { season: 1, episode: 7 } }.not_to change(EpisodeProgress, :count)
@@ -140,7 +140,7 @@ RSpec.describe "Episode progress", type: :request do
       put path, params: { next: "1" }
 
       expect(response).to have_http_status(:too_many_requests)
-      expect(page_props["message"]).to eq("Too many progress updates. Please try again in a minute.")
+      expect(page_props["message"]).to eq("Too many progress updates. Try again in a minute.")
     ensure
       ApplicationController::RATE_LIMIT_STORE.clear
     end
@@ -156,7 +156,7 @@ RSpec.describe "Episode progress", type: :request do
 
       expect(response).to redirect_to(group_watchlist_item_path(group, show))
       follow_redirect!
-      expect(page_props.dig("flash", "notice")).to eq("Your progress was cleared.")
+      expect(page_props.dig("flash", "notice")).to eq("Progress cleared.")
       expect(my_progress).to be_nil
       expect(my_progress(owner).position).to eq(season: 1, episode: 2)
     end

@@ -67,7 +67,7 @@ RSpec.describe "Group ownership and member management", type: :request do
     expect(member.reload.groups).to contain_exactly(other_group)
     expect(User.exists?(member.id)).to be(true)
     follow_redirect!
-    expect(page_props.dig("flash", "notice")).to eq("Bob was removed. The invitation code has been replaced.")
+    expect(page_props.dig("flash", "notice")).to eq("Bob was removed. The invitation code changed.")
     expect(page_props.dig("group", "invitation_code")).to eq(group.invite_code)
 
     delete session_path
@@ -116,7 +116,7 @@ RSpec.describe "Group ownership and member management", type: :request do
       }.not_to change(Membership, :count)
       expect(response).to redirect_to(group_path(group))
       follow_redirect!
-      expect(page_props.dig("flash", "alert")).to eq("You cannot remove yourself. A group must keep at least one owner.")
+      expect(page_props.dig("flash", "alert")).to eq("A group needs at least one owner.")
       expect(group.owner?(owner)).to be(true)
       expect(group.reload.invite_code).to eq(original_code)
     end

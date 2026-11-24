@@ -86,12 +86,7 @@ export default function Group({ group }: { group: GroupDetails }) {
               })
             }
           />
-        ) : (
-          <section className="card" aria-labelledby="invitation-title">
-            <h2 id="invitation-title">Invite people</h2>
-            <p className="muted">Ask a group owner for the invitation code.</p>
-          </section>
-        )}
+        ) : null}
       </div>
       {group.is_owner && (
         <section className="danger-zone" aria-labelledby="delete-group-title">
@@ -100,10 +95,7 @@ export default function Group({ group }: { group: GroupDetails }) {
           </h2>
           {confirmDelete ? (
             <div className="confirm">
-              <p>
-                Delete “{group.name}”? Everyone will lose access and its invitation code will stop
-                working. This cannot be undone.
-              </p>
+              <p>Delete “{group.name}” for everyone? This cannot be undone.</p>
               <div className="row">
                 <button
                   type="button"
@@ -171,7 +163,7 @@ function InviteCard({
       await navigator.clipboard.writeText(code);
       toast({ message: "Invitation code copied.", tone: "success" });
     } catch {
-      toast({ message: "Couldn't copy the code. Select and copy it manually.", tone: "error" });
+      toast({ message: "Couldn't copy the code.", tone: "error" });
     }
   }
 
@@ -179,13 +171,13 @@ function InviteCard({
     try {
       await navigator.share({
         title: `Join ${group.name} on WatchTogether`,
-        text: `Join my WatchTogether group, ${group.name}. Sign in and enter this invitation code: ${code}`,
+        text: `Join ${group.name} on WatchTogether with the code ${code}`,
         url: `${window.location.origin}/groups/join`,
       });
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
         toast({
-          message: "Sharing isn't available right now. Copy the invitation code instead.",
+          message: "Couldn't share. Copy the code instead.",
           tone: "error",
         });
       }
@@ -195,14 +187,10 @@ function InviteCard({
   return (
     <section className="card" aria-labelledby="invitation-title">
       <h2 id="invitation-title">Invite people</h2>
-      <p className="muted">Anyone with this code can join the group.</p>
       <code className="code-well">{code}</code>
       {confirming ? (
         <div className="confirm">
-          <p>
-            Replace this invitation code? The old code will stop working. Current members will stay
-            in the group.
-          </p>
+          <p>Replace this code? The old code will stop working.</p>
           <div className="row">
             <button
               type="button"

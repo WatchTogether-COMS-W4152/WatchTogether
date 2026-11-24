@@ -88,11 +88,6 @@ export default function GroupMembers({
                   </h3>
                   {panel.step === "actions" ? (
                     <>
-                      <p className="meta">
-                        {member.role === "owner"
-                          ? "This owner has the same permissions as you."
-                          : "This member can view the group and its members."}
-                      </p>
                       <div className="row">
                         {member.role === "member" && (
                           <button
@@ -123,8 +118,8 @@ export default function GroupMembers({
                     <>
                       <p className="meta">
                         {panel.step === "promote"
-                          ? "They will have the same permissions as you: invite people, make other members owners, remove members (including other owners), and delete the group. You will stay an owner."
-                          : `${member.role === "owner" ? "They will also lose their owner permissions. " : ""}They will lose access to this group. Their account will be kept. The invitation code will change so their saved code cannot be reused. Other members will stay; share the new code for any pending invitations.`}
+                          ? "They'll be able to invite and remove people, and delete the group."
+                          : "They'll lose access, and the invitation code will change."}
                       </p>
                       <div className="row">
                         <button

@@ -52,7 +52,7 @@ Then("{string} has exactly one suggestion titled {string}") do |group_name, titl
 end
 
 Then("I am told {string} was added") do |title|
-  expect(props.dig("flash", "notice")).to eq("“#{title}” was added. Rate it below.")
+  expect(props.dig("flash", "notice")).to eq("“#{title}” was added.")
 end
 
 Then("{string} is shown as suggested by {string}") do |title, viewer|

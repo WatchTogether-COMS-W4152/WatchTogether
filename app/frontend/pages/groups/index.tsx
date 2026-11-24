@@ -36,16 +36,12 @@ export default function Groups({ groups }: { groups: GroupSummary[] }) {
                   </p>
                 </div>
                 <AvatarStack names={group.member_names} count={group.member_count} />
-                <p className="next">
-                  {group.show_in_progress ? (
-                    <>
-                      {group.show_in_progress.title}
-                      <EpisodeCode position={group.show_in_progress.next_episode} next />
-                    </>
-                  ) : (
-                    "No shows in progress."
-                  )}
-                </p>
+                {group.show_in_progress && (
+                  <p className="next">
+                    {group.show_in_progress.title}
+                    <EpisodeCode position={group.show_in_progress.next_episode} next />
+                  </p>
+                )}
               </Link>
             </li>
           ))}
@@ -53,7 +49,6 @@ export default function Groups({ groups }: { groups: GroupSummary[] }) {
       ) : (
         <section className="empty">
           <h2>No groups yet</h2>
-          <p>Create a group for the people you watch with, or join one with an invitation code.</p>
           <Link className="btn btn-primary" href="/groups/new">
             Create a group
           </Link>
