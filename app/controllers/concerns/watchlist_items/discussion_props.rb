@@ -6,6 +6,7 @@ module WatchlistItems
       return {} unless item.episodic?
 
       is_owner = item.group.owner?(current_user)
+      @member_ids = item.group.memberships.pluck(:user_id).to_set
       progress = EpisodeComment.progress_for(current_user, item)
       visible = EpisodeComment.visible_to(current_user, item).includes(:user)
       episodes = Hash.new { |hash, position| hash[position] = { comments: [], hidden_count: 0 } }
@@ -28,7 +29,7 @@ module WatchlistItems
       {
         id: comment.id,
         body: comment.body,
-        author: comment.user && { id: comment.user.id, display_name: comment.user.display_name },
+        author: (comment.user if @member_ids.include?(comment.user_id))&.then { |user| { id: user.id, display_name: user.display_name } },
         created_at: comment.created_at.iso8601,
         mine: comment.user_id == current_user.id,
         can_delete: comment.deletable_by?(current_user, group_owner: is_owner)
