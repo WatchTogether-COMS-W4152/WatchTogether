@@ -1,4 +1,3 @@
-import "../styles/discussion.css";
 import { router, useForm, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
@@ -11,7 +10,9 @@ import {
   type EpisodePosition,
 } from "../types/episodes";
 import Avatar from "./avatar";
+import EpisodeCode from "./episode-code";
 import Field from "./field";
+import InlineConfirm from "./inline-confirm";
 
 type DiscussionPageProps = {
   group: { id: number };
@@ -19,9 +20,8 @@ type DiscussionPageProps = {
   discussion?: Discussion;
 };
 
-function hiddenLabel({ season, episode, hidden_count: count }: DiscussionEpisode) {
-  const comments = count === 1 ? "1 comment" : `${count} comments`;
-  return `${comments} on ${formatEpisode({ season, episode })}, unlocked when you get there.`;
+function hiddenLabel({ hidden_count: count }: DiscussionEpisode) {
+  return `${count === 1 ? "1 comment" : `${count} comments`} hidden until you watch it`;
 }
 
 export default function EpisodeDiscussionSection(_props: Record<string, unknown>) {
@@ -37,34 +37,25 @@ export default function EpisodeDiscussionSection(_props: Record<string, unknown>
 
   return (
     <section className="discussion" aria-labelledby="discussion-title">
-      <div className="section-label">
+      <div className="section-title">
         <h2 id="discussion-title">Discussion</h2>
-        <span>
+        <span className="meta">
           {total} {total === 1 ? "comment" : "comments"}
         </span>
       </div>
-      <p className="muted">
-        Comments are tied to episodes. You only see comments on episodes you've watched.
-      </p>
-      {position ? (
-        <CommentForm
-          key={`${position.season}-${position.episode}`}
-          path={basePath}
-          position={position}
-          maxLength={discussion.max_body_length}
-        />
-      ) : (
-        <p className="panel muted">Mark the episodes you've watched to join the conversation.</p>
-      )}
       {discussion.episodes.length === 0 ? (
         <p className="muted">No comments yet.</p>
       ) : (
-        <ol className="discussion-episodes">
+        <ol className="thread">
           {discussion.episodes.map((entry) => (
-            <li key={`${entry.season}-${entry.episode}`} className="discussion-episode">
-              <h3>{formatEpisode(entry)}</h3>
+            <li key={`${entry.season}-${entry.episode}`} className="thread-ep">
+              <header>
+                <h3>
+                  <EpisodeCode position={entry} />
+                </h3>
+              </header>
               {entry.comments.length > 0 && (
-                <ul className="list comment-list">
+                <ul className="comments">
                   {entry.comments.map((comment) => (
                     <Comment
                       key={comment.id}
@@ -74,10 +65,24 @@ export default function EpisodeDiscussionSection(_props: Record<string, unknown>
                   ))}
                 </ul>
               )}
-              {entry.hidden_count > 0 && <p className="discussion-locked">{hiddenLabel(entry)}</p>}
+              {entry.hidden_count > 0 && (
+                <div className="shutter">
+                  <span className="shutter-label">{hiddenLabel(entry)}</span>
+                </div>
+              )}
             </li>
           ))}
         </ol>
+      )}
+      {position ? (
+        <CommentForm
+          key={`${position.season}-${position.episode}`}
+          path={basePath}
+          position={position}
+          maxLength={discussion.max_body_length}
+        />
+      ) : (
+        <p className="muted">Mark an episode as watched to comment.</p>
       )}
     </section>
   );
@@ -97,17 +102,20 @@ function CommentForm({
     episode: String(position.episode),
     body: "",
   });
+  const season = Number(form.data.season);
+  const episode = Number(form.data.episode);
+  const target = season >= 1 && episode >= 1 ? formatEpisode({ season, episode }) : null;
 
   return (
     <form
-      className="panel discussion-form"
+      className="card comment-form"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
         form.post(path, { preserveScroll: true, onSuccess: () => form.reset("body") });
       }}
     >
-      <div className="discussion-position">
+      <div className="field-pair">
         <Field
           label="Season"
           name="comment-season"
@@ -131,12 +139,11 @@ function CommentForm({
         />
       </div>
       <div className="field">
-        <label htmlFor="comment-body">Comment</label>
+        <label htmlFor="comment-body">{target ? `Comment on ${target}` : "Comment"}</label>
         <textarea
           id="comment-body"
           name="comment-body"
           maxLength={maxLength}
-          placeholder={`What did you think of ${formatEpisode(position)}?`}
           value={form.data.body}
           aria-invalid={Boolean(form.errors.body?.length)}
           aria-describedby={form.errors.body?.length ? "comment-body-error" : undefined}
@@ -148,11 +155,8 @@ function CommentForm({
           </p>
         ) : null}
       </div>
-      <div className="form-actions">
-        <span className="field-hint">
-          You can comment on any episode up to {formatEpisode(position)}.
-        </span>
-        <button className="button button-primary" type="submit" disabled={form.processing}>
+      <div className="row">
+        <button className="btn btn-secondary" type="submit" disabled={form.processing}>
           {form.processing ? "Posting…" : "Post comment"}
         </button>
       </div>
@@ -161,59 +165,38 @@ function CommentForm({
 }
 
 function Comment({ comment, path }: { comment: EpisodeComment; path: string }) {
-  const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const name = comment.author?.display_name ?? "Former member";
 
   return (
-    <li className="comment">
-      <Avatar name={name} size="small" />
-      <div className="comment-main">
-        <div className="comment-meta">
+    <li className={comment.mine ? "comment is-mine" : "comment"}>
+      <Avatar name={name} size="sm" />
+      <div className="bubble">
+        <div className="bubble-meta">
           <strong>{comment.mine ? `${name} (you)` : name}</strong>
           <time dateTime={comment.created_at} title={new Date(comment.created_at).toLocaleString()}>
             {formatCommentTime(comment.created_at)}
           </time>
         </div>
-        <p className="comment-body">{comment.body}</p>
+        <p>{comment.body}</p>
         {comment.can_delete && (
-          <div className="comment-actions">
-            {confirming ? (
-              <>
-                <span>Delete this comment?</span>
-                <button
-                  type="button"
-                  className="text-button danger-text"
-                  disabled={deleting}
-                  onClick={() =>
-                    router.delete(path, {
-                      preserveScroll: true,
-                      onStart: () => setDeleting(true),
-                      onFinish: () => setDeleting(false),
-                    })
-                  }
-                >
-                  {deleting ? "Deleting…" : "Yes, delete"}
-                </button>
-                <button
-                  type="button"
-                  className="text-button"
-                  disabled={deleting}
-                  onClick={() => setConfirming(false)}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="text-button danger-text"
-                aria-label={`Delete comment by ${name}`}
-                onClick={() => setConfirming(true)}
-              >
-                Delete
-              </button>
-            )}
+          <div className="bubble-actions">
+            <InlineConfirm
+              flush
+              label="Delete"
+              accessibleLabel={`Delete comment by ${name}`}
+              question="Delete this comment?"
+              confirmLabel="Yes, delete"
+              pendingLabel="Deleting…"
+              pending={deleting}
+              onConfirm={() =>
+                router.delete(path, {
+                  preserveScroll: true,
+                  onStart: () => setDeleting(true),
+                  onFinish: () => setDeleting(false),
+                })
+              }
+            />
           </div>
         )}
       </div>

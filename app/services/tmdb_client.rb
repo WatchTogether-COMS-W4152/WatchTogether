@@ -7,7 +7,7 @@ class TmdbClient
   class Unavailable < Error; end
 
   MEDIA_TYPES = %w[movie tv].freeze
-  UNAVAILABLE_MESSAGE = "Movie search is temporarily unavailable. Please try again later or add a title manually."
+  UNAVAILABLE_MESSAGE = "Search is unavailable. Add the title by hand."
   TIMEOUTS = { open_timeout: 1, read_timeout: 2, write_timeout: 2 }.freeze
   OUTAGE_KEY = [ "tmdb", "outage" ].freeze
   OUTAGE_TTL = 30.seconds
@@ -108,7 +108,7 @@ class TmdbClient
       http.max_retries = 0
       http.get(uri.request_uri, "Accept" => "application/json")
     end
-    raise InvalidSelection, "That title could not be found. Please choose another result." if response.code == "404"
+    raise InvalidSelection, "That title couldn't be found. Choose another." if response.code == "404"
     raise Unavailable, UNAVAILABLE_MESSAGE unless response.is_a?(Net::HTTPSuccess)
 
     body = response.body

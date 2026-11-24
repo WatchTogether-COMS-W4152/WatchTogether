@@ -1,12 +1,13 @@
-import "../../styles/catalog.css";
-import { Link, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
+import { useState } from "react";
 
 import EpisodeDiscussionSection from "../../components/episode-discussion";
 import EpisodeProgressSection from "../../components/episode-progress";
+import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
-import MediaDetails, { MediaPoster } from "../../components/media-details";
+import { Poster } from "../../components/media-details";
 import WatchProvidersSection, { type WatchProviders } from "../../components/watch-providers";
-import type { MediaMetadata } from "../../types/catalog";
+import { mediaFacts, type MediaMetadata } from "../../types/catalog";
 
 export type WatchlistItemDetails = MediaMetadata & {
   id: number;
@@ -25,27 +26,62 @@ export default function WatchlistItemPage({
   watch_providers?: WatchProviders;
 }) {
   const { props } = usePage();
+  const [pending, setPending] = useState(false);
+  const path = `/groups/${group.id}/watchlist_items/${item.id}`;
+  const facts = mediaFacts(item, true);
+  const requestOptions = {
+    onStart: () => setPending(true),
+    onFinish: () => setPending(false),
+  };
+
   return (
-    <Layout title={`${item.title} · ${group.name}`}>
-      <Link className="back-link" href={`/groups/${group.id}/watchlist_items`}>
+    <Layout title={`${item.title} · ${group.name}`} section="groups">
+      <Link className="back title-back" href={`/groups/${group.id}/watchlist_items`}>
         ← Watchlist
       </Link>
-      <div className="watchlist-item-header">
-        {item.tmdb_id && <MediaPoster {...item} />}
-        <div>
-          <PageHeader title={item.title} />
-          <MediaDetails media={item} />
-        </div>
+      <div className="title-header">
+        <Poster title={item.title} poster_url={item.poster_url} />
+        <PageHeader
+          title={item.title}
+          meta={
+            facts.length > 0 || item.watched ? (
+              <>
+                {item.watched && <span className="chip">Watched</span>}
+                {facts.map((fact) => (
+                  <span key={fact}>{fact}</span>
+                ))}
+              </>
+            ) : undefined
+          }
+        >
+          {item.overview && <p className="overview">{item.overview}</p>}
+        </PageHeader>
       </div>
       <WatchProvidersSection availability={watch_providers} />
-      {item.episodic ? (
+      {item.episodic && (
         <>
           <EpisodeProgressSection {...props} />
           <EpisodeDiscussionSection {...props} />
         </>
-      ) : (
-        <p className="muted">Episode tracking and discussion are available for TV shows.</p>
       )}
+      <section className="title-actions row" aria-label="Watchlist actions">
+        <button
+          className={`btn btn-sm ${item.episodic ? "btn-secondary" : "btn-primary"}`}
+          type="button"
+          disabled={pending}
+          onClick={() => router.patch(path, {}, requestOptions)}
+        >
+          {item.watched ? "Mark as unwatched" : "Mark as watched"}
+        </button>
+        <InlineConfirm
+          label="Remove"
+          question={`Remove “${item.title}” from the watchlist?`}
+          confirmLabel="Yes, remove"
+          pendingLabel="Removing…"
+          pending={pending}
+          onConfirm={() => router.delete(path, requestOptions)}
+        />
+      </section>
     </Layout>
   );
 }

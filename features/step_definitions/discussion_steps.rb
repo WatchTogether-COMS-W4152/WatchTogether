@@ -46,7 +46,7 @@ Then("the page does not reveal {string}") do |text|
 end
 
 Then("I am told my comment was posted on {string}") do |label|
-  expect(props.dig("flash", "notice")).to eq("Comment posted on #{label}.")
+  expect(props.dig("flash", "notice")).to eq("Comment posted.")
 end
 
 Then("the comment {string} on {string} in {string} still exists") do |body, title, group_name|

@@ -1,30 +1,38 @@
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect, useState, type ReactNode } from "react";
 
-import Avatar from "./avatar";
+import type { FlashData } from "../types";
+import { ToastContext, type ToastMessage } from "./toast-context";
+
+const TOAST_DURATION = 4000;
 
 export default function Layout({
   title,
-  children,
+  section,
   narrow = false,
+  children,
 }: {
   title: string;
-  children: ReactNode;
+  section?: "groups" | "profile";
   narrow?: boolean;
+  children: ReactNode;
 }) {
   const { auth, flash } = usePage().props;
   const logout = useForm({});
   const [requestError, setRequestError] = useState("");
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [closedNotice, setClosedNotice] = useState<FlashData | null>(null);
+  const [closedAlert, setClosedAlert] = useState<FlashData | null>(null);
 
   useEffect(() => {
     const removeStart = router.on("start", () => setRequestError(""));
     const removeNetworkError = router.on("networkError", (event) => {
       event.preventDefault();
-      setRequestError("We couldn't connect. Check your connection and try again.");
+      setRequestError("Couldn't connect. Try again.");
     });
     const removeHttpException = router.on("httpException", (event) => {
       event.preventDefault();
-      setRequestError("We couldn't complete that request. Please try again.");
+      setRequestError("Something went wrong. Try again.");
     });
     return () => {
       removeStart();
@@ -33,80 +41,122 @@ export default function Layout({
     };
   }, []);
 
+  useEffect(() => {
+    if (!flash?.notice) return undefined;
+    const timer = window.setTimeout(() => setClosedNotice(flash), TOAST_DURATION);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
+
+  useEffect(() => {
+    if (!toast || toast.tone === "error") return undefined;
+    const timer = window.setTimeout(() => setToast(null), TOAST_DURATION);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
   return (
-    <div className="app-shell">
+    <ToastContext value={setToast}>
       <Head title={`${title} · WatchTogether`} />
-      <header className="site-header">
-        <div className="header-inner">
-          <Link href={auth.user ? "/groups" : "/sign-in"} className="brand">
-            Watch<span>Together</span>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <Link href={auth.user ? "/groups" : "/sign-in"} className="wordmark">
+            WatchTogether
           </Link>
-          <nav aria-label="Main navigation">
-            {auth.user ? (
-              <>
-                <Link href="/groups" className="nav-link">
+          {auth.user ? (
+            <>
+              <nav className="tabs" aria-label="Main">
+                <Link
+                  href="/groups"
+                  className="tab"
+                  aria-current={section === "groups" ? "page" : undefined}
+                >
                   Groups
                 </Link>
-                <Link href="/profile" className="nav-link profile-link">
-                  <Avatar name={auth.user.display_name} size="small" />
-                  <span>Profile</span>
-                </Link>
-                <button
-                  className="text-button"
-                  type="button"
-                  disabled={logout.processing}
-                  onClick={() => logout.delete("/session")}
+                <Link
+                  href="/profile"
+                  className="tab"
+                  aria-current={section === "profile" ? "page" : undefined}
                 >
-                  {logout.processing ? "Signing out…" : "Sign out"}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/sign-in" className="nav-link">
-                  Sign in
+                  Profile
                 </Link>
-                <Link href="/sign-up" className="button button-primary">
-                  Sign up
-                </Link>
-              </>
-            )}
-          </nav>
+              </nav>
+              <button
+                className="btn btn-quiet btn-sm"
+                type="button"
+                disabled={logout.processing}
+                onClick={() => logout.delete("/session")}
+              >
+                {logout.processing ? "Signing out…" : "Sign out"}
+              </button>
+            </>
+          ) : (
+            <div className="topbar-actions">
+              <Link href="/sign-in" className="btn btn-quiet btn-sm">
+                Sign in
+              </Link>
+              <Link href="/sign-up" className="btn btn-secondary btn-sm">
+                Sign up
+              </Link>
+            </div>
+          )}
         </div>
       </header>
-      <main className={`main-content${narrow ? " main-narrow" : ""}`}>
-        {flash?.notice && <output className="banner banner-success">{flash.notice}</output>}
-        {flash?.alert && (
-          <p className="banner banner-error" role="alert">
-            {flash.alert}
-          </p>
+      <main className={narrow ? "page is-narrow" : "page"}>{children}</main>
+      <div className="toasts">
+        {flash?.notice && closedNotice !== flash && (
+          <output className="toast toast-plain">{flash.notice}</output>
         )}
-        {requestError && (
-          <p className="banner banner-error" role="alert">
-            {requestError}
-          </p>
+        {flash?.alert && closedAlert !== flash && (
+          <ErrorToast message={flash.alert} onClose={() => setClosedAlert(flash)} />
         )}
-        {children}
-      </main>
+        {requestError && <ErrorToast message={requestError} onClose={() => setRequestError("")} />}
+        {toast &&
+          (toast.tone === "error" ? (
+            <ErrorToast message={toast.message} onClose={() => setToast(null)} />
+          ) : (
+            <output className={`toast toast-${toast.tone}`}>{toast.message}</output>
+          ))}
+      </div>
+    </ToastContext>
+  );
+}
+
+function ErrorToast({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="toast toast-error" role="alert">
+      <span>{message}</span>
+      <button className="toast-close" type="button" onClick={onClose}>
+        Close
+      </button>
     </div>
   );
 }
 
 export function PageHeader({
   title,
-  description,
+  back,
+  meta,
   actions,
+  children,
 }: {
   title: string;
-  description?: string;
+  back?: { href: string; label: string };
+  meta?: ReactNode;
   actions?: ReactNode;
+  children?: ReactNode;
 }) {
   return (
-    <div className="page-header">
-      <div>
+    <header className="page-header">
+      {back && (
+        <Link className="back" href={back.href}>
+          ← {back.label}
+        </Link>
+      )}
+      <div className="page-title">
         <h1>{title}</h1>
-        {description && <p className="page-description">{description}</p>}
+        {actions && <div className="row">{actions}</div>}
       </div>
-      {actions && <div className="header-actions">{actions}</div>}
-    </div>
+      {meta && <div className="page-meta">{meta}</div>}
+      {children}
+    </header>
   );
 }

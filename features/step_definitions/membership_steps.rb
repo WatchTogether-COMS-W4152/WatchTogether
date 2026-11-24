@@ -29,5 +29,5 @@ end
 Then("I am told I cannot remove myself") do
   expect(@response.status).to eq(200)
   expect(@page.fetch("component")).to eq("groups/show")
-  expect(props.dig("flash", "alert")).to match(/cannot remove yourself/i)
+  expect(props.dig("flash", "alert")).to match(/at least one owner/i)
 end

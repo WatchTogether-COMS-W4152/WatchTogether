@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest"
 
 import Group from "../pages/groups/show";
 import Watchlist from "../pages/watchlist_items/index";
+import WatchlistItemPage from "../pages/watchlist_items/show";
 import type { SharedProps } from "../types";
 
 const page = vi.hoisted(() => ({
@@ -42,7 +43,7 @@ function renderPage(watchlistItems = items) {
 }
 
 function row(title: string) {
-  const element = screen.getByText(title, { exact: true }).closest("li");
+  const element = screen.getByRole("heading", { name: title }).closest("li");
   if (!element) throw new Error(`No watchlist row for ${title}`);
   return within(element);
 }
@@ -61,23 +62,25 @@ beforeEach(() => {
 describe("viewing the watchlist", () => {
   it("explains an empty watchlist and offers an accessible title field", () => {
     renderPage([]);
-    expect(screen.getByRole("heading", { name: "Our Watchlist", level: 1 })).toBeVisible();
-    expect(screen.getByText("Your watchlist is empty. Add your first movie!")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Watchlist", level: 1 })).toBeVisible();
+    expect(screen.getByText("Nothing on the watchlist yet.")).toBeVisible();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toBeRequired();
     expect(screen.getByLabelText("Title")).toHaveAttribute("maxlength", "120");
-    expect(screen.getByRole("button", { name: "Add to Watchlist" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Add to watchlist" })).toBeEnabled();
   });
 
-  it("shows each title's watched state and the appropriate action", () => {
+  it("shows each title as a poster card linking to its page, marking watched titles", () => {
     renderPage();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(row("Paddington").getByText(/Not watched/)).toBeVisible();
-    expect(row("Paddington").getByRole("button", { name: "Mark as Watched" })).toBeEnabled();
-    expect(row("Up").getByText(/Watched ✓/)).toBeVisible();
-    expect(row("Up").getByRole("button", { name: "Mark as Unwatched" })).toBeEnabled();
-    expect(row("Paddington").getByRole("button", { name: "Remove" })).toBeEnabled();
-    expect(row("Up").getByRole("button", { name: "Remove" })).toBeEnabled();
+    expect(screen.getByRole("link", { name: /Paddington/ })).toHaveAttribute(
+      "href",
+      "/groups/7/watchlist_items/11",
+    );
+    expect(row("Up").getByText("Watched")).toHaveClass("chip");
+    expect(row("Paddington").queryByText("Watched")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Mark as/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
   });
 
   it("links back to the current group", () => {
@@ -98,7 +101,7 @@ describe("viewing the watchlist", () => {
         }}
       />,
     );
-    expect(screen.getByRole("link", { name: "Our Watchlist" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Watchlist" })).toHaveAttribute(
       "href",
       "/groups/7/watchlist_items",
     );
@@ -110,7 +113,7 @@ describe("adding a watchlist title", () => {
     const user = userEvent.setup();
     renderPage([]);
     await user.type(screen.getByLabelText("Title"), "Spirited Away");
-    await user.click(screen.getByRole("button", { name: "Add to Watchlist" }));
+    await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
 
     const [url, data, options] = postRequest.mock.calls[0];
     expect(url).toBe("/groups/7/watchlist_items");
@@ -126,14 +129,14 @@ describe("adding a watchlist title", () => {
       options?.onFinish?.(visit);
     });
     expect(screen.getByLabelText("Title")).toHaveValue("");
-    expect(screen.getByRole("button", { name: "Add to Watchlist" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Add to watchlist" })).toBeEnabled();
   });
 
   it("shows server validation, retains the rejected value, and allows a corrected retry", async () => {
     const user = userEvent.setup();
     renderPage([]);
     await user.type(screen.getByLabelText("Title"), "   ");
-    await user.click(screen.getByRole("button", { name: "Add to Watchlist" }));
+    await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
     const options = postRequest.mock.calls[0][2];
     act(() => {
       options?.onStart?.(visit);
@@ -143,11 +146,11 @@ describe("adding a watchlist title", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("can't be blank");
     expect(screen.getByLabelText("Title")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText("Title")).toHaveValue("   ");
-    expect(screen.getByRole("button", { name: "Add to Watchlist" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Add to watchlist" })).toBeEnabled();
 
     await user.clear(screen.getByLabelText("Title"));
     await user.type(screen.getByLabelText("Title"), "Arrival");
-    await user.click(screen.getByRole("button", { name: "Add to Watchlist" }));
+    await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
     expect(postRequest).toHaveBeenCalledTimes(2);
     expect(postRequest.mock.calls[1][1]).toEqual({ title: "Arrival" });
     const retryOptions = postRequest.mock.calls[1][2];
@@ -160,41 +163,37 @@ describe("adding a watchlist title", () => {
   });
 });
 
+function renderTitle(item: { id: number; title: string; watched: boolean }) {
+  return render(<WatchlistItemPage group={group} item={{ ...item, episodic: false }} />);
+}
+
 describe("watching a title", () => {
   it.each([
-    { title: "Paddington", id: 11, action: "Mark as Watched", nextWatched: true },
-    { title: "Up", id: 12, action: "Mark as Unwatched", nextWatched: false },
-  ])("sends $action only for the selected title", async ({ title, id, action, nextWatched }) => {
+    { item: items[0], action: "Mark as watched", nextWatched: true },
+    { item: items[1], action: "Mark as unwatched", nextWatched: false },
+  ])("sends $action only for this title", async ({ item, action, nextWatched }) => {
     const user = userEvent.setup();
-    const { rerender } = renderPage();
-    await user.click(row(title).getByRole("button", { name: action }));
+    const { rerender } = renderTitle(item);
+    await user.click(screen.getByRole("button", { name: action }));
     expect(patchRequest).toHaveBeenCalledTimes(1);
-    expect(patchRequest).toHaveBeenCalledWith(
-      `/groups/7/watchlist_items/${id}`,
-      {},
-      { preserveScroll: true },
-    );
+    expect(patchRequest.mock.calls[0][0]).toBe(`/groups/7/watchlist_items/${item.id}`);
+    expect(patchRequest.mock.calls[0][1]).toEqual({});
     expect(deleteRequest).not.toHaveBeenCalled();
 
     rerender(
-      <Watchlist
-        group={group}
-        watchlist_items={items.map((item) =>
-          item.id === id ? { ...item, watched: nextWatched } : item,
-        )}
-      />,
+      <WatchlistItemPage group={group} item={{ ...item, watched: nextWatched, episodic: false }} />,
     );
     expect(
-      row(title).getByRole("button", {
-        name: nextWatched ? "Mark as Unwatched" : "Mark as Watched",
+      screen.getByRole("button", {
+        name: nextWatched ? "Mark as unwatched" : "Mark as watched",
       }),
     ).toBeEnabled();
   });
 
-  it("shows a failed-request message without losing the title and lets the member retry", async () => {
+  it("shows a failed-request message and lets the member retry", async () => {
     const user = userEvent.setup();
-    renderPage();
-    await user.click(row("Paddington").getByRole("button", { name: "Mark as Watched" }));
+    renderTitle(items[0]);
+    await user.click(screen.getByRole("button", { name: "Mark as watched" }));
     fireEvent(
       document,
       new CustomEvent("inertia:networkError", {
@@ -202,33 +201,38 @@ describe("watching a title", () => {
         detail: { error: new Error("Offline") },
       }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
-    expect(row("Paddington").getByText(/Not watched/)).toBeVisible();
-    await user.click(row("Paddington").getByRole("button", { name: "Mark as Watched" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Mark as watched" }));
     expect(patchRequest).toHaveBeenCalledTimes(2);
   });
 });
 
 describe("removing a watchlist title", () => {
-  it("names the selected title and cancels without a request", async () => {
+  it("asks inline, focuses Cancel, and cancels without a request", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    renderPage();
-    await user.click(row("Up").getByRole("button", { name: "Remove" }));
-    expect(confirm).toHaveBeenCalledWith('Remove "Up" from the watchlist?');
+    const confirm = vi.spyOn(window, "confirm");
+    renderTitle(items[1]);
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+    expect(screen.getByText("Remove “Up” from the watchlist?")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Remove" })).toHaveFocus();
     expect(deleteRequest).not.toHaveBeenCalled();
-    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   it("removes only the confirmed title from the current group", async () => {
     const user = userEvent.setup();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    renderPage();
-    await user.click(row("Up").getByRole("button", { name: "Remove" }));
-    expect(confirm).toHaveBeenCalledWith('Remove "Up" from the watchlist?');
-    expect(deleteRequest).toHaveBeenCalledExactlyOnceWith("/groups/7/watchlist_items/12", {
-      preserveScroll: true,
-    });
+    renderTitle(items[1]);
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+    await user.click(screen.getByRole("button", { name: "Yes, remove" }));
+    expect(deleteRequest).toHaveBeenCalledTimes(1);
+    const [url, options] = deleteRequest.mock.calls[0];
+    expect(url).toBe("/groups/7/watchlist_items/12");
+    act(() => options?.onStart?.(visit));
+    expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
     expect(patchRequest).not.toHaveBeenCalled();
   });
 });

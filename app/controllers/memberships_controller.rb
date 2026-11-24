@@ -17,12 +17,12 @@ class MembershipsController < InertiaController
 
       membership = group.memberships.includes(:user).find_by!(user_id: params[:user_id])
       if membership.user_id == current_user.id
-        return redirect_to group_path(group), alert: "You cannot remove yourself. A group must keep at least one owner.", status: :see_other
+        return redirect_to group_path(group), alert: "A group needs at least one owner.", status: :see_other
       end
 
       membership.destroy!
       group.reset_invitation!
-      redirect_to group_path(group), notice: "#{membership.user.display_name} was removed. The invitation code has been replaced.", status: :see_other
+      redirect_to group_path(group), notice: "#{membership.user.display_name} was removed. The invitation code changed.", status: :see_other
     end
   end
 end
