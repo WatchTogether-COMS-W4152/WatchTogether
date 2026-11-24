@@ -10,7 +10,7 @@ void createInertiaApp({
 
   strictMode: true,
 
-  progress: { color: "#e6b75b" },
+  progress: { color: "var(--ink-muted)" },
 
   defaults: {
     form: {

@@ -1,6 +1,6 @@
 class EpisodeCommentsController < InertiaController
   rate_limit to: 30, within: 1.minute, only: :create, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many comments. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many comments. Try again in a minute.") }
 
   before_action :set_item
 
@@ -8,7 +8,7 @@ class EpisodeCommentsController < InertiaController
     comment = @item.episode_comments.new(comment_params.merge(user: current_user))
 
     if comment.save
-      redirect_to item_path, notice: "Comment posted on #{EpisodeComment.label(comment.position)}.", status: :see_other
+      redirect_to item_path, notice: "Comment posted.", status: :see_other
     else
       errors = comment.errors.to_hash.slice(:season, :episode, :body, :base)
       redirect_to item_path, inertia: { errors: errors }, status: :see_other

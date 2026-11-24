@@ -2,7 +2,7 @@ class SuggestionsController < InertiaController
   include CatalogSelection
 
   rate_limit to: 30, within: 1.minute, only: :create, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many suggestions. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many suggestions. Try again in a minute.") }
 
   before_action :set_group
 
@@ -31,7 +31,7 @@ class SuggestionsController < InertiaController
   def create
     suggestion = Suggestion.new(**selected_title_attributes, group: @group, suggested_by: current_user)
     if suggestion.save
-      redirect_to group_suggestions_path(@group), notice: "“#{suggestion.title}” was added. Rate it below.", status: :see_other
+      redirect_to group_suggestions_path(@group), notice: "“#{suggestion.title}” was added.", status: :see_other
     else
       redirect_with_title_errors(suggestion.errors[:title])
     end

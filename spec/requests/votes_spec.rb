@@ -21,7 +21,7 @@ RSpec.describe "Rating suggestions", type: :request do
     expect(response).to have_http_status(:see_other)
     expect(response).to redirect_to(group_suggestions_path(group))
     follow_redirect!
-    expect(page_props.dig("flash", "notice")).to eq("Your rating for “Heat” was saved.")
+    expect(page_props.dig("flash", "notice")).to eq("Rating saved.")
     expect(page_props["suggestions"].sole).to include("my_rating" => "love", "score" => 2)
 
     %w[maybe not_interested].each do |rating|
@@ -111,7 +111,7 @@ RSpec.describe "Rating suggestions", type: :request do
     put group_suggestion_vote_path(group, suggestion), params: { rating: "not_interested" }
 
     expect(response).to have_http_status(:too_many_requests)
-    expect(page_props["message"]).to eq("Too many ratings. Please try again in a minute.")
+    expect(page_props["message"]).to eq("Too many ratings. Try again in a minute.")
     expect(my_votes.sole.rating).to eq("maybe")
   end
 

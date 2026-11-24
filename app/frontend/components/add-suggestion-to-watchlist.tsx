@@ -10,28 +10,21 @@ export default function AddSuggestionToWatchlist({
   suggestion: Suggestion;
 }) {
   const form = useForm({});
+  if (suggestion.in_watchlist) return <span className="chip">On watchlist</span>;
   return (
-    <div>
+    <>
       <button
         type="button"
-        className="button button-secondary"
-        disabled={form.processing || suggestion.in_watchlist}
-        aria-label={
-          suggestion.in_watchlist
-            ? `${suggestion.title} is on the watchlist`
-            : `Add ${suggestion.title} to watchlist`
-        }
+        className="btn btn-secondary btn-sm"
+        disabled={form.processing}
+        aria-label={`Add ${suggestion.title} to watchlist`}
         onClick={() =>
           form.post(`/groups/${groupId}/suggestions/${suggestion.id}/watchlist`, {
             preserveScroll: true,
           })
         }
       >
-        {suggestion.in_watchlist
-          ? "On watchlist ✓"
-          : form.processing
-            ? "Adding…"
-            : "Add to watchlist"}
+        {form.processing ? "Adding…" : "Add to watchlist"}
       </button>
       {Object.entries(form.errors).map(([field, messages]) =>
         Array.isArray(messages) ? (
@@ -40,6 +33,6 @@ export default function AddSuggestionToWatchlist({
           </p>
         ) : null,
       )}
-    </div>
+    </>
   );
 }

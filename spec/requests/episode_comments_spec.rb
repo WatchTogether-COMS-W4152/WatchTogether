@@ -111,7 +111,7 @@ RSpec.describe "Episode discussion", type: :request do
 
       expect(response).to redirect_to(group_watchlist_item_path(group, show))
       expect(response).to have_http_status(:see_other)
-      expect(flash[:notice]).to eq("Comment posted on S1 E3.")
+      expect(flash[:notice]).to eq("Comment posted.")
       expect(EpisodeComment.last).to have_attributes(user: larissa, season: 1, episode: 3, body: "Mark's office!")
     end
 

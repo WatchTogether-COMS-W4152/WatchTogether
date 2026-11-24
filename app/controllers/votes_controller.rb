@@ -1,6 +1,6 @@
 class VotesController < InertiaController
   rate_limit to: 60, within: 1.minute, only: :update, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many ratings. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many ratings. Try again in a minute.") }
 
   def update
     group = current_user.groups.find(params[:group_id])
@@ -11,7 +11,7 @@ class VotesController < InertiaController
     if vote.errors.any?
       redirect_to group_suggestions_path(group), inertia: { errors: { rating: [ "Choose Love it, Maybe, or Not interested." ] } }, status: :see_other
     else
-      redirect_to group_suggestions_path(group), notice: "Your rating for “#{suggestion.title}” was saved.", status: :see_other
+      redirect_to group_suggestions_path(group), notice: "Rating saved.", status: :see_other
     end
   end
 

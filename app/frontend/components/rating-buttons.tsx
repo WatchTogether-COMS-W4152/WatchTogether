@@ -15,7 +15,7 @@ export default function RatingButtons({
 
   return (
     <div className="rating-control">
-      <fieldset className="rating-buttons">
+      <fieldset className="rating">
         <legend className="visually-hidden">Your rating for {suggestion.title}</legend>
         {RATING_OPTIONS.map((option) => {
           const active = suggestion.my_rating === option.value;
@@ -23,7 +23,6 @@ export default function RatingButtons({
             <button
               key={option.value}
               type="button"
-              className={`rating-button rating-${option.value}${active ? " is-active" : ""}`}
               aria-pressed={active}
               disabled={pending}
               onClick={() => {
@@ -37,7 +36,8 @@ export default function RatingButtons({
                       setPending(true);
                       setError("");
                     },
-                    onError: (errors) => setError(errors.rating?.join(". ") ?? "Please try again."),
+                    onError: (errors) =>
+                      setError(errors.rating?.join(". ") ?? "Couldn't save your rating."),
                     onFinish: () => setPending(false),
                   },
                 );

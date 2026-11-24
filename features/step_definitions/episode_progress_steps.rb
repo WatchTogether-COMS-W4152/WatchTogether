@@ -28,7 +28,7 @@ When("I try to record progress for {string} from {string} through {string}") do 
 end
 
 Then("I am told I've watched up to {string}") do |position|
-  expect(props.dig("flash", "notice")).to eq("Saved. You've watched up to #{position}.")
+  expect(props.dig("flash", "notice")).to eq("Watched up to #{position}.")
 end
 
 Then("my progress for {string} in {string} is {string}") do |title, group_name, position|

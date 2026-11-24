@@ -1,5 +1,5 @@
 import { router } from "@inertiajs/react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
@@ -126,10 +126,10 @@ describe("accounts", () => {
   it("explains an expired session on the signed-out page", () => {
     page.props = {
       auth: { user: null },
-      flash: { alert: "Your session has expired. Please sign in again." },
+      flash: { alert: "Your session expired. Sign in again." },
     };
     render(<SignIn />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Your session has expired");
+    expect(screen.getByRole("alert")).toHaveTextContent("Your session expired");
     expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   });
@@ -146,6 +146,12 @@ describe("accounts", () => {
       expect.any(Object),
     );
     expect(screen.getByText("alice@example.com")).toBeVisible();
+  });
+
+  it("credits TMDB on the profile page", () => {
+    render(<Profile />);
+    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
+    expect(screen.getByRole("img", { name: "TMDB" })).toBeVisible();
   });
 
   it("signs out through the server and prevents repeated logout clicks", async () => {
@@ -177,13 +183,35 @@ describe("group flows", () => {
 
   it("links to the member's groups and labels ownership", () => {
     render(
-      <Groups groups={[{ id: 7, name: "Friday Film Club", is_owner: true, member_count: 2 }]} />,
+      <Groups
+        groups={[
+          {
+            id: 7,
+            name: "Friday Film Club",
+            is_owner: true,
+            member_count: 5,
+            member_names: ["Alice", "Bob", "Carol"],
+            show_in_progress: { title: "Severance", next_episode: { season: 1, episode: 3 } },
+          },
+          {
+            id: 8,
+            name: "Ghibli Sundays",
+            is_owner: false,
+            member_count: 1,
+            member_names: ["Alice"],
+            show_in_progress: null,
+          },
+        ]}
+      />,
     );
-    expect(screen.getByRole("link", { name: /Friday Film Club/ })).toHaveAttribute(
-      "href",
-      "/groups/7",
-    );
-    expect(screen.getByText("2 members · Owner")).toBeVisible();
+    const card = screen.getByRole("link", { name: /Friday Film Club/ });
+    expect(card).toHaveAttribute("href", "/groups/7");
+    expect(screen.getByText("5 members · Owner")).toBeVisible();
+    expect(within(card).getByText("+2")).toBeInTheDocument();
+    expect(within(card).getByText("Severance")).toBeVisible();
+    expect(within(card).getByText("S1 E3").closest(".ep")).toHaveClass("ep-next");
+    expect(screen.getByText("1 member")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Groups" })).toHaveAttribute("aria-current", "page");
   });
 
   it("submits a group name and presents a rejected name", async () => {
@@ -225,9 +253,7 @@ describe("group flows", () => {
     expect(screen.getByText("Bob")).toBeVisible();
     expect(screen.queryByText(group.invitation_code!)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copy code" })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Replace invitation code" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Replace code" })).not.toBeInTheDocument();
     expect(screen.queryByText("alice@example.com")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Delete group" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Delete this group" })).not.toBeInTheDocument();
@@ -250,7 +276,7 @@ describe("group flows", () => {
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Permission denied"));
     render(<Group group={group} />);
     await user.click(screen.getByRole("button", { name: "Copy code" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Select and copy it manually");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't copy the code.");
     expect(screen.getByText(group.invitation_code!)).toBeVisible();
   });
 
@@ -271,10 +297,11 @@ describe("group flows", () => {
   it("requires confirmation before replacing a code and blocks repeated submissions", async () => {
     const user = userEvent.setup();
     render(<Group group={group} />);
-    await user.click(screen.getByRole("button", { name: "Replace invitation code" }));
+    await user.click(screen.getByRole("button", { name: "Replace code" }));
     expect(postRequest).not.toHaveBeenCalled();
     expect(screen.getByText(/The old code will stop working/)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Replace code" }));
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Yes, replace code" }));
     const [url, data, options] = lastPost();
     expect(url).toBe("/groups/7/invitation/reset");
     expect(data).toEqual({});
@@ -328,7 +355,7 @@ describe("group flows", () => {
       }),
     );
     act(() => options?.onFinish?.(visit));
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByRole("button", { name: "Yes, delete group" })).toBeEnabled();
     expect(screen.getByText(/Delete “Friday Film Club”/)).toBeVisible();
   });
@@ -384,7 +411,7 @@ describe("member management", () => {
     expect(screen.getByRole("button", { name: "Promoting…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Manage Bob" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Replace invitation code" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Replace code" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Delete group" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Promoting…" }));
     expect(postRequest).toHaveBeenCalledTimes(1);
@@ -407,7 +434,7 @@ describe("member management", () => {
     await user.click(screen.getByRole("button", { name: "Remove from group" }));
     expect(screen.getByRole("heading", { name: "Remove Alice from the group?" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Remove Alice from the group?" })).toHaveTextContent(
-      "lose their owner permissions",
+      "They'll lose access",
     );
     expect(deleteRequest).not.toHaveBeenCalled();
   });
@@ -420,8 +447,6 @@ describe("member management", () => {
     expect(screen.getByRole("heading", { name: "Remove Bob from the group?" })).toBeVisible();
     const confirmation = screen.getByRole("region", { name: "Remove Bob from the group?" });
     expect(confirmation).toHaveTextContent("invitation code will change");
-    expect(confirmation).toHaveTextContent("Their account will be kept");
-    expect(confirmation).toHaveTextContent("Other members will stay");
     expect(deleteRequest).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("button", { name: "Confirm removal" })).not.toBeInTheDocument();
@@ -441,7 +466,7 @@ describe("member management", () => {
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Replace invitation code" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Replace code" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Delete group" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Removing…" }));
     expect(deleteRequest).toHaveBeenCalledTimes(1);
@@ -463,7 +488,7 @@ describe("member management", () => {
       }),
     );
     act(() => options?.onFinish?.(visit));
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByRole("heading", { name: "Remove Bob from the group?" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Confirm removal" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Confirm removal" }));
@@ -476,9 +501,9 @@ describe("member management", () => {
     render(<Group group={group} />);
     await user.click(screen.getByRole("button", { name: "Manage Bob" }));
     await user.click(screen.getByRole("button", { name: "Remove from group" }));
-    await user.click(screen.getByRole("button", { name: "Replace invitation code" }));
+    await user.click(screen.getByRole("button", { name: "Replace code" }));
     expect(screen.queryByRole("button", { name: "Confirm removal" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Replace code" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Yes, replace code" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     expect(deleteRequest).not.toHaveBeenCalled();
     expect(postRequest).not.toHaveBeenCalled();
@@ -489,11 +514,35 @@ describe("member management", () => {
     render(<Group group={group} />);
     await user.click(screen.getByRole("button", { name: "Manage Bob" }));
     await user.click(screen.getByRole("button", { name: "Make owner" }));
-    expect(screen.getByRole("heading", { name: "Make Bob an owner?" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("region", { name: "Make Bob an owner?" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manage Bob" })).toHaveFocus();
     expect(postRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe("toasts", () => {
+  it("closes notices after four seconds and keeps errors until dismissed", async () => {
+    vi.useFakeTimers();
+    try {
+      page.props = {
+        auth: { user: owner },
+        flash: { notice: "Progress saved.", alert: "That didn't work. Try again." },
+      };
+      render(<Groups groups={[]} />);
+      expect(screen.getByRole("status")).toHaveTextContent("Progress saved.");
+      expect(screen.getByRole("alert")).toHaveTextContent("That didn't work. Try again.");
+      act(() => {
+        vi.advanceTimersByTime(4000);
+      });
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -508,7 +557,7 @@ describe("recovery", () => {
     });
     fireEvent(document, event);
     expect(event.defaultPrevented).toBe(true);
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     expect(screen.getByLabelText("Group name")).toHaveValue("Friday Film Club");
     expect(screen.getByRole("button", { name: "Create group" })).toBeEnabled();
   });

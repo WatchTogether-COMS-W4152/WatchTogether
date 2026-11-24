@@ -1,3 +1,5 @@
+import type { EpisodePosition } from "./episodes";
+
 export type FlashData = {
   notice?: string;
   alert?: string;
@@ -19,6 +21,8 @@ export type GroupSummary = {
   name: string;
   is_owner: boolean;
   member_count: number;
+  member_names: string[];
+  show_in_progress: { title: string; next_episode: EpisodePosition } | null;
 };
 
 export type GroupDetails = {
@@ -28,3 +32,7 @@ export type GroupDetails = {
   members: { id: number; display_name: string; role: "owner" | "member" }[];
   invitation_code?: string;
 };
+
+export function memberCount(count: number) {
+  return `${count} ${count === 1 ? "member" : "members"}`;
+}

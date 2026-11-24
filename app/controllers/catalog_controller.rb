@@ -1,7 +1,7 @@
 class CatalogController < ApplicationController
   before_action :set_group
   rate_limit to: 60, within: 1.minute, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
-    with: -> { render json: { error: "Too many searches. Please try again in a minute." }, status: :too_many_requests }
+    with: -> { render json: { error: "Too many searches. Try again in a minute." }, status: :too_many_requests }
 
   rescue_from TmdbClient::InvalidSelection do |error|
     render json: { error: error.message }, status: :unprocessable_content
