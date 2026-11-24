@@ -14,8 +14,11 @@ export type MemberProgress = {
 export type EpisodeProgressData = {
   members: MemberProgress[];
   my_position: EpisodePosition | null;
-  next_episode: EpisodePosition;
+  my_next_episode: EpisodePosition | null;
+  next_episode: EpisodePosition | null;
+  finished: boolean;
   everyone_caught_up: boolean;
+  season_lengths: number[] | null;
 };
 
 export type EpisodeComment = {

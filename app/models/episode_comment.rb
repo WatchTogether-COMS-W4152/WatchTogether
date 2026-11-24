@@ -13,6 +13,7 @@ class EpisodeComment < ApplicationRecord
     length: { maximum: MAX_BODY_LENGTH, message: "Keep comments to #{MAX_BODY_LENGTH} characters or fewer." }
   validate :author_belongs_to_group, on: :create
   validate :watchlist_item_is_episodic, on: :create
+  validate :episode_exists_in_show, on: :create
   validate :author_has_reached_episode, on: :create
 
   scope :in_episode_order, -> { order(:season, :episode, :created_at, :id) }
@@ -67,6 +68,13 @@ class EpisodeComment < ApplicationRecord
     return if watchlist_item.episodic?
 
     errors.add(:base, "Discussion is only available for TV shows")
+  end
+
+  def episode_exists_in_show
+    return unless watchlist_item && season.is_a?(Integer) && episode.is_a?(Integer)
+
+    field, message = watchlist_item.position_error(season: season, episode: episode)
+    errors.add(field, message) if field
   end
 
   def author_has_reached_episode

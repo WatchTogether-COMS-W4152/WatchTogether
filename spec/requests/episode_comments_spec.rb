@@ -126,6 +126,16 @@ RSpec.describe "Episode discussion", type: :request do
       expect(page_props.dig("errors", "episode").first).to include("You're on S1 E4", "can't comment on S1 E5")
     end
 
+    it "refuses comments on episodes the show doesn't have, so they can't slip past the spoiler filter" do
+      show.update!(tmdb_id: 66_732, media_type: "tv", season_lengths: [ 8, 9 ], season_lengths_checked_at: Time.current)
+      watched(larissa, 2, 1)
+      sign_in(larissa)
+
+      expect { post_comment(season: 1, episode: 50, body: "S2 twist!") }.not_to change(EpisodeComment, :count)
+      follow_redirect!
+      expect(page_props.dig("errors", "episode")).to eq([ "Season 1 has 8 episodes." ])
+    end
+
     it "refuses comments from a member who has not watched anything" do
       sign_in(sam)
 

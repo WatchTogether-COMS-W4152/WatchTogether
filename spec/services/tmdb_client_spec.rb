@@ -242,4 +242,23 @@ RSpec.describe TmdbClient do
       expect(client.search("Star")).to be_present
     end
   end
+
+  it "reads episode counts per season, skipping specials and unaired seasons, and caches them" do
+    http = stub_response({ "id" => 66_732, "seasons" => [
+      { "season_number" => 0, "episode_count" => 12 },
+      { "season_number" => 1, "episode_count" => 8 },
+      { "season_number" => 2, "episode_count" => 9 },
+      { "season_number" => 3, "episode_count" => 0 }
+    ] })
+
+    expect(client.season_lengths(66_732)).to eq([ 8, 9 ])
+    expect(client.season_lengths("66732")).to eq([ 8, 9 ])
+    expect(http).to have_received(:get).once.with(a_string_including("/3/tv/66732?"), "Accept" => "application/json")
+  end
+
+  it "returns nil when TMDB lists no seasons" do
+    stub_response({ "id" => 1, "seasons" => "nope" })
+
+    expect(client.season_lengths(1)).to be_nil
+  end
 end
