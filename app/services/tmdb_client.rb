@@ -11,6 +11,8 @@ class TmdbClient
   TIMEOUTS = { open_timeout: 1, read_timeout: 2, write_timeout: 2 }.freeze
   OUTAGE_KEY = [ "tmdb", "outage" ].freeze
   OUTAGE_TTL = 30.seconds
+  FAILURES_KEY = [ "tmdb", "failures" ].freeze
+  FAILURES_BEFORE_OUTAGE = 3
 
   def initialize(api_key: ENV["TMDB_API_KEY"].presence || Rails.application.credentials.dig(:tmdb, :api_key), cache: Rails.cache)
     @api_key = api_key
@@ -74,10 +76,20 @@ class TmdbClient
   def request(path, **query)
     raise Unavailable, UNAVAILABLE_MESSAGE if @api_key.blank? || @cache.read(OUTAGE_KEY)
 
-    fetch_json(path, **query)
-  rescue Unavailable
-    @cache.write(OUTAGE_KEY, true, expires_in: OUTAGE_TTL) if @api_key.present?
-    raise
+    begin
+      data = fetch_json(path, **query)
+    rescue Unavailable
+      record_failure
+      raise
+    end
+    @cache.delete(FAILURES_KEY)
+    data
+  end
+
+  def record_failure
+    failures = @cache.read(FAILURES_KEY).to_i + 1
+    @cache.write(FAILURES_KEY, failures, expires_in: OUTAGE_TTL)
+    @cache.write(OUTAGE_KEY, true, expires_in: OUTAGE_TTL) if failures >= FAILURES_BEFORE_OUTAGE
   end
 
   def fetch_json(path, **query)

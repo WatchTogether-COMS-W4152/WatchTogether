@@ -21,6 +21,8 @@ type PutOptions = NonNullable<Parameters<typeof router.put>[2]>;
 type Visit = Parameters<NonNullable<PutOptions["onFinish"]>>[0];
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Form callbacks do not inspect visit metadata; the request transport is stubbed.
 const visit = {} as Visit;
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- onSuccess receives the next page, which this panel ignores.
+const nextPage = {} as Parameters<NonNullable<PutOptions["onSuccess"]>>[0];
 let putRequest: MockInstance<typeof router.put>;
 let deleteRequest: MockInstance<typeof router.delete>;
 
@@ -245,7 +247,17 @@ describe("recording my progress", () => {
     renderPanel();
     await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     await user.click(screen.getByRole("button", { name: "Clear my progress" }));
-    expect(deleteRequest).toHaveBeenCalledWith(PATH, { preserveScroll: true });
+    expect(deleteRequest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Yes, clear" }));
+    const [url, options] = deleteRequest.mock.calls[0];
+    expect(url).toBe(PATH);
+    act(() => options?.onStart?.(visit));
+    expect(screen.getByRole("button", { name: /Watched next episode/ })).toBeDisabled();
+    expect(screen.getByLabelText("Episode")).toHaveValue(1);
+    act(() => {
+      options?.onSuccess?.(nextPage);
+      options?.onFinish?.(visit);
+    });
     expect(screen.getByLabelText("Episode")).toHaveValue(null);
   });
 });

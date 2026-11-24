@@ -10,6 +10,7 @@ import {
 import Avatar from "./avatar";
 import EpisodeCode from "./episode-code";
 import Field from "./field";
+import InlineConfirm from "./inline-confirm";
 
 type ProgressPageProps = {
   group: { id: number };
@@ -46,6 +47,8 @@ export function EpisodeProgressPanel({
   });
   const [exactOpen, setExactOpen] = useState(false);
   const [savingExact, setSavingExact] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const busy = form.processing || clearing;
   const started = progress.members.some((member) => member.position);
   const advanceTo = progress.my_next_episode;
   const showExact = exactOpen || Object.keys(form.errors).length > 0;
@@ -97,7 +100,7 @@ export function EpisodeProgressPanel({
           <button
             className="btn btn-primary"
             type="button"
-            disabled={form.processing}
+            disabled={busy}
             onClick={() => {
               form.setData({
                 season: String(advanceTo.season),
@@ -159,21 +162,25 @@ export function EpisodeProgressPanel({
             />
           </div>
           <div className="row">
-            <button className="btn btn-secondary btn-sm" type="submit" disabled={form.processing}>
+            <button className="btn btn-secondary btn-sm" type="submit" disabled={busy}>
               {form.processing && savingExact ? "Saving…" : "Save progress"}
             </button>
             {mine && (
-              <button
-                className="btn btn-quiet btn-sm is-danger"
-                type="button"
-                disabled={form.processing}
-                onClick={() => {
-                  form.setData({ season: "1", episode: "" });
-                  router.delete(path, { preserveScroll: true });
-                }}
-              >
-                Clear my progress
-              </button>
+              <InlineConfirm
+                label="Clear my progress"
+                question="Clear your progress? Comments on episodes you haven't reached will be hidden again."
+                confirmLabel="Yes, clear"
+                pendingLabel="Clearing…"
+                pending={clearing}
+                onConfirm={() =>
+                  router.delete(path, {
+                    preserveScroll: true,
+                    onStart: () => setClearing(true),
+                    onSuccess: () => form.setData({ season: "1", episode: "" }),
+                    onFinish: () => setClearing(false),
+                  })
+                }
+              />
             )}
           </div>
         </form>

@@ -268,4 +268,15 @@ RSpec.describe "Episode progress", type: :request do
     expect(page_props["errors"]).to eq("episode" => [ "Enter an episode number from 1 to 9999." ])
     expect(my_progress).to be_nil
   end
+
+  it "drops the next-episode hint once a show is marked watched" do
+    show.episode_progresses.create!(user: owner, season: 1, episode: 3)
+    show.episode_progresses.create!(user: member, season: 1, episode: 3)
+    show.update!(watched: true)
+    sign_in(member)
+
+    get group_watchlist_items_path(group)
+
+    expect(page_props["watchlist_items"].sole).to include("next_episode" => nil)
+  end
 end

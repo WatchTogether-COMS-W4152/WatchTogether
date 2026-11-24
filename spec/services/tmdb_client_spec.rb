@@ -213,12 +213,13 @@ RSpec.describe TmdbClient do
   end
 
   describe "after TMDB fails" do
-    it "skips TMDB for a short while, then tries again" do
+    it "keeps trying after one failure, skips TMDB for a short while after three, then tries again" do
       stub_response(nil, code: "503")
-      expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable)
+      %w[Heat Ronin Thief].each { |query| expect { client.search(query) }.to raise_error(TmdbClient::Unavailable) }
+      expect(Net::HTTP).to have_received(:start).exactly(3).times
 
       expect { client.search("Alien") }.to raise_error(TmdbClient::Unavailable, TmdbClient::UNAVAILABLE_MESSAGE)
-      expect(Net::HTTP).to have_received(:start).once
+      expect(Net::HTTP).to have_received(:start).exactly(3).times
 
       travel(31.seconds) do
         stub_response({ "results" => [ movie ] })
@@ -226,12 +227,15 @@ RSpec.describe TmdbClient do
       end
     end
 
-    it "treats network errors the same way" do
+    it "treats network errors the same way, and a success resets the count" do
       allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
-      expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable)
-      expect { client.details("movie", 11) }.to raise_error(TmdbClient::Unavailable)
+      2.times { expect { client.search("Heat") }.to raise_error(TmdbClient::Unavailable) }
+      stub_response({ "results" => [ movie ] })
+      expect(client.search("Star")).to be_present
+      allow(Net::HTTP).to receive(:start).and_raise(Net::OpenTimeout)
+      2.times { expect { client.details("movie", 11) }.to raise_error(TmdbClient::Unavailable) }
 
-      expect(Net::HTTP).to have_received(:start).once
+      expect(Net::HTTP).to have_received(:start).exactly(5).times
     end
 
     it "does not record an outage for a missing title" do

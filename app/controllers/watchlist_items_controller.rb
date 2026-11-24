@@ -15,7 +15,7 @@ class WatchlistItemsController < InertiaController
       group: @group.as_json(only: [ :id, :name ]),
       watchlist_items: watchlist_items.map do |item|
         item.as_json(only: [ :id, :title, :watched ])
-          .merge(item.catalog_json, "next_episode" => item.next_group_episode(members: members))
+          .merge(item.catalog_json, "next_episode" => (item.next_group_episode(members: members) unless item.watched))
       end
     }
   end
