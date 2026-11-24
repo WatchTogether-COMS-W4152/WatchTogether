@@ -5,6 +5,7 @@ import EpisodeDiscussionSection from "../../components/episode-discussion";
 import EpisodeProgressSection from "../../components/episode-progress";
 import Layout, { PageHeader } from "../../components/layout";
 import MediaDetails, { MediaPoster } from "../../components/media-details";
+import WatchProvidersSection, { type WatchProviders } from "../../components/watch-providers";
 import type { MediaMetadata } from "../../types/catalog";
 
 export type WatchlistItemDetails = MediaMetadata & {
@@ -17,9 +18,11 @@ export type WatchlistItemDetails = MediaMetadata & {
 export default function WatchlistItemPage({
   group,
   item,
+  watch_providers,
 }: {
   group: { id: number; name: string };
   item: WatchlistItemDetails;
+  watch_providers?: WatchProviders;
 }) {
   const { props } = usePage();
   return (
@@ -34,6 +37,7 @@ export default function WatchlistItemPage({
           <MediaDetails media={item} />
         </div>
       </div>
+      <WatchProvidersSection availability={watch_providers} />
       {item.episodic ? (
         <>
           <EpisodeProgressSection {...props} />
