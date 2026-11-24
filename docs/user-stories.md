@@ -1,6 +1,6 @@
 # User stories
 
-This branch delivers thirty-one web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26), spoiler-safe episode discussion (US27–US30), and streaming availability (US31). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
+WatchTogether delivers thirty-four web application stories: group management (US01–US11, US32), group voting (US12–US15, US33), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26, US34), spoiler-safe episode discussion (US27–US30), and streaming availability (US31). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
 
 | Story                                        | User need and acceptance criteria                                                                                                                                                                                                                                                                                                                                  | Executable coverage                                                                                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -16,7 +16,7 @@ This branch delivers thirty-one web application stories: group management (US01�
 | **US10 — Share ownership with a member**     | As an owner, I can make an existing member another owner so we can share responsibility. Confirmation explains that all owners can invite, manage members, and delete the group. Existing owners keep their roles, repeat promotion is harmless, and ordinary members and outsiders cannot promote anyone.                                                         | `@US10`, [memberships.feature](../features/memberships.feature); membership request specs and frontend management/confirmation tests.                |
 | **US11 — Remove someone from my group**      | As an owner, I can remove another member, including another owner, after a named confirmation. Their access ends and the invitation changes; accounts, other groups, and remaining memberships are kept. I cannot remove myself, so the group keeps an owner. Ordinary members and outsiders cannot remove anyone.                                                 | `@US11`, [memberships.feature](../features/memberships.feature); membership request specs and frontend removal/cancellation tests.                   |
 | **US12 — Suggest a title**                   | As a member, I can suggest a title for my group to consider. Extra spaces are trimmed. A blank title is explained, and a plain-text title already suggested manually in the group (ignoring letter case and spacing) is rejected. Outsiders cannot see or add suggestions, and visitors must sign in.                                                              | `@US12`, [voting.feature](../features/voting.feature); Suggestion model and suggestion request specs, suggest-form frontend tests.                   |
-| **US13 — Rate a suggestion privately**       | As a member, I can rate each title Love it, Maybe, or Not interested, and change my mind later. I always have exactly one rating per title, and no other option is accepted. Other members see how many people rated a title and its total, but never my individual rating. Outsiders cannot rate.                                                                 | `@US13`, [voting.feature](../features/voting.feature); Vote model and vote request specs, rating-button frontend tests.                              |
+| **US13 — Rate a suggestion privately**       | As a member, I can rate each title Love it, Maybe, or Not interested, and change my mind later. I have at most one rating per title, and no other option is accepted. Other members see how many people rated a title and its total, but never my individual rating. Outsiders cannot rate.                                                                        | `@US13`, [voting.feature](../features/voting.feature); Vote model and vote request specs, rating-button frontend tests.                              |
 | **US14 — See the group's ranked picks**      | As a member, I can see titles ranked by what the whole group is happy with: Love it adds 2, Maybe adds 1, and Not interested subtracts 2. Ties go to more Loves, then the older suggestion. A dislike lowers a title without vetoing it. Ratings from people no longer in the group stop counting.                                                                 | `@US14`, [voting.feature](../features/voting.feature); `Suggestion.ranked_for` model specs and ranking frontend tests.                               |
 | **US15 — Remove a suggestion**               | As the person who suggested a title, or as an owner, I can remove it after confirming, and its ratings go with it. Other members can remove only their own suggestions, and outsiders cannot remove any.                                                                                                                                                           | `@US15`, [voting.feature](../features/voting.feature); suggestion request specs and removal confirmation/cancellation frontend tests.                |
 | **US16 — Keep a shared watchlist**           | As a group member, I can add movies and shows to a shared list so we remember what we want to watch. Plain-text titles must be nonblank and at most 120 characters; new entries start unwatched. Owners and ordinary members can add and view entries, and the list persists when either returns. Visitors must sign in, and outsiders cannot read or add entries. | `@US16`, [watchlist.feature](../features/watchlist.feature); WatchlistItem model, watchlist request specs, and watchlist frontend tests.             |
@@ -75,7 +75,7 @@ Every comment belongs to one episode of a show on the watchlist. A member sees t
 
 Acceptance criteria for **US27**:
 
-- Any current member can comment on an episode they have reached. Season and episode are whole numbers of at least 1; the comment is trimmed and must contain 1–1000 characters.
+- Any current member can comment on an episode they have reached. Season and episode are whole numbers from 1 to 9999; the comment is trimmed and must contain 1–1000 characters.
 - Episodes are ordered by season, then episode (S1 E10 comes before S2 E1). Comments within an episode are oldest first and show the author's display name, avatar, and a short time.
 - Outsiders, removed members, and signed-out visitors cannot read or post comments, and a show cannot be reached through another group's URL. Movies have no episode discussion.
 
@@ -110,9 +110,9 @@ RSpec also checks details that are not useful as user-facing story steps: databa
 
 Acceptance criteria for **US23**:
 
-- Season and episode must be whole numbers of at least 1. Missing, zero, negative, decimal, or non-numeric values are explained next to the field and leave my previous progress unchanged.
+- Season and episode must be whole numbers from 1 to 9999. Missing, zero, negative, decimal, or non-numeric values are explained next to the field and leave my previous progress unchanged.
 - Saving again replaces my position, including moving backwards; each member has one position per show.
-- **Watched next episode** moves me on one episode within the same season, or to S1 E1 if I had not started.
+- **Watched next episode** moves me on one episode, or to S1 E1 if I had not started. US34 covers moving between seasons.
 - Progress persists and is visible to other members. Movies have no episode progress.
 
 Acceptance criteria for **US24**:
@@ -125,7 +125,7 @@ Acceptance criteria for **US25**:
 
 - The next episode is the one after the position of the member furthest behind. While any member has not started, it is S1 E1.
 - When everyone is at the same episode, the page says everyone is caught up and names the following episode.
-- Season lengths are unknown, so the next episode stays in the same season; members move to a new season by entering it.
+- For shows picked from TMDB the next episode can be in the following season (US34). Typed-in shows have no episode counts, so their next episode stays in the same season.
 - When a member leaves or is removed, their progress no longer affects the list, caught-up status, or next episode.
 - The watchlist shows **Next together** for shows someone has started.
 
@@ -154,6 +154,35 @@ Acceptance criteria for **US31**:
 
 Run this story independently with `bundle exec cucumber --tags @US31`.
 
+## Iteration 2 additions
+
+| Story                                   | User need                                                                                                                                                           | Executable coverage                                                                                                                                                                                                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **US32 — Leave a group**                | As a member, I can leave a group I no longer want to be part of, so it stops appearing for me and my ratings and progress stop affecting the group.                 | `@US32`, [memberships.feature](../features/memberships.feature); [membership requests](../spec/requests/memberships_spec.rb), [group page component tests](../app/frontend/test/pages.test.tsx).                                                                 |
+| **US33 — Take back my rating**          | As a member, I can clear my rating for a title, so a title I no longer have an opinion on is scored as if I had not rated it.                                       | `@US33`, [voting.feature](../features/voting.feature); [rating requests](../spec/requests/votes_spec.rb), [rating-button tests](../app/frontend/test/suggestions.test.tsx).                                                                                      |
+| **US34 — Follow a show across seasons** | As a member watching a show picked from TMDB, I can move from a season's finale to the next season in one click and see when the whole group has finished the show. | `@US34`, [episode_progress.feature](../features/episode_progress.feature); [WatchlistItem model](../spec/models/watchlist_item_spec.rb), [TMDB service](../spec/services/tmdb_client_spec.rb), [progress requests](../spec/requests/episode_progresses_spec.rb). |
+
+Acceptance criteria for **US32**:
+
+- Any member can leave from the group page after confirming. They are returned to their group list, and the group's page is no longer available to them.
+- Their ratings and episode progress in that group are removed, so rankings, caught-up status, and the next episode reflect only current members. Their discussion comments remain under their name.
+- The last owner is told to make someone else an owner before leaving. The only member of a group is told to delete the group instead. A group therefore always keeps an owner.
+- Owners cannot use member removal on themselves; they are pointed to **Leave group**. Visitors must sign in.
+
+Acceptance criteria for **US33**:
+
+- Choosing my highlighted rating again clears it. The title's score and rating count drop accordingly, and my rating shows as unrated.
+- Clearing a rating I don't have is harmless. Other members' ratings are unchanged.
+- Outsiders cannot clear ratings in a group they don't belong to.
+
+Acceptance criteria for **US34**:
+
+- For a TV show picked from TMDB, the app stores the episode count of each regular season (specials are ignored) and refreshes it at most daily.
+- **Watched next episode** on a season's last episode moves to episode 1 of the next season. On the show's last episode it reports that every episode has been watched and keeps the position.
+- A season beyond the show's last season, or an episode beyond its season's length, is rejected with a message giving the real count, and previous progress is kept.
+- When every current member has watched the final episode, the page says the group has finished the show.
+- Typed-in shows and shows whose counts are unavailable keep the earlier behaviour: the next episode stays in the same season.
+
 ## Two-user demonstration
 
 To demonstrate US19–US22, follow the account/group setup below and complete these checks before deleting the temporary group:
@@ -164,11 +193,17 @@ To demonstrate US19–US22, follow the account/group setup below and complete th
 4. Remove the copied Interstellar suggestion and confirm its watchlist entry and watched state remain. On a second suggestion, remove only its watchlist entry and confirm the voting page offers **Add to watchlist** again.
 5. Edit an input quickly, including trailing spaces, and confirm its dropdown follows the latest text. Check Escape dismissal, missing-poster fallbacks when present, and narrow-screen usability. No-match and outage recovery are deterministic in the tagged acceptance and component tests; the live catalogue's current results and ratings may vary.
 
-To demonstrate US23–US26, add a plain-text show such as **Severance** to Friday Night's watchlist and open its title:
+To demonstrate US23–US26, type **Severance** in Friday Night's watchlist, mark it as a **TV show**, add it, and open its title:
 
 1. **Bob:** Enter season 1, episode 3 and save. Choose **Watched next episode** and confirm Bob is at S1 E4. Try season 0 and confirm the error leaves S1 E4 in place.
 2. **Alice:** Refresh the title. Bob is listed first as **Caught up** and Alice as **Not started**; the next episode for everyone is S1 E1. Record S1 E2 and confirm the next episode becomes S1 E3 and the watchlist shows **Next together: S1 E3**.
 3. **Bob:** Choose **Clear my progress**. **Alice:** Refresh and confirm Bob is **Not started** and Alice is now caught up.
+
+To demonstrate US32–US34 on Friday Night:
+
+1. **Bob:** On **What should we watch?**, rate a title **Love it**, then choose **Love it** again and confirm the rating clears and the score drops.
+2. **Alice:** In the watchlist, search **Severance**, pick the TV series, and open it. Record the last episode of season 1, choose **Watched next episode**, and confirm progress moves to S2 E1. Enter a season past the end and read the error.
+3. **Bob:** At the bottom of Friday Night, choose **Leave group** and confirm. Friday Night disappears from **My groups**. **Alice:** Refresh and confirm Bob's ratings and progress no longer count. As the last owner, try **Leave group** and read the message asking you to make someone else an owner first.
 
 Use the running app in two separate browser profiles or one regular and one private window. Use temporary demo accounts with different email addresses. Do not use a production database for destructive testing.
 
@@ -193,4 +228,4 @@ Use the running app in two separate browser profiles or one regular and one priv
 
 The account, group, membership, and watchlist changes persist in the configured database. Browser storage alone is not the source of truth. Session-expiry timing and replay of a revoked cookie are covered by automated tests rather than waiting 30 days during the demonstration.
 
-Group management intentionally separates shared ownership from leaving or demotion. Owners cannot remove themselves, and there is no owner-demotion control in this iteration. Removing someone is not a permanent ban: sharing the replacement invitation allows them to join again as an ordinary member.
+Owners cannot remove themselves; they use **Leave group**, and the last owner must make someone else an owner first. There is no owner-demotion control in this iteration. Removing someone is not a permanent ban: sharing the replacement invitation allows them to join again as an ordinary member.

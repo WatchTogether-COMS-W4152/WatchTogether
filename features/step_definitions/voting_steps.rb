@@ -110,3 +110,13 @@ Then("only the suggester or an owner is allowed to do that") do
   expect(@page.fetch("component")).to eq("errors/show")
   expect(props.fetch("message")).to match(/suggested a title or a group owner/)
 end
+
+When("I remove my rating for {string} in {string}") do |title, group_name|
+  visit_page(:delete, "#{suggestions_path(group_name)}/#{suggestion_id(title, group_name)}/vote")
+end
+
+Then("I am told my rating was removed") do
+  expect(@response.status).to eq(200)
+  expect(@page.fetch("component")).to eq("suggestions/index")
+  expect(props.dig("flash", "notice")).to eq("Rating removed.")
+end

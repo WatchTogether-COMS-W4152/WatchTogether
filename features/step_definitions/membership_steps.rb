@@ -31,3 +31,22 @@ Then("I am told I cannot remove myself") do
   expect(@page.fetch("component")).to eq("groups/show")
   expect(props.dig("flash", "alert")).to match(/use leave group/i)
 end
+
+When("I leave {string}") do |name|
+  visit_page(:delete, "#{group_path(name)}/membership")
+end
+
+Then("I am told I left {string}") do |name|
+  expect(@response.status).to eq(200)
+  expect(@page.fetch("component")).to eq("groups/index")
+  expect(props.dig("flash", "notice")).to eq("You left #{name}.")
+end
+
+Then("I am warned {string}") do |message|
+  expect(@response.status).to eq(200)
+  expect(props.dig("flash", "alert")).to eq(message)
+end
+
+Then("{string} is not a member of {string}") do |viewer, name|
+  expect(membership_for(viewer, name)).to be_empty
+end

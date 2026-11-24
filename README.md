@@ -4,12 +4,12 @@ WatchTogether helps friends organize what they watch together. This web-first it
 
 ## Team
 
-| Name    | UNI     |
-| ------- | ------- |
-| Alex    | amf2346 |
-| David   | dn2620  |
-| Larissa | ls4270  |
-| Yuqi    | yl6408  |
+| Name                  | UNI     |
+| --------------------- | ------- |
+| Alex Foster           | amf2346 |
+| David Nguyen          | dn2620  |
+| Larissa Silva Martins | ls4270  |
+| Yuqi Lu               | yl6408  |
 
 **Live app:** https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/.
 
@@ -57,7 +57,7 @@ This feature uses the existing `TMDB_API_KEY` configuration and requires no addi
 
 ## Design and scope
 
-The implementation uses ordinary Rails controllers, Inertia pages, and eight models:
+The implementation uses ordinary Rails controllers, Inertia pages, and nine models:
 
 | Model             | Responsibility                                                                                      |
 | ----------------- | --------------------------------------------------------------------------------------------------- |
@@ -79,33 +79,35 @@ Group creation and the creator's owner membership are one transaction. Only memb
 
 Owners can make existing members owners. Ownership is shared: the original owner remains an owner, and every owner has the same permissions to invite friends, manage members, and delete the group. Each other member's **Manage** control opens the available actions; promotion asks for confirmation and explains these permissions.
 
-Owners can remove another member, including another owner. Removal asks for confirmation, removes access to that group, and replaces its invitation code in the same transaction so a saved code cannot restore access. Existing members stay in the group; member accounts and memberships in other groups are kept. An owner cannot remove themselves, so these actions always leave at least one owner. Removal is not a permanent ban: someone with a newly shared invitation can join again as an ordinary member.
+Owners can remove another member, including another owner. Removal asks for confirmation, removes access to that group, and replaces its invitation code in the same transaction so a saved code cannot restore access. Existing members stay in the group; member accounts and memberships in other groups are kept. An owner cannot remove themselves; they use **Leave group** instead. Removal is not a permanent ban: someone with a newly shared invitation can join again as an ordinary member.
+
+Any member can leave a group from the bottom of its page after confirming. Leaving ends their access, and their ratings and episode progress stop counting for the group; their discussion comments stay. The last owner must make someone else an owner first, and a group's only member is asked to delete the group instead, so every group always keeps an owner.
 
 An owner can delete a group after confirming in the web interface. Deletion removes the group and all its memberships, invalidates its invitation code, and returns the owner to their group list. Member accounts and unrelated groups are kept. Ordinary members and outsiders cannot delete the group.
 
 ### Voting
 
-Any member can suggest a title to their group from **What should we watch?** on the group page. Blank titles and duplicates (ignoring letter case and extra spaces) are rejected. Each member privately rates each title with exactly one of three options: **Love it** (+2), **Maybe** (+1), or **Not interested** (−2). A member can change their rating at any time; there is no way to clear it.
+Any member can suggest a title to their group from **What should we watch?** on the group page. Blank titles and duplicates (ignoring letter case and extra spaces) are rejected. Each member privately rates each title with exactly one of three options: **Love it** (+2), **Maybe** (+1), or **Not interested** (−2). A member can change their rating at any time, or clear it by choosing their current rating again.
 
 The group ranking orders titles by total score, then by number of Love it ratings, then by the oldest suggestion. Unrated titles score 0, so one dislike cancels one Love without acting as a veto. Only current members' ratings count: when someone is removed from the group, their ratings stop affecting the ranking. Members see each title's total score, how many members have rated it, and their own rating, but never who chose which rating. The suggester or any owner can remove a title, which deletes its ratings. Deleting a group deletes its suggestions and ratings; deleting an account deletes that person's ratings and keeps their suggestions.
 
 ### Watchlist
 
-Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Plain-text titles must contain 1–120 characters; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
+Open **Our Watchlist** from a group page. Every current member, including ordinary members, can add a title, mark any item watched or unwatched, and remove any item after confirmation. Typed-in titles must contain 1–120 characters and be marked as a movie or a TV show; blank or whitespace-only titles are rejected. Items start unwatched and appear newest first. Plain-text duplicates are allowed, while the same TMDB movie or show is kept once per group. Changes persist and are shared with the group. In voting, **Add to watchlist** copies a suggestion and its saved metadata without deleting it or changing anyone's votes. Repeating that action does not create another item.
 
 Visitors must sign in, and outsiders or removed members cannot view or change the list. An item's ID only works within its own group. Deleting a group deletes its watchlist while preserving other groups and their items.
 
 ### Episode progress
 
-Each watchlist title has its own page. For TV shows (and plain-text titles, which may be shows), every member can record the last episode they watched as a season and episode number, move on one episode with **Watched next episode**, or clear their progress. Numbers must be whole numbers of at least 1. The page lists every current member furthest ahead first, with **Not started** for anyone who has not recorded progress, and marks the members at the furthest position as **Caught up**.
+Each watchlist title has its own page. For TV shows, including typed-in titles marked as TV shows, every member can record the last episode they watched as a season and episode number, move on one episode with **Watched next episode**, or clear their progress. Numbers must be whole numbers from 1 to 9999. The page lists every current member furthest ahead first, with **Not started** for anyone who has not recorded progress, and marks the members at the furthest position as **Caught up**.
 
-The group's next episode is the one after the position of whoever is furthest behind; while anyone has not started, it is S1 E1. Episode counts per season are not stored, so the next episode always stays in the same season. Once someone has started a show, the watchlist shows its next episode under the title. Progress from people who have left the group stops counting immediately. Movies have no episode progress.
+The group's next episode is the one after the position of whoever is furthest behind; while anyone has not started, it is S1 E1. For shows picked from TMDB, the app stores each season's episode count and refreshes it daily. **Watched next episode** moves from a season's last episode to the next season, positions past the end of the show are rejected, and once everyone has watched the final episode the page says the group has finished the show. Typed-in shows have no episode counts, so their next episode stays in the same season. Once someone has started a show, the watchlist shows its next episode under the title. Progress from people who have left the group stops counting immediately. Movies have no episode progress.
 
 ### Spoiler-safe episode discussion
 
 Each show on the watchlist has its own page with a **Discussion** section. Every comment is tied to a season and episode. A member reads only the comments on episodes they have already watched (according to their episode progress) plus their own; for later episodes they see a count such as "3 comments on S2 E5, unlocked when you get there." The filtering happens in Rails (`EpisodeComment.visible_to` / `.hidden_counts_for`), so hidden comment text and authors never reach the browser. Members can only post about episodes they have reached. The author or any owner can delete a comment. Comments are deleted with their show; if an account is deleted, its comments stay and show as from a former member.
 
-There is no separate mobile client or public JSON API in this branch. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, leaving groups, owner demotion, and exclusive ownership transfer are outside this iteration.
+There is no separate mobile client or public JSON API in this iteration. A future mobile client can share these models and rules through additional API controllers. Avatars, social login, email verification, password-reset delivery, group editing, owner demotion, and exclusive ownership transfer are outside this iteration.
 
 ## Tests and grading
 
@@ -139,8 +141,8 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Thirty-one user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, the discussion stories with `bundle exec cucumber features/episode_discussion.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
-- RSpec checks models, services, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model/service files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other. TMDB tests use fake credentials and deterministic HTTP responses; no real key or live service is needed.
+- [Thirty-four user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, the discussion stories with `bundle exec cucumber features/episode_discussion.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
+- RSpec checks models, services, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model/service files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other. The latest measured figures, including combined coverage across both suites, are in [verification.md](docs/verification.md). TMDB tests use fake credentials and deterministic HTTP responses; no real key or live service is needed.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
 - GitHub Actions is configured to run the checks when the branch is pushed or opened as a pull request. A local run does not imply a remote workflow has run.
@@ -163,11 +165,13 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 | `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                                                  |
 | `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                                                |
 | `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.                                |
+| `DELETE /groups/:id/membership`                       | Leave the group.                                                                      |
 | `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.                             |
 | `POST /groups/:id/suggestions`                        | Suggest a title to the group.                                                         |
 | `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.                            |
 | `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).                                          |
 | `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                                                |
+| `DELETE /groups/:id/suggestions/:id/vote`             | Clear your rating for a title.                                                        |
 | `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).                                     |
 | `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                                                 |
 | `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                                         |

@@ -1,5 +1,25 @@
 # Verification record
 
+## Iteration 2 — November 23, 2026
+
+Measured on `main` at `75d1f0d` plus the iteration 2 story and documentation update, on macOS with Ruby 4.0.10, Node 24.16.0, and SQLite.
+
+| Check                          | Result                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| RSpec                          | 339 examples passed; 99.87% line coverage (792/793), 96.20% branch coverage (279/290). |
+| Cucumber                       | 104 scenarios and 1351 steps passed, covering all 34 tagged stories.                   |
+| Cucumber coverage              | 95.96% line coverage (761/793), 78.96% branch coverage (229/290).                      |
+| Combined RSpec + Cucumber      | 99.87% line coverage (792/793), 96.21% branch coverage (279/290).                      |
+| Vitest / React Testing Library | 98 tests passed.                                                                       |
+| TypeScript, oxlint, oxfmt      | Passed.                                                                                |
+| RuboCop                        | 110 files inspected, no offenses.                                                      |
+| Brakeman, bundler-audit        | No warnings; no vulnerable dependencies.                                               |
+| GitHub Actions                 | CI passed on `main` at `75d1f0d`.                                                      |
+
+Combined coverage counts a line or branch as covered when either suite runs it. Both suites still enforce their own 90% line minimum.
+
+Production is Heroku release v13, deployed from `75d1f0d`. The release phase ran `db:prepare`, which applied the season-length and title-type migrations. `/up`, `/sign-in`, `/sign-up`, and the compiled JavaScript and CSS returned HTTP 200.
+
 ## Streaming availability — November 23, 2026
 
 The `feature/streaming-availability` branch starts from `main` commit `073d25b`. The feature was developed and verified locally on macOS with Ruby 4.0.10, Node 24.22.2, and SQLite.
@@ -99,7 +119,7 @@ The [two-user demonstration](user-stories.md#two-user-demonstration) remains the
 
 ## Deployment status
 
-The deployed app follows `main`. The watchlist is currently on `feature/watchlist` and has not been merged or deployed; its absence in production is expected. These test/story improvements do not change the deployment.
+The deployed app follows `main`; the current release is recorded in the iteration 2 section above. The record below is from iteration 1.
 
 The existing deployment record is Heroku release v5 on November 9, 2026, at https://watchtogether-w4152-0a83ade2e0ae.herokuapp.com/ (Heroku-24 stack, one Basic dyno, Heroku Postgres `essential-0`). The build installed dependencies, compiled the frontend with Vite, and ran `db:prepare` in the release phase without errors. `/up` returned HTTP 200, and the sign-in page and its JavaScript and CSS loaded. The November 9 rubric review reconfirmed those public responses and checked sign-in/registration rendering without console errors; it did not repeat the authenticated production walkthrough.
 

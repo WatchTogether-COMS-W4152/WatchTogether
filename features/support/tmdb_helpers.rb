@@ -17,6 +17,11 @@ module TmdbHelpers
       "id" => 63639, "name" => "The Expanse", "media_type" => "tv", "first_air_date" => "2015-12-14",
       "overview" => "A missing person brings a scattered crew together across the solar system.",
       "poster_path" => "/expanse.jpg", "vote_average" => 8.1, "vote_count" => 100,
+      "seasons" => [
+        { "season_number" => 0, "episode_count" => 3 },
+        { "season_number" => 1, "episode_count" => 10 },
+        { "season_number" => 2, "episode_count" => 13 }
+      ],
       "content_ratings" => { "results" => [ { "iso_3166_1" => "US", "rating" => "TV-14" } ] }
     },
     [ "tv", 329865 ] => {

@@ -29,6 +29,8 @@ When(/^I add catalogue (movie|TV show) (\d+) to the (suggestions|watchlist) for 
   visit_page(:post, path, fields)
   if destination == "suggestions"
     Suggestion.for_group(group_id(group_name)).each { |suggestion| remember_suggestion(suggestion.title, group_name) }
+  else
+    WatchlistItem.where(group_id: group_id(group_name)).each { |item| remember_watchlist_item(item.title, group_name) }
   end
 end
 
