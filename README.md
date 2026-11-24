@@ -149,37 +149,37 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 
 ## Main web routes
 
-| Route                                                 | Purpose                                                       |
-| ----------------------------------------------------- | ------------------------------------------------------------- |
-| `GET/POST /sign-up`                                   | Registration; automatically signs in.                         |
-| `GET/POST /sign-in`                                   | Sign-in form and authentication.                              |
-| `DELETE /session`                                     | Revoke the current session and sign out.                      |
-| `GET/PATCH /profile`                                  | Read profile and update display name.                         |
-| `GET /`, `GET /groups`                                | List the current user's groups.                               |
-| `GET /groups/new`, `POST /groups`                     | Create a private group.                                       |
-| `GET/POST /groups/join`                               | Paste an invitation code and join.                            |
-| `GET /groups/:id`                                     | Member-only details, with owner-only invitation controls.     |
-| `DELETE /groups/:id`                                  | Owner-only deletion of the group and its memberships.         |
-| `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                          |
-| `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                        |
-| `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.        |
-| `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.     |
-| `POST /groups/:id/suggestions`                        | Suggest a title to the group.                                 |
-| `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.    |
-| `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).                  |
-| `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                        |
-| `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).             |
-| `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                         |
-| `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                 |
-| `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                    |
+| Route                                                 | Purpose                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET/POST /sign-up`                                   | Registration; automatically signs in.                                                 |
+| `GET/POST /sign-in`                                   | Sign-in form and authentication.                                                      |
+| `DELETE /session`                                     | Revoke the current session and sign out.                                              |
+| `GET/PATCH /profile`                                  | Read profile and update display name.                                                 |
+| `GET /`, `GET /groups`                                | List the current user's groups.                                                       |
+| `GET /groups/new`, `POST /groups`                     | Create a private group.                                                               |
+| `GET/POST /groups/join`                               | Paste an invitation code and join.                                                    |
+| `GET /groups/:id`                                     | Member-only details, with owner-only invitation controls.                             |
+| `DELETE /groups/:id`                                  | Owner-only deletion of the group and its memberships.                                 |
+| `POST /groups/:id/invitation/reset`                   | Replace the owner's invitation code.                                                  |
+| `POST /groups/:id/members/:user_id/promote`           | Make an existing member another owner.                                                |
+| `DELETE /groups/:id/members/:user_id`                 | Remove another member and replace the invitation code.                                |
+| `GET /groups/:id/suggestions`                         | Member-only ranked suggestions with the viewer's ratings.                             |
+| `POST /groups/:id/suggestions`                        | Suggest a title to the group.                                                         |
+| `POST /groups/:id/suggestions/:id/watchlist`          | Copy a suggestion to the watchlist without changing votes.                            |
+| `DELETE /groups/:id/suggestions/:id`                  | Remove a title (its suggester or any owner).                                          |
+| `PUT /groups/:id/suggestions/:id/vote`                | Set or change your rating for a title.                                                |
+| `GET /groups/:id/watchlist_items`                     | View the group's shared watchlist (members only).                                     |
+| `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                                                 |
+| `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                                         |
+| `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                                            |
 | `GET /groups/:id/watchlist_items/:id`                 | A title's page: streaming availability, episode progress and spoiler-safe discussion. |
-| `PUT /groups/:id/watchlist_items/:id/progress`        | Set your last watched episode, or advance with `next=1`.      |
-| `DELETE /groups/:id/watchlist_items/:id/progress`     | Clear your episode progress for a show.                       |
-| `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                       |
-| `DELETE /groups/:id/watchlist_items/:id/comments/:id` | Delete a comment (its author or any owner).                   |
-| `GET /groups/:id/catalog/search?q=...`                | Member-only movie and TV autocomplete.                        |
-| `GET /groups/:id/catalog/:media_type/:tmdb_id`        | Member-only canonical title preview and age certification.    |
-| `GET /up`                                             | Public Rails health endpoint.                                 |
+| `PUT /groups/:id/watchlist_items/:id/progress`        | Set your last watched episode, or advance with `next=1`.                              |
+| `DELETE /groups/:id/watchlist_items/:id/progress`     | Clear your episode progress for a show.                                               |
+| `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                                               |
+| `DELETE /groups/:id/watchlist_items/:id/comments/:id` | Delete a comment (its author or any owner).                                           |
+| `GET /groups/:id/catalog/search?q=...`                | Member-only movie and TV autocomplete.                                                |
+| `GET /groups/:id/catalog/:media_type/:tmdb_id`        | Member-only canonical title preview and age certification.                            |
+| `GET /up`                                             | Public Rails health endpoint.                                                         |
 
 Successful form submissions redirect to a page. Validation errors return through Inertia to their form fields. Signed-out or expired sessions return to sign-in, inaccessible groups return 404, and a member attempting an owner-only action receives 403.
 

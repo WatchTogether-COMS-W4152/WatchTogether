@@ -137,8 +137,8 @@ For US23–US26, signed-out visitors must sign in, outsiders and removed members
 
 ## Streaming availability user story
 
-| Story | User need | Executable coverage |
-| --- | --- | --- |
+| Story                                  | User need                                                                                                                     | Executable coverage                                                                                                                                                                                                                                                                             |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **US31 — Find where to watch a title** | As a group member, I can see where a movie or TV show is available to watch so that my group can plan our next watch session. | `@US31`, [watch_providers.feature](../features/watch_providers.feature); [TMDB service tests](../spec/services/tmdb_client_spec.rb), [watchlist detail request tests](../spec/requests/watchlist_item_show_spec.rb), [provider component tests](../app/frontend/test/watch-providers.test.tsx). |
 
 Acceptance criteria for **US31**:

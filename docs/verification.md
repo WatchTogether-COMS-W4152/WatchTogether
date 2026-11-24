@@ -4,15 +4,15 @@
 
 The `feature/streaming-availability` branch starts from `main` commit `073d25b`. The feature was developed and verified locally on macOS with Ruby 4.0.10, Node 24.22.2, and SQLite.
 
-| Check | Result |
-| --- | --- |
-| RSpec | 312 examples passed; 99.85% line coverage (667/668), 96.90% branch coverage (219/226). |
-| Cucumber | 95 scenarios and 1222 steps passed, including four new scenarios tagged US31. |
-| Cucumber coverage | 95.80% line coverage (640/668), 79.20% branch coverage (179/226). |
-| Vitest / React Testing Library | 91 tests passed, including seven new streaming availability component tests. |
-| TypeScript / frontend lint | Passed; no warnings or errors. |
-| RuboCop | All modified Ruby files passed with no offenses. |
-| Git diff | No whitespace errors in committed changes. |
+| Check                          | Result                                                                                 |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| RSpec                          | 312 examples passed; 99.85% line coverage (667/668), 96.90% branch coverage (219/226). |
+| Cucumber                       | 95 scenarios and 1222 steps passed, including four new scenarios tagged US31.          |
+| Cucumber coverage              | 95.80% line coverage (640/668), 79.20% branch coverage (179/226).                      |
+| Vitest / React Testing Library | 91 tests passed, including seven new streaming availability component tests.           |
+| TypeScript / frontend lint     | Passed; no warnings or errors.                                                         |
+| RuboCop                        | All modified Ruby files passed with no offenses.                                       |
+| Git diff                       | No whitespace errors in committed changes.                                             |
 
 Streaming availability adds six service tests, five request tests, seven frontend tests, and four Cucumber scenarios. All existing automated tests continued to pass.
 
