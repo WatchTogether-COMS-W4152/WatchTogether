@@ -3,6 +3,7 @@ import { useForm, usePage } from "@inertiajs/react";
 import Avatar from "../../components/avatar";
 import Field, { FormError } from "../../components/field";
 import Layout, { PageHeader } from "../../components/layout";
+import { TmdbAttribution } from "../../components/media-details";
 
 export default function Profile() {
   const { auth } = usePage().props;
@@ -44,6 +45,7 @@ export default function Profile() {
           </div>
         </form>
       </section>
+      <TmdbAttribution />
     </Layout>
   );
 }

@@ -5,7 +5,7 @@ import EpisodeDiscussionSection from "../../components/episode-discussion";
 import EpisodeProgressSection from "../../components/episode-progress";
 import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
-import { Poster, TmdbAttribution } from "../../components/media-details";
+import { Poster } from "../../components/media-details";
 import { mediaFacts, type MediaMetadata } from "../../types/catalog";
 
 export type WatchlistItemDetails = MediaMetadata & {
@@ -78,7 +78,6 @@ export default function WatchlistItemPage({
           onConfirm={() => router.delete(path, requestOptions)}
         />
       </section>
-      {item.tmdb_id && <TmdbAttribution />}
     </Layout>
   );
 }

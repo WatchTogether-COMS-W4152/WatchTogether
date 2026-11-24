@@ -4,7 +4,7 @@ import { useState } from "react";
 import AddSuggestionToWatchlist from "../../components/add-suggestion-to-watchlist";
 import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
-import { MediaMeta, SmallPoster, TmdbAttribution } from "../../components/media-details";
+import { MediaMeta, SmallPoster } from "../../components/media-details";
 import RatingButtons from "../../components/rating-buttons";
 import TitleSearch from "../../components/title-search";
 import type { CatalogTitle } from "../../types/catalog";
@@ -137,7 +137,6 @@ export default function Suggestions({
           </section>
         </div>
       </div>
-      <TmdbAttribution />
     </Layout>
   );
 }
