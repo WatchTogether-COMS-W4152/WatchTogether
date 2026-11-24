@@ -147,3 +147,52 @@ Feature: Share ownership and manage the crew
     Then I am asked to sign in
     And "Bob" has exactly one membership in "Friday Night"
     And "Bob" is an ordinary member of "Friday Night"
+
+  @US32
+  Scenario: A member leaves a group and their ratings and progress stop counting
+    Given "Alice" suggested "Spirited Away" to "Friday Night"
+    And "Bob" rated "Spirited Away" in "Friday Night" as "Love it"
+    And "Alice" added the TV show "Severance" to the watchlist for "Friday Night"
+    And "Bob" has watched "Severance" up to season 1 episode 4 in "Friday Night"
+    And I am signed in as "Bob"
+    When I leave "Friday Night"
+    Then I am told I left "Friday Night"
+    And "Bob" is not a member of "Friday Night"
+    When I view the group "Friday Night"
+    Then the group is not available to me
+    When I am signed in as "Alice"
+    And I view the suggestions for "Friday Night"
+    Then "Spirited Away" shows 0 of 1 members rated
+    When I view "Severance" in "Friday Night"
+    Then the progress for "Severance" in "Friday Night" shows:
+      | Alice | Not started |  |
+
+  @US32
+  Scenario: The last owner must hand over ownership before leaving
+    Given I am signed in as "Alice"
+    When I leave "Friday Night"
+    Then I am warned "Make someone else an owner before you leave."
+    And "Alice" has exactly one membership in "Friday Night"
+    When I make "Bob" an owner of "Friday Night"
+    And I leave "Friday Night"
+    Then I am told I left "Friday Night"
+    When I am signed in as "Bob"
+    And I view the group "Friday Night"
+    Then the group has these owners:
+      | Bob |
+
+  @US32
+  Scenario: The only member is asked to delete the group instead of leaving
+    Given "Carol" has an account
+    And "Carol" owns a group named "Solo"
+    And I am signed in as "Carol"
+    When I leave "Solo"
+    Then I am warned "You're the only member. Delete the group instead."
+    And "Carol" has exactly one membership in "Solo"
+
+  @US32
+  Scenario: Visitors must sign in before leaving a group
+    Given I am signed out
+    When I leave "Friday Night"
+    Then I am asked to sign in
+    And "Bob" has exactly one membership in "Friday Night"

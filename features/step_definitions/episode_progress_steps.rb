@@ -65,3 +65,19 @@ end
 Then("progress details contain no emails or invitation codes") do
   expect(nested_keys(props.fetch("episode_progress"))).not_to include("email", "invitation_code", "invite_code")
 end
+
+Then("I see the error {string} for {string}") do |message, field|
+  expect(props.fetch("errors").fetch(field)).to eq(message).or include(message)
+end
+
+Then("I am told I've watched every episode") do
+  expect(props.dig("flash", "notice")).to eq("You've watched every episode.")
+end
+
+Then("the group has finished the show") do
+  expect(props.fetch("episode_progress").fetch("finished")).to be(true)
+end
+
+Then("the group has not finished the show") do
+  expect(props.fetch("episode_progress").fetch("finished")).to be(false)
+end

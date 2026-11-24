@@ -123,3 +123,45 @@ Feature: Tracking episode progress together
     Then the progress for "Severance" in "Friday Night" shows:
       | Alice | Not started |  |
       | Bob   | Not started |  |
+
+  @US34 @tmdb
+  Scenario: Episode counts from TMDB carry progress into the next season and stop at the finale
+    Given the TMDB catalogue is available
+    And I am signed in as "Alice"
+    When I add catalogue TV show 63639 to the watchlist for "Friday Night"
+    And I record that I watched "The Expanse" up to season "1" episode "10" in "Friday Night"
+    Then I am told I've watched up to "S1 E10"
+    When I mark the next episode of "The Expanse" as watched in "Friday Night"
+    Then I am told I've watched up to "S2 E1"
+    When I record that I watched "The Expanse" up to season "3" episode "1" in "Friday Night"
+    Then I see the error "This show has 2 seasons." for "season"
+    And my progress for "The Expanse" in "Friday Night" is "S2 E1"
+    When I record that I watched "The Expanse" up to season "1" episode "11" in "Friday Night"
+    Then I see the error "Season 1 has 10 episodes." for "episode"
+    When I record that I watched "The Expanse" up to season "2" episode "13" in "Friday Night"
+    And I mark the next episode of "The Expanse" as watched in "Friday Night"
+    Then I am told I've watched every episode
+    And my progress for "The Expanse" in "Friday Night" is "S2 E13"
+
+  @US34 @tmdb
+  Scenario: The group sees when everyone has finished a show
+    Given the TMDB catalogue is available
+    And I am signed in as "Alice"
+    When I add catalogue TV show 63639 to the watchlist for "Friday Night"
+    And "Bob" has watched "The Expanse" up to season 2 episode 13 in "Friday Night"
+    And I view "The Expanse" in "Friday Night"
+    Then the group has not finished the show
+    And the next episode for everyone is "S1 E1"
+    Given "Alice" has watched "The Expanse" up to season 2 episode 12 in "Friday Night"
+    When I view "The Expanse" in "Friday Night"
+    Then the next episode for everyone is "S2 E13"
+    Given "Alice" has watched "The Expanse" up to season 2 episode 13 in "Friday Night"
+    When I view "The Expanse" in "Friday Night"
+    Then the group has finished the show
+
+  @US34
+  Scenario: Typed-in shows have no episode counts, so progress stays in the same season
+    Given "Bob" has watched "Severance" up to season 1 episode 9 in "Friday Night"
+    And I am signed in as "Bob"
+    When I mark the next episode of "Severance" as watched in "Friday Night"
+    Then I am told I've watched up to "S1 E10"

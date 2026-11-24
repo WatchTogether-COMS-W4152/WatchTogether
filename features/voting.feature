@@ -65,6 +65,35 @@ Feature: Decide what to watch together
       | Spirited Away | -2 |
     And "Bob" has exactly one rating for "Spirited Away" in "Friday Night"
 
+  @US33
+  Scenario: A member takes back their rating
+    Given "Alice" suggested "Spirited Away" to "Friday Night"
+    And "Alice" rated "Spirited Away" in "Friday Night" as "Maybe"
+    And "Bob" rated "Spirited Away" in "Friday Night" as "Love it"
+    And I am signed in as "Bob"
+    When I remove my rating for "Spirited Away" in "Friday Night"
+    Then I am told my rating was removed
+    And I have not rated "Spirited Away"
+    And "Spirited Away" shows 1 of 2 members rated
+    And the suggestions for "Friday Night" are ranked:
+      | Spirited Away | 1 |
+    When I remove my rating for "Spirited Away" in "Friday Night"
+    Then I am told my rating was removed
+    And "Spirited Away" shows 1 of 2 members rated
+    When I am signed in as "Alice"
+    And I view the suggestions for "Friday Night"
+    Then my rating for "Spirited Away" is "Maybe"
+
+  @US33
+  Scenario: Outsiders cannot remove a group member's rating
+    Given "Alice" suggested "Spirited Away" to "Friday Night"
+    And "Bob" rated "Spirited Away" in "Friday Night" as "Love it"
+    And "Mallory" has an account
+    And I am signed in as "Mallory"
+    When I remove my rating for "Spirited Away" in "Friday Night"
+    Then the group is not available to me
+    And "Bob" has exactly one rating for "Spirited Away" in "Friday Night"
+
   @US13
   Scenario: Only the three rating options are accepted
     Given "Alice" suggested "Spirited Away" to "Friday Night"
