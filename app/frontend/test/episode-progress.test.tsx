@@ -33,7 +33,9 @@ const progress: EpisodeProgressData = {
     { id: 3, display_name: "Carol", position: null, caught_up: false },
   ],
   my_position: { season: 2, episode: 1 },
+  my_next_episode: { season: 2, episode: 2 },
   next_episode: { season: 1, episode: 1 },
+  finished: false,
   everyone_caught_up: false,
 };
 
@@ -75,7 +77,9 @@ describe("seeing where everyone is", () => {
     renderPanel({
       members: [{ id: 2, display_name: "Bob", position: null, caught_up: false }],
       my_position: null,
+      my_next_episode: { season: 1, episode: 1 },
       next_episode: { season: 1, episode: 1 },
+      finished: false,
       everyone_caught_up: false,
     });
     expect(screen.getByText("Nobody has started yet. Start together with S1 E1.")).toBeVisible();
@@ -92,10 +96,30 @@ describe("seeing where everyone is", () => {
         { id: 2, display_name: "Bob", position: { season: 1, episode: 5 }, caught_up: true },
       ],
       my_position: { season: 1, episode: 5 },
+      my_next_episode: { season: 1, episode: 6 },
       next_episode: { season: 1, episode: 6 },
+      finished: false,
       everyone_caught_up: true,
     });
     expect(screen.getByText("Everyone is caught up. Next up together: S1 E6.")).toBeVisible();
+  });
+
+  it("rolls over to the next season and stops after the last episode", () => {
+    const { unmount } = renderPanel({ ...progress, my_next_episode: { season: 3, episode: 1 } });
+    expect(screen.getByRole("button", { name: "Watched next episode (S3 E1)" })).toBeVisible();
+    unmount();
+    renderPanel({
+      members: [
+        { id: 2, display_name: "Bob", position: { season: 4, episode: 9 }, caught_up: true },
+      ],
+      my_position: { season: 4, episode: 9 },
+      my_next_episode: null,
+      next_episode: null,
+      finished: true,
+      everyone_caught_up: true,
+    });
+    expect(screen.getByText("Everyone has finished the show.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Watched next episode/ })).not.toBeInTheDocument();
   });
 });
 
@@ -148,7 +172,7 @@ describe("recording my progress", () => {
 
   it("starts at the first episode when I have not started", async () => {
     const user = userEvent.setup();
-    renderPanel({ ...progress, my_position: null });
+    renderPanel({ ...progress, my_position: null, my_next_episode: { season: 1, episode: 1 } });
     await user.click(screen.getByRole("button", { name: "Watched next episode (S1 E1)" }));
     expect(putRequest.mock.calls[0][1]).toEqual({ next: "1" });
     expect(screen.getByLabelText("Episode")).toHaveValue(1);

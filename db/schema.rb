@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_000000) do
   create_table "episode_comments", force: :cascade do |t|
     t.integer "watchlist_item_id", null: false
     t.integer "user_id"
@@ -122,6 +122,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_000100) do
     t.string "age_rating"
     t.string "poster_path"
     t.integer "source_suggestion_id"
+    t.json "season_lengths"
+    t.datetime "season_lengths_checked_at"
     t.index ["group_id", "media_type", "tmdb_id"], name: "index_watchlist_items_on_group_id_and_media_type_and_tmdb_id", unique: true, where: "tmdb_id IS NOT NULL"
     t.index ["group_id"], name: "index_watchlist_items_on_group_id"
     t.index ["source_suggestion_id"], name: "index_watchlist_items_on_source_suggestion_id", unique: true

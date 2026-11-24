@@ -19,7 +19,9 @@ module WatchlistItems
             }
           end,
           my_position: mine&.position,
+          my_next_episode: mine&.position ? item.position_after(mine.position) : GroupProgress::FIRST_EPISODE,
           next_episode: progress.next_episode,
+          finished: progress.finished?,
           everyone_caught_up: progress.everyone_caught_up?
         }
       }

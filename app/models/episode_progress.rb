@@ -6,6 +6,7 @@ class EpisodeProgress < ApplicationRecord
   validates :user_id, uniqueness: { scope: :watchlist_item_id }
   validate :user_belongs_to_group
   validate :watchlist_item_is_episodic
+  validate :position_exists_in_show
 
   def self.compare(a, b)
     [ a.fetch(:season), a.fetch(:episode) ] <=> [ b.fetch(:season), b.fetch(:episode) ]
@@ -26,6 +27,19 @@ class EpisodeProgress < ApplicationRecord
     return if watchlist_item.group.memberships.exists?(user_id: user_id)
 
     errors.add(:user, "must be a member of the group")
+  end
+
+  def position_exists_in_show
+    return unless watchlist_item && season.to_i >= 1 && episode.to_i >= 1
+
+    lengths = watchlist_item.season_lengths
+    return unless lengths
+
+    if season > lengths.size
+      errors.add(:season, :out_of_range, message: "This show has #{ActionController::Base.helpers.pluralize(lengths.size, "season")}.")
+    elsif episode > lengths[season - 1]
+      errors.add(:episode, :out_of_range, message: "Season #{season} has #{ActionController::Base.helpers.pluralize(lengths[season - 1], "episode")}.")
+    end
   end
 
   def watchlist_item_is_episodic

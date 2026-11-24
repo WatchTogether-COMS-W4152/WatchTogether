@@ -68,4 +68,52 @@ RSpec.describe WatchlistItem, type: :model do
       }.to raise_error(ActiveRecord::NotNullViolation)
     end
   end
+
+  describe "season lengths" do
+    let(:client) { instance_double(TmdbClient) }
+
+    before { allow(TmdbClient).to receive(:new).and_return(client) }
+
+    it "fetches season lengths for a TMDB show once and stores them" do
+      allow(client).to receive(:season_lengths).with(66_732).and_return([ 8, 9 ])
+      show = group.watchlist_items.create!(title: "Stranger Things", tmdb_id: 66_732, media_type: "tv")
+
+      expect(show.season_lengths).to eq([ 8, 9 ])
+      expect(show.reload.season_lengths).to eq([ 8, 9 ])
+      expect(client).to have_received(:season_lengths).once
+    end
+
+    it "refreshes stored lengths after a day and keeps them when TMDB is down" do
+      allow(client).to receive(:season_lengths).and_raise(TmdbClient::Unavailable)
+      show = group.watchlist_items.create!(title: "Stranger Things", tmdb_id: 66_732, media_type: "tv",
+        season_lengths: [ 8 ], season_lengths_checked_at: 2.days.ago)
+
+      expect(show.season_lengths).to eq([ 8 ])
+      expect(show.season_lengths).to eq([ 8 ])
+      expect(client).to have_received(:season_lengths).once
+    end
+
+    it "never asks TMDB about custom titles" do
+      allow(client).to receive(:season_lengths)
+      show = group.watchlist_items.create!(title: "Home videos")
+
+      expect(show.season_lengths).to be_nil
+      expect(client).not_to have_received(:season_lengths)
+    end
+
+    it "steps through episodes, rolls over to the next season, and stops at the end" do
+      show = group.watchlist_items.create!(title: "Stranger Things", tmdb_id: 66_732, media_type: "tv",
+        season_lengths: [ 8, 9 ], season_lengths_checked_at: Time.current)
+
+      expect(show.position_after(season: 1, episode: 7)).to eq(season: 1, episode: 8)
+      expect(show.position_after(season: 1, episode: 8)).to eq(season: 2, episode: 1)
+      expect(show.position_after(season: 2, episode: 9)).to be_nil
+    end
+
+    it "counts up without limit when the lengths are unknown" do
+      show = group.watchlist_items.create!(title: "Home videos")
+
+      expect(show.position_after(season: 1, episode: 60)).to eq(season: 1, episode: 61)
+    end
+  end
 end

@@ -50,6 +50,21 @@ class TmdbClient
     end
   end
 
+  def season_lengths(tmdb_id)
+    raise InvalidSelection, "Choose a valid movie or TV show." unless tmdb_id.to_s.match?(/\A[1-9]\d{0,9}\z/)
+
+    @cache.fetch([ "tmdb", "season_lengths", tmdb_id.to_s ], expires_in: 12.hours) do
+      seasons = request("tv/#{tmdb_id}")["seasons"]
+      counts = (seasons.is_a?(Array) ? seasons : []).each_with_object({}) do |season, lengths|
+        next unless season.is_a?(Hash)
+
+        number, count = season.values_at("season_number", "episode_count")
+        lengths[number] = count if number.is_a?(Integer) && number.positive? && count.is_a?(Integer) && count.positive?
+      end
+      (1..counts.size).map { |number| counts[number] }.take_while(&:itself).presence
+    end
+  end
+
   def self.poster_url(path)
     "https://image.tmdb.org/t/p/w342#{path}" if path.is_a?(String) && path.match?(/\A\/[A-Za-z0-9_-]+\.(jpg|png|webp)\z/i)
   end

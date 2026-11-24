@@ -8,6 +8,7 @@ class GroupProgress
   end
 
   def initialize(watchlist_item, members: watchlist_item.group.members.to_a)
+    @item = watchlist_item
     @members = members
     member_ids = members.to_set(&:id)
     @positions = watchlist_item.episode_progresses
@@ -28,8 +29,11 @@ class GroupProgress
   def next_episode
     return FIRST_EPISODE if @members.empty? || @positions.size < @members.size
 
-    behind = @positions.values.min { |a, b| EpisodeProgress.compare(a, b) }
-    { season: behind[:season], episode: behind[:episode] + 1 }
+    @item.position_after(@positions.values.min { |a, b| EpisodeProgress.compare(a, b) })
+  end
+
+  def finished?
+    started? && next_episode.nil?
   end
 
   def started?

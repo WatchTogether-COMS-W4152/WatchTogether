@@ -37,7 +37,7 @@ export function EpisodeProgressPanel({
     episode: mine ? String(mine.episode) : "",
   });
   const started = progress.members.some((member) => member.position);
-  const advanceTo = mine ? { season: mine.season, episode: mine.episode + 1 } : null;
+  const advanceTo = progress.my_next_episode;
 
   function save(data: { season: string; episode: string }) {
     form.transform(() => data);
@@ -50,9 +50,11 @@ export function EpisodeProgressPanel({
       <p className="progress-next">
         {!started
           ? "Nobody has started yet. Start together with S1 E1."
-          : progress.everyone_caught_up
-            ? `Everyone is caught up. Next up together: ${formatEpisode(progress.next_episode)}.`
-            : `Next episode for everyone: ${formatEpisode(progress.next_episode)}`}
+          : !progress.next_episode
+            ? "Everyone has finished the show."
+            : progress.everyone_caught_up
+              ? `Everyone is caught up. Next up together: ${formatEpisode(progress.next_episode)}.`
+              : `Next episode for everyone: ${formatEpisode(progress.next_episode)}`}
       </p>
 
       <ul className="member-list" aria-label="Where everyone is">
@@ -113,19 +115,23 @@ export function EpisodeProgressPanel({
           <button className="button button-primary" type="submit" disabled={form.processing}>
             Save progress
           </button>
-          <button
-            className="button button-secondary"
-            type="button"
-            disabled={form.processing}
-            onClick={() => {
-              const next = advanceTo ?? { season: 1, episode: 1 };
-              form.setData({ season: String(next.season), episode: String(next.episode) });
-              form.transform(() => ({ next: "1" }));
-              form.put(path, { preserveScroll: true });
-            }}
-          >
-            Watched next episode{advanceTo ? ` (${formatEpisode(advanceTo)})` : " (S1 E1)"}
-          </button>
+          {advanceTo && (
+            <button
+              className="button button-secondary"
+              type="button"
+              disabled={form.processing}
+              onClick={() => {
+                form.setData({
+                  season: String(advanceTo.season),
+                  episode: String(advanceTo.episode),
+                });
+                form.transform(() => ({ next: "1" }));
+                form.put(path, { preserveScroll: true });
+              }}
+            >
+              Watched next episode ({formatEpisode(advanceTo)})
+            </button>
+          )}
           {mine && (
             <button
               className="text-button danger-text"
