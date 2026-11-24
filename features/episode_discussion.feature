@@ -10,7 +10,7 @@ Feature: Spoiler-safe episode discussion
     And "David" owns a group named "Roommates"
     And "Larissa" joined "Roommates" using an invitation
     And "Sam" joined "Roommates" using an invitation
-    And "David" added "Severance" to the watchlist for "Roommates"
+    And "David" added the TV show "Severance" to the watchlist for "Roommates"
 
   @US27
   Scenario: Members discuss an episode they have all watched

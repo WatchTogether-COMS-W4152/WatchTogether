@@ -5,6 +5,7 @@ import AddSuggestionToWatchlist from "../../components/add-suggestion-to-watchli
 import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
 import { MediaMeta, SmallPoster } from "../../components/media-details";
+import MediaKind from "../../components/media-kind";
 import RatingButtons from "../../components/rating-buttons";
 import TitleSearch from "../../components/title-search";
 import type { CatalogTitle } from "../../types/catalog";
@@ -23,7 +24,7 @@ export default function Suggestions({
   member_count: number;
   suggestions: Suggestion[];
 }) {
-  const form = useForm({ title: "" });
+  const form = useForm({ title: "", manual_media_type: "" });
   const [selected, setSelected] = useState<CatalogTitle | null>(null);
   const removal = useForm({});
 
@@ -48,7 +49,11 @@ export default function Suggestions({
               event.preventDefault();
               form.transform((data) =>
                 selected
-                  ? { ...data, tmdb_id: selected.tmdb_id, media_type: selected.media_type }
+                  ? {
+                      title: data.title,
+                      tmdb_id: selected.tmdb_id,
+                      media_type: selected.media_type,
+                    }
                   : data,
               );
               form.post(`/groups/${group.id}/suggestions`, {
@@ -75,6 +80,13 @@ export default function Suggestions({
               }}
               error={form.errors.title}
             />
+            {!selected && form.data.title.trim() && (
+              <MediaKind
+                value={form.data.manual_media_type}
+                disabled={form.processing}
+                onChange={(kind) => form.setData("manual_media_type", kind)}
+              />
+            )}
             <div className="row">
               <button className="btn btn-primary" type="submit" disabled={form.processing}>
                 {form.processing ? "Adding…" : "Add suggestion"}

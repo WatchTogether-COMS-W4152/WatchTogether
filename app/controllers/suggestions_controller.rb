@@ -8,9 +8,10 @@ class SuggestionsController < InertiaController
 
   def index
     is_owner = @group.owner?(current_user)
-    watchlist = @group.watchlist_items.pluck(:source_suggestion_id, :media_type, :tmdb_id)
+    watchlist = @group.watchlist_items.pluck(:source_suggestion_id, :media_type, :tmdb_id, :title)
     source_ids = watchlist.map(&:first).compact.to_set
-    catalog_ids = watchlist.filter_map { |_, type, id| [ type, id ] if id }.to_set
+    catalog_ids = watchlist.filter_map { |_, type, id, _| [ type, id ] if id }.to_set
+    manual_titles = watchlist.filter_map { |_, _, id, title| title.downcase unless id }.to_set
     suggestions = Suggestion.ranked_for(@group, viewer: current_user).map do |suggestion|
       suggestion.as_json(only: [ :id, :title ]).merge(suggestion.catalog_json).merge(
         score: suggestion.score.to_i,
@@ -18,7 +19,8 @@ class SuggestionsController < InertiaController
         my_rating: suggestion.viewer_rating,
         suggested_by: suggestion.suggested_by&.display_name,
         can_remove: is_owner || suggestion.suggested_by_id == current_user.id,
-        in_watchlist: source_ids.include?(suggestion.id) || catalog_ids.include?([ suggestion.media_type, suggestion.tmdb_id ])
+        in_watchlist: source_ids.include?(suggestion.id) || catalog_ids.include?([ suggestion.media_type, suggestion.tmdb_id ]) ||
+          (suggestion.tmdb_id.nil? && manual_titles.include?(suggestion.title.downcase))
       )
     end
     render inertia: "suggestions/index", props: {
@@ -45,7 +47,7 @@ class SuggestionsController < InertiaController
     suggestion = Suggestion.for_group(@group).find(params[:id])
     identity = suggestion.tmdb_id ? { tmdb_id: suggestion.tmdb_id, media_type: suggestion.media_type } : { source_suggestion_id: suggestion.id }
     @group.with_lock do
-      unless @group.watchlist_items.exists?(identity)
+      unless @group.watchlist_items.exists?(identity) || (suggestion.tmdb_id.nil? && @group.watchlist_items.manual_titled(suggestion.title).exists?)
         @group.watchlist_items.create!(suggestion.catalog_attributes.merge(source_suggestion: suggestion))
       end
     end
@@ -55,7 +57,7 @@ class SuggestionsController < InertiaController
   rescue ActiveRecord::RecordInvalid
     # A direct watchlist addition may finish between our existence check and
     # model validation. Treat only that duplicate as a successful transfer.
-    raise unless @group.watchlist_items.exists?(identity)
+    raise unless @group.watchlist_items.exists?(identity) || @group.watchlist_items.manual_titled(suggestion.title).exists?
 
     redirect_to group_suggestions_path(@group), notice: "That title is already on your watchlist.", status: :see_other
   end

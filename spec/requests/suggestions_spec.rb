@@ -74,7 +74,7 @@ RSpec.describe "Group suggestions", type: :request do
 
       expect {
         post group_suggestions_path(group), params: {
-          title: "  Spirited   Away ", group_id: other_group.id, suggested_by_id: owner.id, title_key: "x"
+          manual_media_type: "movie", title: "  Spirited   Away ", group_id: other_group.id, suggested_by_id: owner.id, title_key: "x"
         }
       }.to change(Suggestion, :count).by(1)
 
@@ -93,7 +93,7 @@ RSpec.describe "Group suggestions", type: :request do
 
       [ "   ", "x" * 121, "spirited AWAY" ].each do |title|
         expect {
-          post group_suggestions_path(group), params: { title: title }
+          post group_suggestions_path(group), params: { manual_media_type: "movie", title: title }
         }.not_to change(Suggestion, :count)
         expect(response).to redirect_to(group_suggestions_path(group))
         follow_redirect!
@@ -108,7 +108,7 @@ RSpec.describe "Group suggestions", type: :request do
       sign_in(member)
       allow_any_instance_of(Suggestion).to receive(:save).and_raise(ActiveRecord::RecordNotUnique)
 
-      post group_suggestions_path(group), params: { title: "Heat" }
+      post group_suggestions_path(group), params: { manual_media_type: "movie", title: "Heat" }
 
       expect(response).to redirect_to(group_suggestions_path(group))
       follow_redirect!
@@ -116,20 +116,20 @@ RSpec.describe "Group suggestions", type: :request do
     end
 
     it "does not let outsiders or signed-out visitors suggest titles" do
-      post group_suggestions_path(group), params: { title: "Heat" }
+      post group_suggestions_path(group), params: { manual_media_type: "movie", title: "Heat" }
       expect(response).to redirect_to(sign_in_path)
 
       sign_in(outsider)
-      post group_suggestions_path(group), params: { title: "Heat" }
+      post group_suggestions_path(group), params: { manual_media_type: "movie", title: "Heat" }
       expect(response).to have_http_status(:not_found)
       expect(Suggestion.count).to eq(0)
     end
 
     it "limits how quickly one member can add suggestions" do
       sign_in(member)
-      30.times { |index| post group_suggestions_path(group), params: { title: "Film #{index}" } }
+      30.times { |index| post group_suggestions_path(group), params: { manual_media_type: "movie", title: "Film #{index}" } }
 
-      post group_suggestions_path(group), params: { title: "One too many" }
+      post group_suggestions_path(group), params: { manual_media_type: "movie", title: "One too many" }
 
       expect(response).to have_http_status(:too_many_requests)
       expect(page_props["message"]).to eq("Too many suggestions. Try again in a minute.")
@@ -141,7 +141,7 @@ RSpec.describe "Group suggestions", type: :request do
       previous = ApplicationController.allow_forgery_protection
       ApplicationController.allow_forgery_protection = true
 
-      post group_suggestions_path(group), params: { title: "Heat" }
+      post group_suggestions_path(group), params: { manual_media_type: "movie", title: "Heat" }
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(Suggestion.count).to eq(0)

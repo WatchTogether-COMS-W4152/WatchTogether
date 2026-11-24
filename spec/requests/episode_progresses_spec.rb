@@ -105,8 +105,8 @@ RSpec.describe "Episode progress", type: :request do
         expect(response).to redirect_to(group_watchlist_item_path(group, show))
         follow_redirect!
         expected = {}
-        expected["season"] = [ "Enter a season number of 1 or more." ] unless params[:season] == 1
-        expected["episode"] = [ "Enter an episode number of 1 or more." ] unless params[:episode] == 1 || params[:episode] == 2
+        expected["season"] = [ "Enter a season number from 1 to 9999." ] unless params[:season] == 1
+        expected["episode"] = [ "Enter an episode number from 1 to 9999." ] unless params[:episode] == 1 || params[:episode] == 2
         expect(page_props["errors"]).to eq(expected)
       end
       expect(my_progress.position).to eq(season: 1, episode: 4)
@@ -257,5 +257,15 @@ RSpec.describe "Episode progress", type: :request do
       expect(page_props["errors"]).to eq("episode" => [ "Season 1 has 3 episodes." ])
       expect(my_progress).to be_nil
     end
+  end
+
+  it "rejects huge numbers with a field error instead of crashing" do
+    sign_in(member)
+
+    put path, params: { season: "1", episode: "99999999999999999999" }
+    follow_redirect!
+
+    expect(page_props["errors"]).to eq("episode" => [ "Enter an episode number from 1 to 9999." ])
+    expect(my_progress).to be_nil
   end
 end

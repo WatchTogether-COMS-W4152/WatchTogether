@@ -158,8 +158,8 @@ RSpec.describe "Episode discussion", type: :request do
 
       post_comment(season: "", episode: "0", body: "Hi")
       follow_redirect!
-      expect(page_props["errors"]).to include("season" => [ "Season must be a whole number of at least 1." ])
-      expect(page_props.dig("errors", "episode")).to include("Episode must be a whole number of at least 1.")
+      expect(page_props["errors"]).to include("season" => [ "Season must be a whole number from 1 to 9999." ])
+      expect(page_props.dig("errors", "episode")).to include("Episode must be a whole number from 1 to 9999.")
       expect(EpisodeComment.count).to eq(0)
     end
 

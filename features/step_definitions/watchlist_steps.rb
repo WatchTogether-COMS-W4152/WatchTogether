@@ -1,6 +1,15 @@
+Given("{string} added the TV show {string} to the watchlist for {string}") do |viewer, title, group_name|
+  as_viewer(viewer) do
+    visit_page(:post, watchlist_path(group_name), manual_media_type: "tv", title: title)
+    expect_watchlist_page(group_name)
+    expect(props.fetch("errors", {})).to be_empty
+  end
+  remember_watchlist_item(title, group_name)
+end
+
 Given("{string} added {string} to the watchlist for {string}") do |viewer, title, group_name|
   as_viewer(viewer) do
-    visit_page(:post, watchlist_path(group_name), title: title)
+    visit_page(:post, watchlist_path(group_name), manual_media_type: "movie", title: title)
     expect_watchlist_page(group_name)
     expect(props.fetch("errors", {})).to be_empty
   end
@@ -12,20 +21,21 @@ When("I view the watchlist for {string}") do |group_name|
 end
 
 When("I add {string} to the watchlist for {string}") do |title, group_name|
-  visit_page(:post, watchlist_path(group_name), title: title)
+  visit_page(:post, watchlist_path(group_name), manual_media_type: "movie", title: title)
   remember_watchlist_item(title, group_name)
 end
 
 When("I add a watchlist title of {int} characters to {string}") do |length, group_name|
-  visit_page(:post, watchlist_path(group_name), title: "A" * length)
+  visit_page(:post, watchlist_path(group_name), manual_media_type: "movie", title: "A" * length)
 end
 
 When("I add a whitespace-only title to the watchlist for {string}") do |group_name|
-  visit_page(:post, watchlist_path(group_name), title: "   ")
+  visit_page(:post, watchlist_path(group_name), manual_media_type: "movie", title: "   ")
 end
 
 When("I change the watched status of {string} in {string}") do |title, group_name|
-  visit_page(:patch, "#{watchlist_path(group_name)}/#{watchlist_item_id(title, group_name)}")
+  id = watchlist_item_id(title, group_name)
+  visit_page(:patch, "#{watchlist_path(group_name)}/#{id}", watched: !WatchlistItem.find(id).watched)
 end
 
 When("I remove {string} from the watchlist for {string}") do |title, group_name|
@@ -33,7 +43,7 @@ When("I remove {string} from the watchlist for {string}") do |title, group_name|
 end
 
 When("I try to change {string} from {string} through the watchlist for {string}") do |title, source_group, target_group|
-  visit_page(:patch, "#{watchlist_path(target_group)}/#{watchlist_item_id(title, source_group)}")
+  visit_page(:patch, "#{watchlist_path(target_group)}/#{watchlist_item_id(title, source_group)}", watched: true)
 end
 
 When("I try to remove {string} from {string} through the watchlist for {string}") do |title, source_group, target_group|

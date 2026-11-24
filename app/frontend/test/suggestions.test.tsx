@@ -126,7 +126,7 @@ describe("suggesting a title", () => {
     await user.click(screen.getByRole("button", { name: "Add suggestion" }));
     const [url, data, options] = postRequest.mock.calls[0];
     expect(url).toBe("/groups/7/suggestions");
-    expect(data).toEqual({ title: "Spirited Away" });
+    expect(data).toEqual({ title: "Spirited Away", manual_media_type: "" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Adding…" })).toBeDisabled();

@@ -7,8 +7,8 @@ class EpisodeComment < ApplicationRecord
   normalizes :body, with: ->(body) { body.strip }
 
   validates :user, presence: true, on: :create
-  validates :season, :episode, numericality: { only_integer: true, greater_than_or_equal_to: 1,
-    message: ->(_comment, data) { "#{data[:attribute]} must be a whole number of at least 1." } }
+  validates :season, :episode, numericality: { only_integer: true, in: 1..9999,
+    message: ->(_comment, data) { "#{data[:attribute]} must be a whole number from 1 to 9999." } }
   validates :body, presence: { message: "Write something before posting." },
     length: { maximum: MAX_BODY_LENGTH, message: "Keep comments to #{MAX_BODY_LENGTH} characters or fewer." }
   validate :author_belongs_to_group, on: :create

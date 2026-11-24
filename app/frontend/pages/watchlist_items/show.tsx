@@ -65,7 +65,7 @@ export default function WatchlistItemPage({
           className={`btn btn-sm ${item.episodic ? "btn-secondary" : "btn-primary"}`}
           type="button"
           disabled={pending}
-          onClick={() => router.patch(path, {}, requestOptions)}
+          onClick={() => router.patch(path, { watched: !item.watched }, requestOptions)}
         >
           {item.watched ? "Mark as unwatched" : "Mark as watched"}
         </button>

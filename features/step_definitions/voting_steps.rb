@@ -1,6 +1,6 @@
 Given("{string} suggested {string} to {string}") do |viewer, title, group_name|
   as_viewer(viewer) do
-    visit_page(:post, suggestions_path(group_name), title: title)
+    visit_page(:post, suggestions_path(group_name), manual_media_type: "movie", title: title)
     expect(@page.fetch("component")).to eq("suggestions/index")
     expect(props.fetch("errors", {})).to be_empty
   end
@@ -15,7 +15,7 @@ Given("{string} rated {string} in {string} as {string}") do |viewer, title, grou
 end
 
 When("I suggest {string} to {string}") do |title, group_name|
-  visit_page(:post, suggestions_path(group_name), title: title)
+  visit_page(:post, suggestions_path(group_name), manual_media_type: "movie", title: title)
   remember_suggestion(title, group_name)
 end
 

@@ -207,10 +207,10 @@ describe("recording my progress", () => {
     await user.click(screen.getByRole("button", { name: "Save progress" }));
     const options = putRequest.mock.calls[0][2];
     act(() => {
-      options?.onError?.({ season: ["Enter a season number of 1 or more."] });
+      options?.onError?.({ season: ["Enter a season number from 1 to 9999."] });
       options?.onFinish?.(visit);
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a season number of 1 or more.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a season number from 1 to 9999.");
     expect(screen.getByLabelText("Season")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText("Season")).toHaveValue(0);
   });

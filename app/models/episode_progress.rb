@@ -2,7 +2,7 @@ class EpisodeProgress < ApplicationRecord
   belongs_to :watchlist_item
   belongs_to :user
 
-  validates :season, :episode, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :season, :episode, numericality: { only_integer: true, in: 1..9999 }
   validates :user_id, uniqueness: { scope: :watchlist_item_id }
   validate :user_belongs_to_group
   validate :watchlist_item_is_episodic

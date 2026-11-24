@@ -1,7 +1,7 @@
 class EpisodeProgressesController < InertiaController
   ERROR_MESSAGES = {
-    season: "Enter a season number of 1 or more.",
-    episode: "Enter an episode number of 1 or more."
+    season: "Enter a season number from 1 to 9999.",
+    episode: "Enter an episode number from 1 to 9999."
   }.freeze
 
   rate_limit to: 60, within: 1.minute, by: -> { current_user.id }, store: RATE_LIMIT_STORE,

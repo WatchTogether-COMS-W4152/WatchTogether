@@ -50,7 +50,7 @@ class WatchlistItemsController < InertiaController
   def update
     item = @group.watchlist_items.find(params[:id])
 
-    item.update!(watched: !item.watched)
+    item.update!(watched: ActiveModel::Type::Boolean.new.cast(params.fetch(:watched)))
 
     redirect_to group_watchlist_items_path(@group),
       notice: "Watchlist updated.",

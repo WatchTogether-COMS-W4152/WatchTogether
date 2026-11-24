@@ -6,16 +6,19 @@ class WatchlistItem < ApplicationRecord
   has_many :episode_progresses, dependent: :delete_all
   has_many :episode_comments, dependent: :delete_all
 
+  normalizes :title, with: ->(title) { title.squish }
+
   validates :title, presence: true, length: { maximum: 120 }, unless: :tmdb_id?
   validates :title, presence: true, length: { maximum: 500 }, if: :tmdb_id?
   validate :catalog_title_unique_in_group
 
   SEASON_LENGTHS_TTL = 1.day
 
-  scope :episodic, -> { where.not(media_type: "movie").or(where(media_type: nil)) }
+  scope :manual_titled, ->(title) { where(tmdb_id: nil).where("LOWER(title) = ?", title.to_s.squish.downcase) }
+  scope :episodic, -> { where("COALESCE(media_type, manual_media_type, 'tv') != 'movie'") }
 
   def episodic?
-    media_type != "movie"
+    (media_type || manual_media_type) != "movie"
   end
 
   def season_lengths
@@ -73,8 +76,11 @@ class WatchlistItem < ApplicationRecord
   end
 
   def catalog_title_unique_in_group
-    return unless tmdb_id && group_id
-    return unless self.class.where(group_id: group_id, tmdb_id: tmdb_id, media_type: media_type).where.not(id: id).exists?
+    return unless group_id
+
+    others = self.class.where(group_id: group_id).where.not(id: id)
+    others = tmdb_id ? others.where(tmdb_id: tmdb_id, media_type: media_type) : others.manual_titled(title)
+    return unless others.exists?
 
     errors.add(:title, "is already on this group's watchlist")
   end
