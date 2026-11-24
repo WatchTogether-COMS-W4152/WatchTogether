@@ -23,7 +23,7 @@ export default function EpisodeProgressSection(_props: Record<string, unknown>) 
   if (!props.episode_progress) return null;
   return (
     <EpisodeProgressPanel
-      path={`/groups/${props.group.id}/watchlist_items/${props.item.id}/progress`}
+      path={`/groups/${props.group.id}/watchlist/${props.item.id}/progress`}
       progress={props.episode_progress}
       currentUserId={props.auth.user?.id}
     />

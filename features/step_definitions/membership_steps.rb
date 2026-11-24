@@ -28,7 +28,7 @@ end
 
 Then("I am told I cannot remove myself") do
   expect(@response.status).to eq(200)
-  expect(@page.fetch("component")).to eq("groups/show")
+  expect(@page.fetch("component")).to eq("groups/members")
   expect(props.dig("flash", "alert")).to match(/use leave group/i)
 end
 

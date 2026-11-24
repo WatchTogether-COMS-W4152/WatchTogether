@@ -27,7 +27,7 @@ export default function Groups({ groups }: { groups: GroupSummary[] }) {
         <ul className="group-list">
           {groups.map((group) => (
             <li key={group.id}>
-              <Link className="group-card" href={`/groups/${group.id}`}>
+              <Link className="group-card" href={`/groups/${group.id}/watchlist`}>
                 <div>
                   <h2 className="item-title">{group.name}</h2>
                   <p className="meta">

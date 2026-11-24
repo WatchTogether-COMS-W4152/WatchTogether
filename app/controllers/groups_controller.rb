@@ -23,13 +23,18 @@ class GroupsController < InertiaController
 
   def create
     group = Group.create_with_owner!(owner: current_user, name: params.permit(:name)[:name])
-    redirect_to group_path(group), notice: "Your group is ready.", status: :see_other
+    redirect_to group_members_path(group), notice: "Your group is ready.", status: :see_other
   rescue ActiveRecord::RecordInvalid => error
     redirect_to new_group_path, inertia: { errors: error.record.errors }, status: :see_other
   end
 
   def show
     group = current_user.groups.find(params[:id])
+    redirect_to group_watchlist_items_path(group)
+  end
+
+  def members
+    group = current_user.groups.find(params[:group_id])
     is_owner = group.owner?(current_user)
     details = group.as_json(only: [ :id, :name ]).merge(
       is_owner: is_owner,
@@ -38,7 +43,7 @@ class GroupsController < InertiaController
       end
     )
     details[:invitation_code] = group.invite_code if is_owner
-    render inertia: "groups/show", props: { group: details }
+    render inertia: "groups/members", props: { group: details }
   end
 
   def destroy
@@ -52,7 +57,7 @@ class GroupsController < InertiaController
   end
 
   def join_form
-    render inertia: "groups/join"
+    render inertia: "groups/join", props: { code: params[:code].to_s.strip.upcase.first(32) }
   end
 
   def join
@@ -67,7 +72,7 @@ class GroupsController < InertiaController
 
       group.memberships.find_or_create_by!(user: current_user)
     end
-    redirect_to group_path(group), notice: "You joined #{group.name}.", status: :see_other
+    redirect_to group_watchlist_items_path(group), notice: "You joined #{group.name}.", status: :see_other
   end
 
   private

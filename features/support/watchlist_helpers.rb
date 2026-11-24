@@ -1,6 +1,6 @@
 module WatchlistHelpers
   def watchlist_path(group_name)
-    "#{group_path(group_name)}/watchlist_items"
+    "#{group_path(group_name)}/watchlist"
   end
 
   def watchlist_ids

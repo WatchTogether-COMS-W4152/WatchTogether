@@ -1,12 +1,12 @@
-import { Link, useForm } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
 import { useState } from "react";
 
+import AddTitleForm from "../../components/add-title-form";
 import EpisodeCode from "../../components/episode-code";
-import Layout, { PageHeader } from "../../components/layout";
+import GroupHeader from "../../components/group-header";
+import Layout from "../../components/layout";
 import { MediaMeta, Poster } from "../../components/media-details";
-import MediaKind from "../../components/media-kind";
-import TitleSearch from "../../components/title-search";
-import type { CatalogTitle, MediaMetadata } from "../../types/catalog";
+import type { MediaMetadata } from "../../types/catalog";
 import type { EpisodePosition } from "../../types/episodes";
 
 type WatchlistItem = MediaMetadata & {
@@ -28,71 +28,34 @@ export default function Watchlist({
   group: Group;
   watchlist_items: WatchlistItem[];
 }) {
-  const form = useForm({ title: "", manual_media_type: "" });
-  const [selected, setSelected] = useState<CatalogTitle | null>(null);
+  const [adding, setAdding] = useState(watchlist_items.length === 0);
 
   return (
     <Layout title={`Watchlist · ${group.name}`} section="groups">
-      <PageHeader
-        title="Watchlist"
-        back={{ href: `/groups/${group.id}`, label: group.name }}
+      <GroupHeader
+        group={group}
+        current="watchlist"
         actions={
-          <Link className="btn btn-secondary" href={`/groups/${group.id}/suggestions`}>
-            What should we watch?
-          </Link>
+          !adding && (
+            <button
+              className="btn btn-primary btn-sm"
+              type="button"
+              onClick={() => setAdding(true)}
+            >
+              Add a title
+            </button>
+          )
         }
       />
 
-      <section className="card read-width" aria-labelledby="watchlist-add">
-        <h2 id="watchlist-add">Add a movie or show</h2>
-        <form
-          className="form"
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            form.transform((data) =>
-              selected
-                ? { title: data.title, tmdb_id: selected.tmdb_id, media_type: selected.media_type }
-                : data,
-            );
-            form.post(`/groups/${group.id}/watchlist_items`, {
-              preserveScroll: true,
-              onSuccess: () => {
-                form.reset();
-                setSelected(null);
-              },
-            });
-          }}
-        >
-          <TitleSearch
-            groupId={group.id}
-            value={form.data.title}
-            selected={selected}
-            disabled={form.processing}
-            onChange={(title) => {
-              form.setData("title", title);
-              setSelected(null);
-            }}
-            onSelect={(title) => {
-              form.setData("title", title.title);
-              setSelected(title);
-            }}
-            error={form.errors.title}
-          />
-          {!selected && form.data.title.trim() && (
-            <MediaKind
-              value={form.data.manual_media_type}
-              disabled={form.processing}
-              onChange={(kind) => form.setData("manual_media_type", kind)}
-            />
-          )}
-          <div className="row">
-            <button className="btn btn-primary" type="submit" disabled={form.processing}>
-              {form.processing ? "Adding…" : "Add to watchlist"}
-            </button>
-          </div>
-        </form>
-      </section>
+      {adding && (
+        <AddTitleForm
+          groupId={group.id}
+          action={`/groups/${group.id}/watchlist`}
+          submitLabel="Add to watchlist"
+          onClose={watchlist_items.length > 0 ? () => setAdding(false) : undefined}
+        />
+      )}
 
       <section aria-labelledby="watchlist-titles">
         <h2 id="watchlist-titles" className="visually-hidden">
@@ -104,10 +67,7 @@ export default function Watchlist({
           <ul className="poster-grid">
             {watchlist_items.map((item) => (
               <li key={item.id}>
-                <Link
-                  className="poster-card"
-                  href={`/groups/${group.id}/watchlist_items/${item.id}`}
-                >
+                <Link className="poster-card" href={`/groups/${group.id}/watchlist/${item.id}`}>
                   <Poster title={item.title} poster_url={item.poster_url}>
                     {item.next_episode && !item.watched ? (
                       <EpisodeCode position={item.next_episode} next />

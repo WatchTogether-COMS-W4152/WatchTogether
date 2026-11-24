@@ -3,8 +3,8 @@ import { Link, useForm } from "@inertiajs/react";
 import Field, { FormError } from "../../components/field";
 import Layout, { PageHeader } from "../../components/layout";
 
-export default function JoinGroup() {
-  const form = useForm({ code: "" });
+export default function JoinGroup({ code = "" }: { code?: string }) {
+  const form = useForm({ code });
   return (
     <Layout title="Join a group" section="groups" narrow>
       <PageHeader title="Join a group" back={{ href: "/groups", label: "Groups" }} />

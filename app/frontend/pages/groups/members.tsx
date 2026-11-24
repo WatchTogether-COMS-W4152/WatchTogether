@@ -1,14 +1,14 @@
-import { Link, useForm, usePage } from "@inertiajs/react";
+import { useForm, usePage } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 
-import { AvatarStack } from "../../components/avatar";
+import GroupHeader from "../../components/group-header";
 import GroupMembers, { type MemberPanel } from "../../components/group-members";
 import InlineConfirm from "../../components/inline-confirm";
-import Layout, { PageHeader } from "../../components/layout";
+import Layout from "../../components/layout";
 import { useToast } from "../../components/toast-context";
-import { memberCount, type GroupDetails } from "../../types";
+import type { GroupDetails } from "../../types";
 
-export default function Group({ group }: { group: GroupDetails }) {
+export default function Members({ group }: { group: GroupDetails }) {
   const { auth } = usePage().props;
   const action = useForm({});
   const [memberPanel, setMemberPanel] = useState<MemberPanel | null>(null);
@@ -21,30 +21,8 @@ export default function Group({ group }: { group: GroupDetails }) {
   }, [confirmDelete]);
 
   return (
-    <Layout title={group.name} section="groups">
-      <PageHeader
-        title={group.name}
-        back={{ href: "/groups", label: "Groups" }}
-        meta={
-          <>
-            <AvatarStack
-              names={group.members.map((member) => member.display_name)}
-              count={group.members.length}
-            />
-            <span>{memberCount(group.members.length)}</span>
-          </>
-        }
-        actions={
-          <>
-            <Link className="btn btn-secondary" href={`/groups/${group.id}/watchlist_items`}>
-              Watchlist
-            </Link>
-            <Link className="btn btn-primary" href={`/groups/${group.id}/suggestions`}>
-              What should we watch?
-            </Link>
-          </>
-        }
-      />
+    <Layout title={`Members · ${group.name}`} section="groups">
+      <GroupHeader group={group} current="members" />
       <div className="group-layout">
         <GroupMembers
           group={group}
@@ -167,12 +145,14 @@ function InviteCard({
     if (confirming) cancel.current?.focus();
   }, [confirming]);
 
+  const link = `${window.location.origin}/join/${code}`;
+
   async function copy() {
     try {
-      await navigator.clipboard.writeText(code);
-      toast({ message: "Invitation code copied.", tone: "success" });
+      await navigator.clipboard.writeText(link);
+      toast({ message: "Invite link copied.", tone: "success" });
     } catch {
-      toast({ message: "Couldn't copy the code.", tone: "error" });
+      toast({ message: "Couldn't copy the link.", tone: "error" });
     }
   }
 
@@ -180,13 +160,12 @@ function InviteCard({
     try {
       await navigator.share({
         title: `Join ${group.name} on WatchTogether`,
-        text: `Join ${group.name} on WatchTogether with the code ${code}`,
-        url: `${window.location.origin}/groups/join`,
+        url: link,
       });
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
         toast({
-          message: "Couldn't share. Copy the code instead.",
+          message: "Couldn't share. Copy the link instead.",
           tone: "error",
         });
       }
@@ -228,7 +207,7 @@ function InviteCard({
             disabled={processing}
             onClick={() => void copy()}
           >
-            Copy code
+            Copy invite link
           </button>
           {typeof navigator.share === "function" && (
             <button

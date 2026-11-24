@@ -164,7 +164,7 @@ Run this story independently with `bundle exec cucumber --tags @US31`.
 
 Acceptance criteria for **US32**:
 
-- Any member can leave from the group page after confirming. They are returned to their group list, and the group's page is no longer available to them.
+- Any member can leave from the group's **Members** tab after confirming. They are returned to their group list, and the group's page is no longer available to them.
 - Their ratings and episode progress in that group are removed, so rankings, caught-up status, and the next episode reflect only current members. Their discussion comments remain under their name.
 - The last owner is told to make someone else an owner before leaving. The only member of a group is told to delete the group instead. A group therefore always keeps an owner.
 - Owners cannot use member removal on themselves; they are pointed to **Leave group**. Visitors must sign in.
@@ -201,7 +201,7 @@ To demonstrate US23–US26, type **Severance** in Friday Night's watchlist, mark
 
 To demonstrate US32–US34 on Friday Night:
 
-1. **Bob:** On **What should we watch?**, rate a title **Love it**, then choose **Love it** again and confirm the rating clears and the score drops.
+1. **Bob:** On **Picks**, rate a title **Love it**, then choose **Love it** again and confirm the rating clears and the score drops.
 2. **Alice:** In the watchlist, search **Severance**, pick the TV series, and open it. Record the last episode of season 1, choose **Watched next episode**, and confirm progress moves to S2 E1. Enter a season past the end and read the error.
 3. **Bob:** At the bottom of Friday Night, choose **Leave group** and confirm. Friday Night disappears from **My groups**. **Alice:** Refresh and confirm Bob's ratings and progress no longer count. As the last owner, try **Leave group** and read the message asking you to make someone else an owner first.
 
@@ -209,10 +209,10 @@ Use the running app in two separate browser profiles or one regular and one priv
 
 1. **Alice:** Open the app and choose **Create account**. Register with a display name, email, and password. Confirm the groups page opens automatically and displays its empty state.
 2. **Alice:** Open **Create group**, submit a blank name to see validation, then create **Friday Night**. Confirm Alice is the owner and appears once in the member list.
-3. **Alice:** Copy the group's invitation code. Keep this original code for step 8.
-4. **Bob:** In the second browser session, register another account. Open **Join group**, try an invalid code, then paste Alice's code. Confirm Friday Night opens with both names.
-5. **Bob:** Return to **My groups** and reopen Friday Night. Confirm Bob sees the member list but no invitation code or reset control. Join with the same code again and confirm Bob still appears once.
-6. **Bob:** Open **Profile**, change the display name, refresh, and confirm the new name remains. Refresh Alice's group page and confirm the member list uses Bob's updated name.
+3. **Alice:** On the **Members** tab, note the invitation code and choose **Copy invite link**. Keep this original code for step 8.
+4. **Bob:** In the second browser session, open Alice's invite link and register another account. Confirm the join form opens with the code filled in. Clear it, try an invalid code, then paste Alice's code. Confirm Friday Night opens on its **Watchlist** tab and its **Members** tab lists both names.
+5. **Bob:** Return to **My groups** and reopen Friday Night. On **Members**, confirm Bob sees the member list but no invitation code or reset control. Join with the same code again and confirm Bob still appears once.
+6. **Bob:** Open **Profile**, change the display name, refresh, and confirm the new name remains. Refresh Alice's **Members** tab and confirm the member list uses Bob's updated name.
 7. **Bob:** Sign out. Confirm visiting `/groups` or `/profile` returns to sign-in. Sign in again and confirm the group membership remains.
 8. **Alice:** Replace the invitation code. Confirm it changes and Bob remains a member. **Bob:** Try joining with the saved original code and confirm it is rejected; joining with the new code succeeds without a duplicate membership.
 9. **Bob:** Create a separate group. Copy its URL. **Alice:** Open that URL while signed in and confirm a not-found page protects Bob's private group.
@@ -220,8 +220,8 @@ Use the running app in two separate browser profiles or one regular and one priv
 11. **Alice:** Open **Manage** on Bob's row and choose **Make owner**. Read the permissions explanation and cancel; Bob should remain an ordinary member. Repeat and confirm. Both names should now have an **Owner** badge. **Bob:** Refresh Friday Night and confirm invitation and management controls appear. **Alice:** Confirm you remain an owner too.
 12. **Alice:** Open **Manage** on Bob's row and choose **Remove from group**. Confirm the warning names Bob, identifies his owner role, and explains that the invitation will change. Cancel and verify both members remain. Save the current code, repeat, and confirm removal. Bob should disappear from Friday Night, and the code should change. There should be no **Manage** control on Alice's own row.
 13. **Bob:** Refresh Friday Night and confirm access is denied. Confirm Friday Night is absent from **My groups**, Bob's separate group remains, and the saved code is rejected by **Join group**. **Alice:** Share the new code. **Bob:** Join again and confirm you return as an ordinary member without invitation or management controls.
-14. **Alice:** Open **What should we watch?** on Friday Night. Submit a blank title to see validation, then suggest **Paddington** and **Cats**. Try suggesting **paddington** again and confirm it is rejected. Rate Paddington **Love it** and Cats **Maybe**. **Bob:** Open the same page, rate Paddington **Maybe** and Cats **Not interested**, then change Cats to **Maybe**. Confirm Paddington ranks first with +3 and Cats shows +2, each "2 of 2 rated", and that Bob's page highlights only Bob's own ratings. **Bob:** Confirm there is no **Remove** control on Alice's titles. **Alice:** Remove Cats, cancel once, then confirm, and check it disappears for both viewers.
-15. **Bob:** Open **Our Watchlist** on Friday Night. Submit a blank title and check the field error, then add **Paddington** and **Cats**. Confirm both start **Not watched**. Return to the group and reopen the watchlist; the entries should persist. **Alice:** Open the same watchlist and confirm both titles appear. **Bob:** Add a title to his separate group's watchlist. **Alice:** Try that watchlist URL and confirm access is denied.
+14. **Alice:** Open the **Picks** tab on Friday Night. Submit a blank title to see validation, then suggest **Paddington** and **Cats**. Try suggesting **paddington** again and confirm it is rejected. Rate Paddington **Love it** and Cats **Maybe**. **Bob:** Open the same page, rate Paddington **Maybe** and Cats **Not interested**, then change Cats to **Maybe**. Confirm Paddington ranks first with +3 and Cats shows +2, each "2 of 2 rated", and that Bob's page highlights only Bob's own ratings. **Bob:** Confirm there is no **Remove** control on Alice's titles. **Alice:** Remove Cats, cancel once, then confirm, and check it disappears for both viewers.
+15. **Bob:** Open Friday Night, which starts on its **Watchlist** tab. Submit a blank title and check the field error, then add **Paddington** and **Cats**. Confirm both start **Not watched**. Return to the group and reopen the watchlist; the entries should persist. **Alice:** Open the same watchlist and confirm both titles appear. **Bob:** Add a title to his separate group's watchlist. **Alice:** Try that watchlist URL and confirm access is denied.
 16. **Bob:** Mark Paddington **Watched**. **Alice:** Refresh and confirm the shared status, then mark it **Unwatched**. **Bob:** Refresh and confirm it is back to **Not watched**. Both owners and ordinary members can update any watchlist entry.
 17. **Bob:** Choose **Remove** for Cats and cancel; Cats should remain. Repeat and confirm. **Alice:** Refresh and confirm Cats is gone and Paddington remains. Watchlist removal is available to every member, including entries another member added.
 18. **Alice:** On the temporary Friday Night group, choose **Delete group**, then cancel and confirm the group remains. Open the confirmation again and confirm deletion. Both viewers' group lists should lose Friday Night; its previous URL, watchlist URL, and invitation should no longer work. Both accounts and Bob's separate group and watchlist should remain available.

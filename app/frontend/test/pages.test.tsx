@@ -9,8 +9,8 @@ import SignUp from "../pages/auth/sign-up";
 import ErrorPage from "../pages/errors/show";
 import Groups from "../pages/groups/index";
 import JoinGroup from "../pages/groups/join";
+import Group from "../pages/groups/members";
 import NewGroup from "../pages/groups/new";
-import Group from "../pages/groups/show";
 import Profile from "../pages/profile/show";
 import type { GroupDetails, SharedProps } from "../types";
 
@@ -205,7 +205,7 @@ describe("group flows", () => {
       />,
     );
     const card = screen.getByRole("link", { name: /Friday Film Club/ });
-    expect(card).toHaveAttribute("href", "/groups/7");
+    expect(card).toHaveAttribute("href", "/groups/7/watchlist");
     expect(screen.getByText("5 members · Owner")).toBeVisible();
     expect(within(card).getByText("+2")).toBeInTheDocument();
     expect(within(card).getByText("Severance")).toBeVisible();
@@ -227,6 +227,11 @@ describe("group flows", () => {
     });
     expect(screen.getByRole("alert")).toHaveTextContent("is too long");
     expect(screen.getByLabelText("Group name")).toHaveValue("Friday Film Club");
+  });
+
+  it("fills in the code from an invite link", () => {
+    render(<JoinGroup code="ABC123" />);
+    expect(screen.getByLabelText("Invitation code")).toHaveValue("ABC123");
   });
 
   it("submits a pasted invitation code and shows an invalid-code error", async () => {
@@ -252,7 +257,7 @@ describe("group flows", () => {
     expect(screen.getByText("Alice")).toBeVisible();
     expect(screen.getByText("Bob")).toBeVisible();
     expect(screen.queryByText(group.invitation_code!)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Copy code" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy invite link" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Replace code" })).not.toBeInTheDocument();
     expect(screen.queryByText("alice@example.com")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Delete group" })).not.toBeInTheDocument();
@@ -262,25 +267,27 @@ describe("group flows", () => {
     expect(screen.queryByRole("button", { name: "Remove from group" })).not.toBeInTheDocument();
   });
 
-  it("copies the owner's invitation code", async () => {
+  it("copies the owner's invite link", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText");
     render(<Group group={group} />);
-    await user.click(screen.getByRole("button", { name: "Copy code" }));
-    expect(writeText).toHaveBeenCalledWith(group.invitation_code);
-    expect(screen.getByRole("status")).toHaveTextContent("Invitation code copied.");
+    await user.click(screen.getByRole("button", { name: "Copy invite link" }));
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/join/${group.invitation_code}`,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Invite link copied.");
   });
 
   it("keeps the code visible and gives a manual fallback if clipboard access fails", async () => {
     const user = userEvent.setup();
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Permission denied"));
     render(<Group group={group} />);
-    await user.click(screen.getByRole("button", { name: "Copy code" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't copy the code.");
+    await user.click(screen.getByRole("button", { name: "Copy invite link" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't copy the link.");
     expect(screen.getByText(group.invitation_code!)).toBeVisible();
   });
 
-  it("shares the group name, code, and join URL when native sharing is available", async () => {
+  it("shares the invite link when native sharing is available", async () => {
     const user = userEvent.setup();
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { configurable: true, value: share });
@@ -288,8 +295,7 @@ describe("group flows", () => {
     await user.click(screen.getByRole("button", { name: "Share" }));
     expect(share).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining(group.invitation_code!),
-        url: `${window.location.origin}/groups/join`,
+        url: `${window.location.origin}/join/${group.invitation_code}`,
       }),
     );
   });
@@ -437,7 +443,7 @@ describe("member management", () => {
     const user = userEvent.setup();
     render(<Group group={coownedGroup} />);
     expect(screen.getAllByText("Owner")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Copy code" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Copy invite link" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Delete group" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Manage Bob" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Manage Alice" }));

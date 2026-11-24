@@ -1,8 +1,9 @@
-import { Link, router, usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
 import EpisodeDiscussionSection from "../../components/episode-discussion";
 import EpisodeProgressSection from "../../components/episode-progress";
+import GroupHeader from "../../components/group-header";
 import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
 import { Poster } from "../../components/media-details";
@@ -27,7 +28,7 @@ export default function WatchlistItemPage({
 }) {
   const { props } = usePage();
   const [pending, setPending] = useState(false);
-  const path = `/groups/${group.id}/watchlist_items/${item.id}`;
+  const path = `/groups/${group.id}/watchlist/${item.id}`;
   const facts = mediaFacts(item, true);
   const requestOptions = {
     onStart: () => setPending(true),
@@ -36,9 +37,7 @@ export default function WatchlistItemPage({
 
   return (
     <Layout title={`${item.title} · ${group.name}`} section="groups">
-      <Link className="back title-back" href={`/groups/${group.id}/watchlist_items`}>
-        ← Watchlist
-      </Link>
+      <GroupHeader group={group} current="watchlist" nested />
       <div className="title-header">
         <Poster title={item.title} poster_url={item.poster_url} />
         <PageHeader
@@ -55,33 +54,29 @@ export default function WatchlistItemPage({
           }
         >
           {item.overview && <p className="overview">{item.overview}</p>}
+          <div className="title-actions row">
+            <button
+              className="btn btn-secondary btn-sm"
+              type="button"
+              disabled={pending}
+              onClick={() => router.patch(path, { watched: !item.watched }, requestOptions)}
+            >
+              {item.watched ? "Mark as unwatched" : "Mark as watched"}
+            </button>
+            <InlineConfirm
+              label="Remove"
+              question={`Remove “${item.title}” from the watchlist?`}
+              confirmLabel="Yes, remove"
+              pendingLabel="Removing…"
+              pending={pending}
+              onConfirm={() => router.delete(path, requestOptions)}
+            />
+          </div>
         </PageHeader>
       </div>
+      {item.episodic && <EpisodeProgressSection {...props} />}
       <WatchProvidersSection availability={watch_providers} />
-      {item.episodic && (
-        <>
-          <EpisodeProgressSection {...props} />
-          <EpisodeDiscussionSection {...props} />
-        </>
-      )}
-      <section className="title-actions row" aria-label="Watchlist actions">
-        <button
-          className={`btn btn-sm ${item.episodic ? "btn-secondary" : "btn-primary"}`}
-          type="button"
-          disabled={pending}
-          onClick={() => router.patch(path, { watched: !item.watched }, requestOptions)}
-        >
-          {item.watched ? "Mark as unwatched" : "Mark as watched"}
-        </button>
-        <InlineConfirm
-          label="Remove"
-          question={`Remove “${item.title}” from the watchlist?`}
-          confirmLabel="Yes, remove"
-          pendingLabel="Removing…"
-          pending={pending}
-          onConfirm={() => router.delete(path, requestOptions)}
-        />
-      </section>
+      {item.episodic && <EpisodeDiscussionSection {...props} />}
     </Layout>
   );
 }

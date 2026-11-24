@@ -28,7 +28,7 @@ export default function EpisodeDiscussionSection(_props: Record<string, unknown>
   const { group, item, discussion } = usePage<DiscussionPageProps>().props;
   if (!discussion) return null;
 
-  const basePath = `/groups/${group.id}/watchlist_items/${item.id}/comments`;
+  const basePath = `/groups/${group.id}/watchlist/${item.id}/comments`;
   const position = discussion.viewer_position;
   const total = discussion.episodes.reduce(
     (sum, entry) => sum + entry.comments.length + entry.hidden_count,

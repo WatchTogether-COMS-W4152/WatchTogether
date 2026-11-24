@@ -17,7 +17,7 @@ When("I view my groups") do
 end
 
 When("I view the group {string}") do |name|
-  visit_page(:get, group_path(name))
+  visit_page(:get, members_path(name))
 end
 
 When("I delete the group {string}") do |name|

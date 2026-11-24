@@ -26,7 +26,7 @@ const nextPage = {} as Parameters<NonNullable<PutOptions["onSuccess"]>>[0];
 let putRequest: MockInstance<typeof router.put>;
 let deleteRequest: MockInstance<typeof router.delete>;
 
-const PATH = "/groups/7/watchlist_items/11/progress";
+const PATH = "/groups/7/watchlist/11/progress";
 
 const progress: EpisodeProgressData = {
   members: [

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
-import Group from "../pages/groups/show";
+import Group from "../pages/groups/members";
 import Watchlist from "../pages/watchlist_items/index";
 import WatchlistItemPage from "../pages/watchlist_items/show";
 import type { SharedProps } from "../types";
@@ -62,7 +62,7 @@ beforeEach(() => {
 describe("viewing the watchlist", () => {
   it("explains an empty watchlist and offers an accessible title field", () => {
     renderPage([]);
-    expect(screen.getByRole("heading", { name: "Watchlist", level: 1 })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Friday Film Club", level: 1 })).toBeVisible();
     expect(screen.getByText("Nothing on the watchlist yet.")).toBeVisible();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toBeRequired();
@@ -70,12 +70,22 @@ describe("viewing the watchlist", () => {
     expect(screen.getByRole("button", { name: "Add to watchlist" })).toBeEnabled();
   });
 
+  it("keeps the add form closed until asked once the list has titles", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add a title" }));
+    expect(screen.getByLabelText("Title")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
+  });
+
   it("shows each title as a poster card linking to its page, marking watched titles", () => {
     renderPage();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByRole("link", { name: /Paddington/ })).toHaveAttribute(
       "href",
-      "/groups/7/watchlist_items/11",
+      "/groups/7/watchlist/11",
     );
     expect(row("Up").getByText("Watched")).toHaveClass("chip");
     expect(row("Paddington").queryByText("Watched")).not.toBeInTheDocument();
@@ -83,11 +93,24 @@ describe("viewing the watchlist", () => {
     expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
   });
 
-  it("links back to the current group", () => {
+  it("shows the group's tabs with this page selected", () => {
     renderPage();
-    expect(screen.getByRole("link", { name: "← Friday Film Club" })).toHaveAttribute(
+    const tabs = screen.getByRole("navigation", { name: "Friday Film Club" });
+    expect(within(tabs).getByRole("link", { name: "Watchlist" })).toHaveAttribute(
       "href",
-      "/groups/7",
+      "/groups/7/watchlist",
+    );
+    expect(within(tabs).getByRole("link", { name: "Picks" })).toHaveAttribute(
+      "href",
+      "/groups/7/picks",
+    );
+    expect(within(tabs).getByRole("link", { name: "Members" })).toHaveAttribute(
+      "href",
+      "/groups/7/members",
+    );
+    expect(within(tabs).getByRole("link", { current: "page" })).toHaveAttribute(
+      "href",
+      "/groups/7/watchlist",
     );
   });
 
@@ -103,7 +126,7 @@ describe("viewing the watchlist", () => {
     );
     expect(screen.getByRole("link", { name: "Watchlist" })).toHaveAttribute(
       "href",
-      "/groups/7/watchlist_items",
+      "/groups/7/watchlist",
     );
   });
 });
@@ -118,7 +141,7 @@ describe("adding a watchlist title", () => {
     await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
 
     const [url, data, options] = postRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/watchlist_items");
+    expect(url).toBe("/groups/7/watchlist");
     expect(data).toEqual({ title: "Spirited Away", manual_media_type: "movie" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
@@ -178,7 +201,7 @@ describe("watching a title", () => {
     const { rerender } = renderTitle(item);
     await user.click(screen.getByRole("button", { name: action }));
     expect(patchRequest).toHaveBeenCalledTimes(1);
-    expect(patchRequest.mock.calls[0][0]).toBe(`/groups/7/watchlist_items/${item.id}`);
+    expect(patchRequest.mock.calls[0][0]).toBe(`/groups/7/watchlist/${item.id}`);
     expect(patchRequest.mock.calls[0][1]).toEqual({ watched: nextWatched });
     expect(deleteRequest).not.toHaveBeenCalled();
 
@@ -232,7 +255,7 @@ describe("removing a watchlist title", () => {
     await user.click(screen.getByRole("button", { name: "Yes, remove" }));
     expect(deleteRequest).toHaveBeenCalledTimes(1);
     const [url, options] = deleteRequest.mock.calls[0];
-    expect(url).toBe("/groups/7/watchlist_items/12");
+    expect(url).toBe("/groups/7/watchlist/12");
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Removing…" })).toBeDisabled();
     expect(patchRequest).not.toHaveBeenCalled();

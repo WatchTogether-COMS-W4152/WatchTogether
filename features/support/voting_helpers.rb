@@ -2,7 +2,7 @@ module VotingHelpers
   RATINGS = { "Love it" => "love", "Maybe" => "maybe", "Not interested" => "not_interested" }.freeze
 
   def suggestions_path(group_name)
-    "#{group_path(group_name)}/suggestions"
+    "#{group_path(group_name)}/picks"
   end
 
   def suggestion_ids
