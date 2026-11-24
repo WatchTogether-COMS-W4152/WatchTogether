@@ -36,7 +36,6 @@ export default function Profile() {
             value={form.data.display_name}
             onChange={(event) => form.setData("display_name", event.target.value)}
             error={form.errors.display_name}
-            hint="Your email is never shown to other members."
           />
           <div className="row">
             <button className="btn btn-primary" type="submit" disabled={form.processing}>

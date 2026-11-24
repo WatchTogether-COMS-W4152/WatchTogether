@@ -1,7 +1,7 @@
 class RegistrationsController < InertiaController
   skip_before_action :require_authentication
   rate_limit to: 10, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many registration attempts. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many registration attempts. Try again in a minute.") }
 
   def new
     return redirect_to groups_path if current_user

@@ -27,7 +27,6 @@ export default function NewGroup() {
           value={form.data.name}
           onChange={(event) => form.setData("name", event.target.value)}
           error={form.errors.name}
-          hint="Groups are private. People join with an invitation code."
         />
         <div className="row">
           <button className="btn btn-primary" type="submit" disabled={form.processing}>

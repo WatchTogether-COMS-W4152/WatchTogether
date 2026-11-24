@@ -27,7 +27,7 @@ end
 Then("I am told the group was deleted") do
   expect(@response.status).to eq(200)
   expect(@page.fetch("component")).to eq("groups/index")
-  expect(props.dig("flash", "notice")).to eq("The group was deleted.")
+  expect(props.dig("flash", "notice")).to eq("Group deleted.")
 end
 
 Then("the group {string} has been deleted") do |name|

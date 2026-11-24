@@ -63,7 +63,7 @@ describe("viewing the watchlist", () => {
   it("explains an empty watchlist and offers an accessible title field", () => {
     renderPage([]);
     expect(screen.getByRole("heading", { name: "Watchlist", level: 1 })).toBeVisible();
-    expect(screen.getByText("Your watchlist is empty. Add your first movie.")).toBeVisible();
+    expect(screen.getByText("Nothing on the watchlist yet.")).toBeVisible();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toBeRequired();
     expect(screen.getByLabelText("Title")).toHaveAttribute("maxlength", "120");
@@ -201,7 +201,7 @@ describe("watching a title", () => {
         detail: { error: new Error("Offline") },
       }),
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Check your connection and try again");
+    expect(screen.getByRole("alert")).toHaveTextContent("Couldn't connect. Try again.");
     await user.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Mark as watched" }));

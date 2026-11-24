@@ -216,7 +216,6 @@ describe("TMDB title search", () => {
     await typeQuery("another title");
     expect(screen.getByRole("status")).toHaveTextContent("Search is unavailable");
     expect(screen.getByRole("combobox")).toHaveValue("another title");
-    expect(screen.getByText(/add your own title/)).toBeVisible();
   });
 
   it("does not search one character or blank input and closes when focus leaves", async () => {

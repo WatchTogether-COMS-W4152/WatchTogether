@@ -55,11 +55,7 @@ export function EpisodeProgressPanel({
       <h2 id="episode-progress-title">
         {!started ? (
           <>
-            Nobody has started yet. Start together with <EpisodeCode position={next} next />.
-          </>
-        ) : progress.everyone_caught_up ? (
-          <>
-            Everyone is caught up. Next up together: <EpisodeCode position={next} next />.
+            Start with <EpisodeCode position={next} next />
           </>
         ) : (
           <>
@@ -212,12 +208,6 @@ function SeasonStrip({ members, next }: { members: MemberProgress[]; next: Episo
           ),
         )}
       </ol>
-      {next.episode > 1 && (
-        <p className="meta">
-          Everyone has watched up to{" "}
-          {formatEpisode({ season: next.season, episode: next.episode - 1 })}.
-        </p>
-      )}
     </>
   );
 }

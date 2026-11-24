@@ -20,9 +20,8 @@ type DiscussionPageProps = {
   discussion?: Discussion;
 };
 
-function hiddenLabel({ season, episode, hidden_count: count }: DiscussionEpisode) {
-  const comments = count === 1 ? "1 comment" : `${count} comments`;
-  return `${comments} on ${formatEpisode({ season, episode })}, unlocked when you get there.`;
+function hiddenLabel({ hidden_count: count }: DiscussionEpisode) {
+  return `${count === 1 ? "1 comment" : `${count} comments`} hidden until you watch it`;
 }
 
 export default function EpisodeDiscussionSection(_props: Record<string, unknown>) {
@@ -44,9 +43,6 @@ export default function EpisodeDiscussionSection(_props: Record<string, unknown>
           {total} {total === 1 ? "comment" : "comments"}
         </span>
       </div>
-      <p className="muted">
-        Comments are tied to episodes. You only see comments on episodes you've watched.
-      </p>
       {discussion.episodes.length === 0 ? (
         <p className="muted">No comments yet.</p>
       ) : (
@@ -86,7 +82,7 @@ export default function EpisodeDiscussionSection(_props: Record<string, unknown>
           maxLength={discussion.max_body_length}
         />
       ) : (
-        <p className="muted">Mark the episodes you've watched to join the conversation.</p>
+        <p className="muted">Mark an episode as watched to comment.</p>
       )}
     </section>
   );
@@ -150,18 +146,14 @@ function CommentForm({
           maxLength={maxLength}
           value={form.data.body}
           aria-invalid={Boolean(form.errors.body?.length)}
-          aria-describedby={form.errors.body?.length ? "comment-body-error" : "comment-body-hint"}
+          aria-describedby={form.errors.body?.length ? "comment-body-error" : undefined}
           onChange={(event) => form.setData("body", event.target.value)}
         />
         {form.errors.body?.length ? (
           <p className="field-error" id="comment-body-error" role="alert">
             {form.errors.body.join(". ")}
           </p>
-        ) : (
-          <p className="field-hint" id="comment-body-hint">
-            You can comment on any episode up to {formatEpisode(position)}.
-          </p>
-        )}
+        ) : null}
       </div>
       <div className="row">
         <button className="btn btn-secondary" type="submit" disabled={form.processing}>

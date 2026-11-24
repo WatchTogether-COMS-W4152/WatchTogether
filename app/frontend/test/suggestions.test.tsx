@@ -103,11 +103,8 @@ describe("group ranking", () => {
     expect(item("Cats").getByText("1 of 3 rated")).toBeInTheDocument();
   });
 
-  it("explains the scoring and shows an empty state", () => {
+  it("shows an empty state", () => {
     renderPage([]);
-    expect(
-      screen.getByText(/Love it adds 2, Maybe adds 1, and Not interested subtracts 2/),
-    ).toBeInTheDocument();
     expect(screen.getByText(/No suggestions yet/)).toBeInTheDocument();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
@@ -222,9 +219,7 @@ describe("removing a suggestion", () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(screen.getByRole("button", { name: "Remove Up" }));
-    expect(
-      screen.getByText(/Remove “Up”\? Everyone's ratings for it will be deleted\./),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Remove “Up”\? Its ratings will be deleted\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(deleteRequest).not.toHaveBeenCalled();

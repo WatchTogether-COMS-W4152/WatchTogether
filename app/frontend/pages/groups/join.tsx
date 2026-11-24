@@ -28,7 +28,6 @@ export default function JoinGroup() {
           value={form.data.code}
           onChange={(event) => form.setData("code", event.target.value)}
           error={form.errors.code}
-          hint="Group owners can find this on the group page."
         />
         <div className="row">
           <button className="btn btn-primary" type="submit" disabled={form.processing}>

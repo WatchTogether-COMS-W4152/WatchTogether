@@ -84,7 +84,7 @@ RSpec.describe "Group suggestions", type: :request do
       expect(suggestion).to have_attributes(group_id: group.id, suggested_by_id: member.id,
         title: "Spirited Away", title_key: "spirited away")
       follow_redirect!
-      expect(page_props.dig("flash", "notice")).to eq("“Spirited Away” was added. Rate it below.")
+      expect(page_props.dig("flash", "notice")).to eq("“Spirited Away” was added.")
     end
 
     it "returns field errors for blank, too long, and duplicate titles" do
@@ -132,7 +132,7 @@ RSpec.describe "Group suggestions", type: :request do
       post group_suggestions_path(group), params: { title: "One too many" }
 
       expect(response).to have_http_status(:too_many_requests)
-      expect(page_props["message"]).to eq("Too many suggestions. Please try again in a minute.")
+      expect(page_props["message"]).to eq("Too many suggestions. Try again in a minute.")
       expect(Suggestion.for_group(group).count).to eq(30)
     end
 

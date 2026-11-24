@@ -1,7 +1,7 @@
 class SessionsController < InertiaController
   skip_before_action :require_authentication, only: [ :new, :create ]
   rate_limit to: 10, within: 1.minute, only: :create, store: RATE_LIMIT_STORE,
-    with: -> { render_error(429, "Too many sign-in attempts. Please try again in a minute.") }
+    with: -> { render_error(429, "Too many sign-in attempts. Try again in a minute.") }
 
   def new
     return redirect_to groups_path if current_user
@@ -22,6 +22,6 @@ class SessionsController < InertiaController
 
   def destroy
     end_session
-    redirect_to sign_in_path, notice: "You have signed out.", status: :see_other, inertia: { clear_history: true }
+    redirect_to sign_in_path, notice: "Signed out.", status: :see_other, inertia: { clear_history: true }
   end
 end

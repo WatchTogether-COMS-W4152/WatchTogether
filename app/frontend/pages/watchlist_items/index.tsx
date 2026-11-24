@@ -91,7 +91,7 @@ export default function Watchlist({
           Movies and shows
         </h2>
         {watchlist_items.length === 0 ? (
-          <p className="muted">Your watchlist is empty. Add your first movie.</p>
+          <p className="muted">Nothing on the watchlist yet.</p>
         ) : (
           <ul className="poster-grid">
             {watchlist_items.map((item) => (

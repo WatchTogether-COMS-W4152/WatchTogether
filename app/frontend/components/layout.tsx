@@ -28,11 +28,11 @@ export default function Layout({
     const removeStart = router.on("start", () => setRequestError(""));
     const removeNetworkError = router.on("networkError", (event) => {
       event.preventDefault();
-      setRequestError("We couldn't connect. Check your connection and try again.");
+      setRequestError("Couldn't connect. Try again.");
     });
     const removeHttpException = router.on("httpException", (event) => {
       event.preventDefault();
-      setRequestError("We couldn't complete that request. Please try again.");
+      setRequestError("Something went wrong. Try again.");
     });
     return () => {
       removeStart();

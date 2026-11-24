@@ -51,18 +51,14 @@ export default function WatchlistItemPage({
             ) : undefined
           }
         >
-          {item.tmdb_id && (
-            <p className="overview">{item.overview || "No description available."}</p>
-          )}
+          {item.overview && <p className="overview">{item.overview}</p>}
         </PageHeader>
       </div>
-      {item.episodic ? (
+      {item.episodic && (
         <>
           <EpisodeProgressSection {...props} />
           <EpisodeDiscussionSection {...props} />
         </>
-      ) : (
-        <p className="muted">Episode tracking and discussion are available for TV shows.</p>
       )}
       <section className="title-actions row" aria-label="Watchlist actions">
         <button
