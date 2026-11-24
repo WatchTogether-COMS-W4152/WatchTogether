@@ -30,16 +30,10 @@ class EpisodeProgress < ApplicationRecord
   end
 
   def position_exists_in_show
-    return unless watchlist_item && season.to_i >= 1 && episode.to_i >= 1
+    return unless watchlist_item && season.is_a?(Integer) && episode.is_a?(Integer)
 
-    lengths = watchlist_item.season_lengths
-    return unless lengths
-
-    if season > lengths.size
-      errors.add(:season, :out_of_range, message: "This show has #{ActionController::Base.helpers.pluralize(lengths.size, "season")}.")
-    elsif episode > lengths[season - 1]
-      errors.add(:episode, :out_of_range, message: "Season #{season} has #{ActionController::Base.helpers.pluralize(lengths[season - 1], "episode")}.")
-    end
+    field, message = watchlist_item.position_error(season: season, episode: episode)
+    errors.add(field, :out_of_range, message: message) if field
   end
 
   def watchlist_item_is_episodic

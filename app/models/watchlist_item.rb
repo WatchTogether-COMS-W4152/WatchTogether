@@ -21,6 +21,17 @@ class WatchlistItem < ApplicationRecord
     self[:season_lengths]
   end
 
+  def position_error(season:, episode:)
+    lengths = season_lengths
+    return unless lengths && season >= 1 && episode >= 1
+
+    if season > lengths.size
+      [ :season, "This show has #{ActionController::Base.helpers.pluralize(lengths.size, "season")}." ]
+    elsif episode > lengths[season - 1]
+      [ :episode, "Season #{season} has #{ActionController::Base.helpers.pluralize(lengths[season - 1], "episode")}." ]
+    end
+  end
+
   def position_after(position)
     season, episode = position.values_at(:season, :episode)
     lengths = season_lengths
