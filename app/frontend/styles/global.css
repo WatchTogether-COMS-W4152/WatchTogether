@@ -2,35 +2,35 @@
 @import "./screens.css";
 
 :root {
-  --ground: #f7f7f8;
-  --surface: #ffffff;
-  --sunk: #efeff1;
-  --sunk-hover: #e4e4e7;
-  --ink: #18191c;
-  --ink-muted: #5f6168;
-  --line: #e4e4e7;
-  --accent: #3451c7;
-  --accent-press: #2a44a8;
+  --ground: #f5f3ee;
+  --surface: #fffdf9;
+  --sunk: #ece9e2;
+  --sunk-hover: #e2ded5;
+  --ink: #1d1b17;
+  --ink-muted: #625e56;
+  --line: #e2ded5;
+  --accent: #1e5c45;
+  --accent-press: #174a37;
   --on-accent: #ffffff;
-  --accent-soft: #e8ecfa;
-  --accent-text: #2f49b8;
-  --danger: #b42318;
+  --accent-soft: #e1ece5;
+  --accent-text: #1b5640;
+  --danger: #b0301f;
   --on-danger: #ffffff;
-  --danger-soft: #fdeceb;
-  --success: #1a6b47;
-  --success-soft: #e6f4ec;
+  --danger-soft: #f9e7e3;
+  --success: #1f6b45;
+  --success-soft: #e2eee6;
   --focus: var(--accent);
-  --spoiler-a: #efeff1;
-  --spoiler-b: #e4e4e7;
-  --avatar-1: #f0d9d0;
-  --avatar-2: #efe3c8;
-  --avatar-3: #d5e6d8;
-  --avatar-4: #d3e2ee;
-  --avatar-5: #dfd8ef;
-  --avatar-6: #efd6e1;
-  --avatar-7: #e0e6cc;
-  --avatar-8: #f0dcc6;
-  --on-avatar: #18191c;
+  --spoiler-a: #ece9e2;
+  --spoiler-b: #e2ded5;
+  --avatar-1: #ecd5c6;
+  --avatar-2: #e9ddbf;
+  --avatar-3: #d3e0d2;
+  --avatar-4: #d4dfe3;
+  --avatar-5: #e4d6cf;
+  --avatar-6: #e7d3d6;
+  --avatar-7: #dbdfc9;
+  --avatar-8: #e8d9c4;
+  --on-avatar: #1d1b17;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -49,9 +49,9 @@
   --radius-lg: 16px;
   --radius-full: 50%;
 
-  --shadow-card: 0 1px 2px #18191c0f, 0 4px 16px -4px #18191c1a;
-  --shadow-poster: 0 4px 12px -6px #18191c40;
-  --shadow-pop: 0 2px 6px #18191c14, 0 16px 40px -12px #18191c40;
+  --shadow-card: 0 1px 2px #1d1b170f, 0 4px 16px -4px #1d1b171a;
+  --shadow-poster: 0 4px 12px -6px #1d1b1740;
+  --shadow-pop: 0 2px 6px #1d1b1714, 0 16px 40px -12px #1d1b1740;
 
   --page-width: 1080px;
   --read-width: 720px;
@@ -63,25 +63,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: #111214;
-    --surface: #1a1b1e;
-    --sunk: #232428;
-    --sunk-hover: #2c2d32;
-    --ink: #ececef;
-    --ink-muted: #9da0a8;
-    --line: #2a2b30;
-    --accent: #8ea2f5;
-    --accent-press: #b1bfff;
-    --on-accent: #111214;
-    --accent-soft: #1f2540;
-    --accent-text: #b1bfff;
-    --danger: #ff8a80;
-    --on-danger: #111214;
-    --danger-soft: #3a1a1a;
-    --success: #74d3a4;
-    --success-soft: #13291f;
-    --spoiler-a: #1a1b1e;
-    --spoiler-b: #25262b;
+    --ground: #141311;
+    --surface: #1c1b18;
+    --sunk: #272521;
+    --sunk-hover: #312e29;
+    --ink: #efebe3;
+    --ink-muted: #a39e94;
+    --line: #2c2a25;
+    --accent: #86c9a6;
+    --accent-press: #a3dbbd;
+    --on-accent: #121a15;
+    --accent-soft: #1b2e24;
+    --accent-text: #a3dbbd;
+    --danger: #f28b7a;
+    --on-danger: #141311;
+    --danger-soft: #3a1e19;
+    --success: #8dd2ac;
+    --success-soft: #17291f;
+    --spoiler-a: #1c1b18;
+    --spoiler-b: #26241f;
 
     --shadow-card: 0 1px 2px #00000066, 0 4px 16px -4px #00000080;
     --shadow-poster: 0 4px 12px -6px #000000b3;
