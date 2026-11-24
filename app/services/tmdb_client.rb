@@ -67,11 +67,46 @@ class TmdbClient
     end
   end
 
+  def watch_providers(media_type, tmdb_id)
+    unless MEDIA_TYPES.include?(media_type) && tmdb_id.to_s.match?(/\A[1-9]\d{0,9}\z/)
+      raise InvalidSelection, "Choose a valid movie or TV show."
+    end
+
+    @cache.fetch([ "tmdb", "watch_providers", media_type, tmdb_id.to_s, "US" ], expires_in: 12.hours) do
+      data = request("#{media_type}/#{tmdb_id}/watch/providers")
+      results = data["results"]
+      raise Unavailable, UNAVAILABLE_MESSAGE unless results.is_a?(Hash)
+
+      country = results["US"]
+      country = {} unless country.is_a?(Hash)
+
+      {
+        region: "US",
+        streaming: provider_names(country["flatrate"]),
+        rent: provider_names(country["rent"]),
+        buy: provider_names(country["buy"]),
+        free: provider_names(country["free"]),
+        ads: provider_names(country["ads"])
+      }
+    end
+  end
+
   def self.poster_url(path)
     "https://image.tmdb.org/t/p/w342#{path}" if path.is_a?(String) && path.match?(/\A\/[A-Za-z0-9_-]+\.(jpg|png|webp)\z/i)
   end
 
   private
+
+  def provider_names(providers)
+    return [] unless providers.is_a?(Array)
+
+    providers.filter_map do |provider|
+      next unless provider.is_a?(Hash)
+
+      name = provider["provider_name"]
+      name.strip if name.is_a?(String) && name.present?
+    end.uniq
+  end
 
   def request(path, **query)
     raise Unavailable, UNAVAILABLE_MESSAGE if @api_key.blank? || @cache.read(OUTAGE_KEY)

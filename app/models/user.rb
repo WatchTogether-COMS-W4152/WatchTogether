@@ -13,5 +13,12 @@ class User < ApplicationRecord
   validates :display_name, presence: true, length: { maximum: 50 }
   validates :email, presence: true, length: { maximum: 254 },
     format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: true
-  validates :password, length: { minimum: 8 }, format: { with: /\S/, message: "can't be only spaces" }, allow_nil: true
+  validates :password, length: { minimum: 8 }, allow_nil: true
+  validate :password_not_blank
+
+  private
+
+  def password_not_blank
+    errors.add(:password, "can't be only spaces") if password && password.strip.empty?
+  end
 end
