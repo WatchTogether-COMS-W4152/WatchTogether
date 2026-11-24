@@ -127,4 +127,16 @@ RSpec.describe "Rating suggestions", type: :request do
   ensure
     ApplicationController.allow_forgery_protection = previous
   end
+
+  it "lets a member take their rating back" do
+    Vote.create!(suggestion: suggestion, user: member, rating: "not_interested")
+    sign_in(member)
+
+    delete group_suggestion_vote_path(group, suggestion)
+    follow_redirect!
+
+    expect(my_votes).to be_empty
+    expect(page_props.dig("flash", "notice")).to eq("Rating removed.")
+    expect(page_props["suggestions"].sole).to include("my_rating" => nil, "score" => 0, "votes_count" => 0)
+  end
 end

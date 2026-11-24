@@ -15,7 +15,7 @@ class WatchlistItemsController < InertiaController
       group: @group.as_json(only: [ :id, :name ]),
       watchlist_items: watchlist_items.map do |item|
         item.as_json(only: [ :id, :title, :watched ])
-          .merge(item.catalog_json, "next_episode" => item.next_group_episode(members: members))
+          .merge(item.catalog_json, "next_episode" => (item.next_group_episode(members: members) unless item.watched))
       end
     }
   end
@@ -51,7 +51,7 @@ class WatchlistItemsController < InertiaController
   def update
     item = @group.watchlist_items.find(params[:id])
 
-    item.update!(watched: !item.watched)
+    item.update!(watched: ActiveModel::Type::Boolean.new.cast(params.fetch(:watched)))
 
     redirect_to group_watchlist_items_path(@group),
       notice: "Watchlist updated.",

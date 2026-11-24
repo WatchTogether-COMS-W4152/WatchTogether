@@ -29,7 +29,7 @@ Rails.application.routes.draw do
     get "catalog/:media_type/:tmdb_id", to: "catalog#show", as: :catalog_title
     resources :suggestions, only: [ :index, :create, :destroy ] do
       post :watchlist, on: :member
-      resource :vote, only: [ :update ]
+      resource :vote, only: [ :update, :destroy ]
     end
     # Watchlist
     resources :watchlist_items, only: [ :index, :create, :show, :update, :destroy ] do

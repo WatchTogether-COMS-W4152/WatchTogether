@@ -19,7 +19,7 @@ RSpec.describe "Catalog voting and watchlist integration", type: :request do
       sign_in(member)
       allow(client).to receive(:details).with("movie", "11").and_return(title)
       path = public_send("group_#{destination}_path", group)
-      post path, params: { title: "Forged", tmdb_id: 11, media_type: "movie", overview: "Forged", age_rating: "G", watched: true }
+      post path, params: { manual_media_type: "movie", title: "Forged", tmdb_id: 11, media_type: "movie", overview: "Forged", age_rating: "G", watched: true }
       expect(response).to redirect_to(path)
       record = destination == :suggestions ? Suggestion.last : WatchlistItem.last
       expect(record).to have_attributes(**title, group_id: group.id)
@@ -32,7 +32,7 @@ RSpec.describe "Catalog voting and watchlist integration", type: :request do
       sign_in(member)
       allow(client).to receive(:details).and_raise(TmdbClient::Unavailable, TmdbClient::UNAVAILABLE_MESSAGE)
       path = public_send("group_#{destination}_path", group)
-      post path, params: { title: "Forged", tmdb_id: 11, media_type: "movie" }
+      post path, params: { manual_media_type: "movie", title: "Forged", tmdb_id: 11, media_type: "movie" }
       expect(Suggestion.count + WatchlistItem.count).to eq(0)
       follow_redirect!
       expect(page_props.dig("errors", "title")).to include(TmdbClient::UNAVAILABLE_MESSAGE)
@@ -64,7 +64,7 @@ RSpec.describe "Catalog voting and watchlist integration", type: :request do
     follow_redirect!
     expect(page_props.dig("errors", "title")).to include("is already on this group's watchlist")
     allow_any_instance_of(WatchlistItem).to receive(:save).and_raise(ActiveRecord::RecordNotUnique)
-    post group_watchlist_items_path(group), params: { title: "A title" }
+    post group_watchlist_items_path(group), params: { manual_media_type: "movie", title: "A title" }
     follow_redirect!
     expect(page_props.dig("errors", "title")).to include("is already on this group's watchlist")
   end
@@ -188,5 +188,16 @@ RSpec.describe "Catalog voting and watchlist integration", type: :request do
     expect(WatchlistItem.count).to eq(0)
   ensure
     ApplicationController.allow_forgery_protection = previous
+  end
+
+  it "treats a typed-in suggestion as already on the watchlist when the same typed-in title is there" do
+    group.watchlist_items.create!(title: "Dune", manual_media_type: "movie")
+    suggestion = Suggestion.create!(group: group, title: "dune", manual_media_type: "movie", suggested_by: owner)
+    sign_in(owner)
+
+    get group_suggestions_path(group)
+    expect(page_props["suggestions"].sole).to include("in_watchlist" => true)
+
+    expect { post watchlist_group_suggestion_path(group, suggestion) }.not_to change(WatchlistItem, :count)
   end
 end

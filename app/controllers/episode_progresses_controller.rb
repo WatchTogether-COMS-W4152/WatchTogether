@@ -1,7 +1,7 @@
 class EpisodeProgressesController < InertiaController
   ERROR_MESSAGES = {
-    season: "Enter a season number of 1 or more.",
-    episode: "Enter an episode number of 1 or more."
+    season: "Enter a season number from 1 to 9999.",
+    episode: "Enter an episode number from 1 to 9999."
   }.freeze
 
   rate_limit to: 60, within: 1.minute, by: -> { current_user.id }, store: RATE_LIMIT_STORE,
@@ -13,7 +13,13 @@ class EpisodeProgressesController < InertiaController
     attempts = 0
     begin
       progress = @item.episode_progresses.find_or_initialize_by(user: current_user)
-      progress.assign_attributes(next_position(progress))
+      position = next_position(progress)
+      unless position
+        return redirect_to group_watchlist_item_path(@group, @item),
+          notice: "You've watched every episode.", status: :see_other
+      end
+
+      progress.assign_attributes(position)
       saved = progress.save
     rescue ActiveRecord::RecordNotUnique
       retry if (attempts += 1) < 2
@@ -47,11 +53,15 @@ class EpisodeProgressesController < InertiaController
     return { season: params[:season], episode: params[:episode] } unless params[:next].present?
     return GroupProgress::FIRST_EPISODE if progress.new_record?
 
-    { season: progress.season, episode: progress.episode + 1 }
+    @item.position_after(progress.position)
   end
 
   def friendly_errors(progress)
-    ERROR_MESSAGES.filter_map { |field, message| [ field, [ message ] ] if progress.errors[field].any? }.to_h
+    ERROR_MESSAGES.filter_map do |field, message|
+      next unless progress.errors[field].any?
+
+      [ field, [ progress.errors.where(field, :out_of_range).first&.message || message ] ]
+    end.to_h
   end
 
   def format_position(position)

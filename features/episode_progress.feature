@@ -8,7 +8,7 @@ Feature: Tracking episode progress together
     And "Bob" has an account
     And "Alice" owns a group named "Friday Night"
     And "Bob" joined "Friday Night" using an invitation
-    And "Alice" added "Severance" to the watchlist for "Friday Night"
+    And "Alice" added the TV show "Severance" to the watchlist for "Friday Night"
 
   @US23
   Scenario: A member records where they are and moves on one episode at a time
@@ -104,7 +104,7 @@ Feature: Tracking episode progress together
   Scenario: Only current members can track progress, and only within their own group
     Given "Carol" has an account
     And "Carol" owns a group named "Film Club"
-    And "Carol" added "Dark" to the watchlist for "Film Club"
+    And "Carol" added the TV show "Dark" to the watchlist for "Film Club"
     And I am signed in as "Carol"
     When I view "Severance" in "Friday Night"
     Then the group is not available to me

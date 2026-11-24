@@ -21,6 +21,8 @@ type PutOptions = NonNullable<Parameters<typeof router.put>[2]>;
 type Visit = Parameters<NonNullable<PutOptions["onFinish"]>>[0];
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Form callbacks do not inspect visit metadata; the request transport is stubbed.
 const visit = {} as Visit;
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- onSuccess receives the next page, which this panel ignores.
+const nextPage = {} as Parameters<NonNullable<PutOptions["onSuccess"]>>[0];
 let putRequest: MockInstance<typeof router.put>;
 let deleteRequest: MockInstance<typeof router.delete>;
 
@@ -33,8 +35,11 @@ const progress: EpisodeProgressData = {
     { id: 3, display_name: "Carol", position: null, caught_up: false },
   ],
   my_position: { season: 2, episode: 1 },
+  my_next_episode: { season: 2, episode: 2 },
   next_episode: { season: 1, episode: 1 },
+  finished: false,
   everyone_caught_up: false,
+  season_lengths: null,
 };
 
 function renderPanel(data: EpisodeProgressData = progress) {
@@ -74,6 +79,13 @@ describe("seeing where everyone is", () => {
     expect(memberRow("Carol").getByText("Not started")).toHaveClass("chip-quiet");
   });
 
+  it("draws every episode of the season when TMDB gives its length", () => {
+    renderPanel({ ...progress, next_episode: { season: 2, episode: 2 }, season_lengths: [8, 9] });
+    expect(
+      within(screen.getByRole("list", { name: "Season 2" })).getAllByRole("listitem"),
+    ).toHaveLength(9);
+  });
+
   it("draws the season strip from the group's progress", () => {
     renderPanel({
       members: [
@@ -81,8 +93,11 @@ describe("seeing where everyone is", () => {
         { id: 2, display_name: "Bob", position: { season: 1, episode: 2 }, caught_up: false },
       ],
       my_position: { season: 1, episode: 2 },
+      my_next_episode: { season: 1, episode: 3 },
       next_episode: { season: 1, episode: 3 },
+      finished: false,
       everyone_caught_up: false,
+      season_lengths: null,
     });
     const cells = within(screen.getByRole("list", { name: "Season 1" })).getAllByRole("listitem");
     expect(cells.map((cell) => cell.className.replace("cell ", ""))).toEqual([
@@ -100,8 +115,11 @@ describe("seeing where everyone is", () => {
     renderPanel({
       members: [{ id: 2, display_name: "Bob", position: null, caught_up: false }],
       my_position: null,
+      my_next_episode: { season: 1, episode: 1 },
       next_episode: { season: 1, episode: 1 },
+      finished: false,
       everyone_caught_up: false,
+      season_lengths: null,
     });
     expect(
       screen.getByRole("heading", {
@@ -118,14 +136,37 @@ describe("seeing where everyone is", () => {
         { id: 2, display_name: "Bob", position: { season: 1, episode: 5 }, caught_up: true },
       ],
       my_position: { season: 1, episode: 5 },
+      my_next_episode: { season: 1, episode: 6 },
       next_episode: { season: 1, episode: 6 },
+      finished: false,
       everyone_caught_up: true,
+      season_lengths: null,
     });
     expect(
       screen.getByRole("heading", {
         name: "Next episode for everyone: Season 1, Episode 6",
       }),
     ).toBeVisible();
+  });
+
+  it("rolls over to the next season and stops after the last episode", () => {
+    const { unmount } = renderPanel({ ...progress, my_next_episode: { season: 3, episode: 1 } });
+    expect(screen.getByRole("button", { name: "Watched next episode (S3 E1)" })).toBeVisible();
+    unmount();
+    renderPanel({
+      members: [
+        { id: 2, display_name: "Bob", position: { season: 4, episode: 9 }, caught_up: true },
+      ],
+      my_position: { season: 4, episode: 9 },
+      my_next_episode: null,
+      next_episode: null,
+      finished: true,
+      everyone_caught_up: true,
+      season_lengths: null,
+    });
+    expect(screen.getByRole("heading", { name: "Everyone has finished the show" })).toBeVisible();
+    expect(screen.queryByRole("list", { name: /Season/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Watched next episode/ })).not.toBeInTheDocument();
   });
 });
 
@@ -168,10 +209,10 @@ describe("recording my progress", () => {
     await user.click(screen.getByRole("button", { name: "Save progress" }));
     const options = putRequest.mock.calls[0][2];
     act(() => {
-      options?.onError?.({ season: ["Enter a season number of 1 or more."] });
+      options?.onError?.({ season: ["Enter a season number from 1 to 9999."] });
       options?.onFinish?.(visit);
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a season number of 1 or more.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a season number from 1 to 9999.");
     expect(screen.getByLabelText("Season")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText("Season")).toHaveValue(0);
   });
@@ -193,7 +234,7 @@ describe("recording my progress", () => {
 
   it("starts at the first episode when I have not started", async () => {
     const user = userEvent.setup();
-    renderPanel({ ...progress, my_position: null });
+    renderPanel({ ...progress, my_position: null, my_next_episode: { season: 1, episode: 1 } });
     await user.click(screen.getByRole("button", { name: "Watched next episode (S1 E1)" }));
     expect(putRequest.mock.calls[0][1]).toEqual({ next: "1" });
     await user.click(screen.getByRole("button", { name: "Set exact episode" }));
@@ -206,7 +247,17 @@ describe("recording my progress", () => {
     renderPanel();
     await user.click(screen.getByRole("button", { name: "Set exact episode" }));
     await user.click(screen.getByRole("button", { name: "Clear my progress" }));
-    expect(deleteRequest).toHaveBeenCalledWith(PATH, { preserveScroll: true });
+    expect(deleteRequest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Yes, clear" }));
+    const [url, options] = deleteRequest.mock.calls[0];
+    expect(url).toBe(PATH);
+    act(() => options?.onStart?.(visit));
+    expect(screen.getByRole("button", { name: /Watched next episode/ })).toBeDisabled();
+    expect(screen.getByLabelText("Episode")).toHaveValue(1);
+    act(() => {
+      options?.onSuccess?.(nextPage);
+      options?.onFinish?.(visit);
+    });
     expect(screen.getByLabelText("Episode")).toHaveValue(null);
   });
 });

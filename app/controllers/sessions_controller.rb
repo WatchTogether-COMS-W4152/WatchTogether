@@ -11,10 +11,11 @@ class SessionsController < InertiaController
 
   def create
     credentials = params.permit(:email, :password)
-    user = User.find_by(email: credentials[:email].to_s.strip.downcase)
-    if user&.authenticate(credentials[:password].to_s)
+    user = User.authenticate_by(email: credentials[:email].to_s, password: credentials[:password].to_s)
+    if user
+      destination = take_return_to
       start_session(user)
-      redirect_to groups_path, notice: "Welcome back.", status: :see_other
+      redirect_to destination, notice: "Welcome back.", status: :see_other
     else
       redirect_to sign_in_path, inertia: { errors: { email: [ "Email or password is incorrect." ] } }, status: :see_other
     end

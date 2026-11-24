@@ -28,8 +28,11 @@ RSpec.describe "Episode progress", type: :request do
           { "id" => member.id, "display_name" => "Bob", "position" => { "season" => 2, "episode" => 1 }, "caught_up" => false }
         ],
         "my_position" => { "season" => 2, "episode" => 1 },
+        "my_next_episode" => { "season" => 2, "episode" => 2 },
         "next_episode" => { "season" => 2, "episode" => 2 },
-        "everyone_caught_up" => false
+        "finished" => false,
+        "everyone_caught_up" => false,
+        "season_lengths" => nil
       )
       expect(response.body).not_to include(owner.email, group.invite_code)
     end
@@ -102,8 +105,8 @@ RSpec.describe "Episode progress", type: :request do
         expect(response).to redirect_to(group_watchlist_item_path(group, show))
         follow_redirect!
         expected = {}
-        expected["season"] = [ "Enter a season number of 1 or more." ] unless params[:season] == 1
-        expected["episode"] = [ "Enter an episode number of 1 or more." ] unless params[:episode] == 1 || params[:episode] == 2
+        expected["season"] = [ "Enter a season number from 1 to 9999." ] unless params[:season] == 1
+        expected["episode"] = [ "Enter an episode number from 1 to 9999." ] unless params[:episode] == 1 || params[:episode] == 2
         expect(page_props["errors"]).to eq(expected)
       end
       expect(my_progress.position).to eq(season: 1, episode: 4)
@@ -210,5 +213,70 @@ RSpec.describe "Episode progress", type: :request do
       expect(response).to redirect_to(sign_in_path)
       expect(EpisodeProgress.count).to eq(0)
     end
+  end
+
+  describe "with season lengths from TMDB" do
+    let(:show) do
+      group.watchlist_items.create!(title: "Stranger Things", tmdb_id: 66_732, media_type: "tv",
+        season_lengths: [ 3, 2 ], season_lengths_checked_at: Time.current)
+    end
+
+    it "moves to the next season after the last episode of a season" do
+      show.episode_progresses.create!(user: member, season: 1, episode: 3)
+      sign_in(member)
+
+      put path, params: { next: "1" }
+
+      expect(my_progress.position).to eq(season: 2, episode: 1)
+    end
+
+    it "stops after the last episode of the show" do
+      show.episode_progresses.create!(user: owner, season: 2, episode: 2)
+      show.episode_progresses.create!(user: member, season: 2, episode: 2)
+      sign_in(member)
+
+      put path, params: { next: "1" }
+      expect(my_progress.position).to eq(season: 2, episode: 2)
+      expect(flash[:notice]).to eq("You've watched every episode.")
+
+      get group_watchlist_item_path(group, show)
+      expect(page_props["episode_progress"]).to include(
+        "my_next_episode" => nil, "next_episode" => nil, "finished" => true
+      )
+    end
+
+    it "rejects seasons and episodes the show doesn't have" do
+      sign_in(member)
+
+      put path, params: { season: "3", episode: "1" }
+      follow_redirect!
+      expect(page_props["errors"]).to eq("season" => [ "This show has 2 seasons." ])
+
+      put path, params: { season: "1", episode: "61" }
+      follow_redirect!
+      expect(page_props["errors"]).to eq("episode" => [ "Season 1 has 3 episodes." ])
+      expect(my_progress).to be_nil
+    end
+  end
+
+  it "rejects huge numbers with a field error instead of crashing" do
+    sign_in(member)
+
+    put path, params: { season: "1", episode: "99999999999999999999" }
+    follow_redirect!
+
+    expect(page_props["errors"]).to eq("episode" => [ "Enter an episode number from 1 to 9999." ])
+    expect(my_progress).to be_nil
+  end
+
+  it "drops the next-episode hint once a show is marked watched" do
+    show.episode_progresses.create!(user: owner, season: 1, episode: 3)
+    show.episode_progresses.create!(user: member, season: 1, episode: 3)
+    show.update!(watched: true)
+    sign_in(member)
+
+    get group_watchlist_items_path(group)
+
+    expect(page_props["watchlist_items"].sole).to include("next_episode" => nil)
   end
 end

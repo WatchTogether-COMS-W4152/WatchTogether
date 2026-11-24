@@ -12,8 +12,9 @@ class RegistrationsController < InertiaController
   def create
     user = User.new(params.permit(:display_name, :email, :password, :password_confirmation))
     if user.save
+      destination = take_return_to
       start_session(user)
-      redirect_to groups_path, notice: "Your account is ready.", status: :see_other
+      redirect_to destination, notice: "Your account is ready.", status: :see_other
     else
       redirect_to sign_up_path, inertia: { errors: user.errors }, status: :see_other
     end

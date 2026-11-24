@@ -11,6 +11,8 @@ class TmdbClient
   TIMEOUTS = { open_timeout: 1, read_timeout: 2, write_timeout: 2 }.freeze
   OUTAGE_KEY = [ "tmdb", "outage" ].freeze
   OUTAGE_TTL = 30.seconds
+  FAILURES_KEY = [ "tmdb", "failures" ].freeze
+  FAILURES_BEFORE_OUTAGE = 3
 
   def initialize(api_key: ENV["TMDB_API_KEY"].presence || Rails.application.credentials.dig(:tmdb, :api_key), cache: Rails.cache)
     @api_key = api_key
@@ -50,6 +52,20 @@ class TmdbClient
     end
   end
 
+  def season_lengths(tmdb_id)
+    raise InvalidSelection, "Choose a valid movie or TV show." unless tmdb_id.to_s.match?(/\A[1-9]\d{0,9}\z/)
+
+    @cache.fetch([ "tmdb", "season_lengths", tmdb_id.to_s ], expires_in: 12.hours) do
+      seasons = request("tv/#{tmdb_id}")["seasons"]
+      counts = (seasons.is_a?(Array) ? seasons : []).each_with_object({}) do |season, lengths|
+        next unless season.is_a?(Hash)
+
+        number, count = season.values_at("season_number", "episode_count")
+        lengths[number] = count if number.is_a?(Integer) && number.positive? && count.is_a?(Integer) && count.positive?
+      end
+      (1..counts.size).map { |number| counts[number] }.take_while(&:itself).presence
+    end
+  end
 
   def watch_providers(media_type, tmdb_id)
     unless MEDIA_TYPES.include?(media_type) && tmdb_id.to_s.match?(/\A[1-9]\d{0,9}\z/)
@@ -95,10 +111,20 @@ class TmdbClient
   def request(path, **query)
     raise Unavailable, UNAVAILABLE_MESSAGE if @api_key.blank? || @cache.read(OUTAGE_KEY)
 
-    fetch_json(path, **query)
-  rescue Unavailable
-    @cache.write(OUTAGE_KEY, true, expires_in: OUTAGE_TTL) if @api_key.present?
-    raise
+    begin
+      data = fetch_json(path, **query)
+    rescue Unavailable
+      record_failure
+      raise
+    end
+    @cache.delete(FAILURES_KEY)
+    data
+  end
+
+  def record_failure
+    failures = @cache.read(FAILURES_KEY).to_i + 1
+    @cache.write(FAILURES_KEY, failures, expires_in: OUTAGE_TTL)
+    @cache.write(OUTAGE_KEY, true, expires_in: OUTAGE_TTL) if failures >= FAILURES_BEFORE_OUTAGE
   end
 
   def fetch_json(path, **query)

@@ -113,11 +113,13 @@ describe("adding a watchlist title", () => {
     const user = userEvent.setup();
     renderPage([]);
     await user.type(screen.getByLabelText("Title"), "Spirited Away");
+    await user.click(screen.getByRole("button", { name: "Movie" }));
+    expect(screen.getByRole("button", { name: "Movie" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
 
     const [url, data, options] = postRequest.mock.calls[0];
     expect(url).toBe("/groups/7/watchlist_items");
-    expect(data).toEqual({ title: "Spirited Away" });
+    expect(data).toEqual({ title: "Spirited Away", manual_media_type: "movie" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Adding…" })).toBeDisabled();
@@ -152,7 +154,7 @@ describe("adding a watchlist title", () => {
     await user.type(screen.getByLabelText("Title"), "Arrival");
     await user.click(screen.getByRole("button", { name: "Add to watchlist" }));
     expect(postRequest).toHaveBeenCalledTimes(2);
-    expect(postRequest.mock.calls[1][1]).toEqual({ title: "Arrival" });
+    expect(postRequest.mock.calls[1][1]).toEqual({ title: "Arrival", manual_media_type: "" });
     const retryOptions = postRequest.mock.calls[1][2];
     act(() => {
       retryOptions?.onSuccess?.(nextPage);
@@ -177,7 +179,7 @@ describe("watching a title", () => {
     await user.click(screen.getByRole("button", { name: action }));
     expect(patchRequest).toHaveBeenCalledTimes(1);
     expect(patchRequest.mock.calls[0][0]).toBe(`/groups/7/watchlist_items/${item.id}`);
-    expect(patchRequest.mock.calls[0][1]).toEqual({});
+    expect(patchRequest.mock.calls[0][1]).toEqual({ watched: nextWatched });
     expect(deleteRequest).not.toHaveBeenCalled();
 
     rerender(

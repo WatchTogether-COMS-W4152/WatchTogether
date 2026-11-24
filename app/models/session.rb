@@ -1,6 +1,8 @@
 require "digest"
 
 class Session < ApplicationRecord
+  LIFETIME = 30.days
+
   belongs_to :user
 
   validates :token_digest, presence: true, uniqueness: true
@@ -9,7 +11,7 @@ class Session < ApplicationRecord
   def self.issue!(user)
     token = SecureRandom.hex(32)
     session = create!(user: user, token_digest: Digest::SHA256.hexdigest(token),
-      expires_at: 30.days.from_now)
+      expires_at: LIFETIME.from_now)
     [ session, token ]
   end
 

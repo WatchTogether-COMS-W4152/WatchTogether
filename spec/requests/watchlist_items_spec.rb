@@ -43,7 +43,7 @@ RSpec.describe "Watchlist items", type: :request do
       sign_in(owner)
 
       expect {
-        post group_watchlist_items_path(group), params: { title: "Titanic" }
+        post group_watchlist_items_path(group), params: { manual_media_type: "movie", title: "Titanic" }
       }.to change(WatchlistItem, :count).by(1)
 
       expect(WatchlistItem.last).to have_attributes(group_id: group.id, title: "Titanic", watched: false)
@@ -60,7 +60,7 @@ RSpec.describe "Watchlist items", type: :request do
 
       expect {
         post group_watchlist_items_path(group), params: {
-          title: "Barbie", group_id: other_group.id, watched: true, id: 999
+          manual_media_type: "movie", title: "Barbie", group_id: other_group.id, watched: true, id: 999
         }
       }.to change(WatchlistItem, :count).by(1)
 
@@ -72,7 +72,7 @@ RSpec.describe "Watchlist items", type: :request do
     it "returns title-specific errors without creating items for missing, blank, or overlong titles" do
       sign_in(member)
 
-      [ {}, { title: "" }, { title: "   " }, { title: "A" * 121 } ].each do |params|
+      [ {}, { title: "" }, { title: "   " }, { manual_media_type: "movie", title: "A" * 121 } ].each do |params|
         expect {
           post group_watchlist_items_path(group), params: params
         }.not_to change(WatchlistItem, :count)
@@ -87,13 +87,39 @@ RSpec.describe "Watchlist items", type: :request do
     end
   end
 
+  describe "typed-in titles" do
+    before { sign_in(member) }
+
+    it "asks whether a typed-in title is a movie or a TV show, and only shows get episodes" do
+      post group_watchlist_items_path(group), params: { title: "Up" }
+      follow_redirect!
+      expect(page_props.dig("errors", "title")).to eq([ "Choose whether it's a movie or a TV show." ])
+
+      post group_watchlist_items_path(group), params: { manual_media_type: "movie", title: "Up" }
+      post group_watchlist_items_path(group), params: { manual_media_type: "tv", title: "Dark" }
+
+      expect(group.watchlist_items.find_by!(title: "Up")).not_to be_episodic
+      expect(group.watchlist_items.find_by!(title: "Dark")).to be_episodic
+    end
+
+    it "blocks the same typed-in title twice, ignoring case and extra spaces" do
+      post group_watchlist_items_path(group), params: { manual_media_type: "movie", title: "Dune" }
+
+      expect {
+        post group_watchlist_items_path(group), params: { manual_media_type: "movie", title: "  dune " }
+      }.not_to change(WatchlistItem, :count)
+      follow_redirect!
+      expect(page_props.dig("errors", "title")).to eq([ "is already on this group's watchlist" ])
+    end
+  end
+
   describe "PATCH update" do
     it "lets an ordinary member mark a shared title watched and then unwatched, persisting both changes" do
       item = group.watchlist_items.create!(title: "Titanic")
       sign_in(member)
 
       [ true, false ].each do |watched|
-        patch group_watchlist_item_path(group, item)
+        patch group_watchlist_item_path(group, item), params: { watched: watched }
 
         expect(item.reload.watched).to be(watched)
         expect(response).to have_http_status(:see_other)
@@ -111,12 +137,21 @@ RSpec.describe "Watchlist items", type: :request do
       sign_in(owner)
 
       patch group_watchlist_item_path(group, item), params: {
-        title: "Changed", group_id: other_group.id, watched: false
+        title: "Changed", group_id: other_group.id, watched: true
       }
 
       expect(item.reload).to have_attributes(group_id: group.id, title: "Titanic", watched: true)
       expect(untouched.reload).to have_attributes(title: "Barbie", watched: false)
       expect(other_group.watchlist_items).to be_empty
+    end
+
+    it "sets the state it was asked for, so a repeated or stale click doesn't undo it" do
+      item = group.watchlist_items.create!(title: "Titanic")
+      sign_in(member)
+
+      2.times { patch group_watchlist_item_path(group, item), params: { watched: true } }
+
+      expect(item.reload.watched).to be(true)
     end
   end
 
@@ -150,7 +185,7 @@ RSpec.describe "Watchlist items", type: :request do
         path = [ :get, :post ].include?(method) ? group_watchlist_items_path(group) : group_watchlist_item_path(group, item)
         before_items = WatchlistItem.order(:id).pluck(:id, :group_id, :title, :watched)
 
-        public_send(method, path, params: { title: "Unwanted film" })
+        public_send(method, path, params: { manual_media_type: "movie", title: "Unwanted film" })
 
         expect(response).to have_http_status(status)
         expect(response).to redirect_to(sign_in_path) if status == :see_other
@@ -205,7 +240,7 @@ RSpec.describe "Watchlist items", type: :request do
       ApplicationController.allow_forgery_protection = true
       path = method == :post ? group_watchlist_items_path(group) : group_watchlist_item_path(group, item)
 
-      public_send(method, path, params: { title: "Unwanted film" })
+      public_send(method, path, params: { manual_media_type: "movie", title: "Unwanted film" })
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(group.watchlist_items.reload).to contain_exactly(item)

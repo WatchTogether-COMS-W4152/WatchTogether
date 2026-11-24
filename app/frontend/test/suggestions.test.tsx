@@ -126,7 +126,7 @@ describe("suggesting a title", () => {
     await user.click(screen.getByRole("button", { name: "Add suggestion" }));
     const [url, data, options] = postRequest.mock.calls[0];
     expect(url).toBe("/groups/7/suggestions");
-    expect(data).toEqual({ title: "Spirited Away" });
+    expect(data).toEqual({ title: "Spirited Away", manual_media_type: "" });
     expect(options?.preserveScroll).toBe(true);
     act(() => options?.onStart?.(visit));
     expect(screen.getByRole("button", { name: "Adding…" })).toBeDisabled();
@@ -183,11 +183,12 @@ describe("rating", () => {
     expect(item("Up").getByRole("button", { name: "Love it" })).toBeEnabled();
   });
 
-  it("does not resend my current rating", async () => {
+  it("removes my rating when I click it again", async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(item("Paddington").getByRole("button", { name: "Maybe" }));
     expect(putRequest).not.toHaveBeenCalled();
+    expect(deleteRequest.mock.calls[0][0]).toMatch(/\/suggestions\/\d+\/vote$/);
   });
 
   it("shows a rating error next to that title", async () => {

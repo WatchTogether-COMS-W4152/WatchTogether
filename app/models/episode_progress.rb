@@ -2,10 +2,11 @@ class EpisodeProgress < ApplicationRecord
   belongs_to :watchlist_item
   belongs_to :user
 
-  validates :season, :episode, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :season, :episode, numericality: { only_integer: true, in: 1..9999 }
   validates :user_id, uniqueness: { scope: :watchlist_item_id }
   validate :user_belongs_to_group
   validate :watchlist_item_is_episodic
+  validate :position_exists_in_show
 
   def self.compare(a, b)
     [ a.fetch(:season), a.fetch(:episode) ] <=> [ b.fetch(:season), b.fetch(:episode) ]
@@ -26,6 +27,13 @@ class EpisodeProgress < ApplicationRecord
     return if watchlist_item.group.memberships.exists?(user_id: user_id)
 
     errors.add(:user, "must be a member of the group")
+  end
+
+  def position_exists_in_show
+    return unless watchlist_item && season.is_a?(Integer) && episode.is_a?(Integer)
+
+    field, message = watchlist_item.position_error(season: season, episode: episode)
+    errors.add(field, :out_of_range, message: message) if field
   end
 
   def watchlist_item_is_episodic

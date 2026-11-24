@@ -172,4 +172,47 @@ RSpec.describe "Accounts and sessions", type: :request do
   ensure
     ApplicationController.allow_forgery_protection = previous
   end
+
+  describe "fixes from the app review" do
+    it "returns to the page you were sent away from after signing in or up" do
+      user = create_user
+
+      get "/groups/join"
+      post sign_in_path, params: { email: user.email, password: "password123" }
+      expect(response).to redirect_to("/groups/join")
+
+      delete "/session"
+      get "/groups/join"
+      post sign_up_path, params: { display_name: "New", email: "new@example.com", password: "password123", password_confirmation: "password123" }
+      expect(response).to redirect_to("/groups/join")
+    end
+
+    it "keeps an active session going instead of ending it at a fixed 30 days" do
+      user = create_user
+      sign_in(user)
+      user.sessions.last.update!(expires_at: 2.days.from_now)
+
+      get groups_path
+
+      expect(user.sessions.last.expires_at).to be > 29.days.from_now
+    end
+
+    it "rejects invisible display names and passwords made only of spaces" do
+      user = User.new(display_name: "\u200B\u3000", email: "x@example.com", password: " " * 8)
+
+      expect(user).not_to be_valid
+      expect(user.errors[:display_name]).to include("can't be blank")
+      expect(user.errors[:password]).to include("can't be only spaces")
+    end
+
+    it "doesn't change the profile when no display name is sent" do
+      user = create_user(display_name: "Alice")
+      sign_in(user)
+
+      patch profile_path
+
+      expect(response).to have_http_status(:bad_request)
+      expect(user.reload.display_name).to eq("Alice")
+    end
+  end
 end

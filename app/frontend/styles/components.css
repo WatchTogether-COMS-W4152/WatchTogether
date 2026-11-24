@@ -787,3 +787,17 @@
     transition: none;
   }
 }
+
+.media-kind {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.media-kind legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+}

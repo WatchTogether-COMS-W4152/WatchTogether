@@ -151,8 +151,8 @@ RSpec.describe EpisodeComment do
       comment = show.episode_comments.new(user: larissa, season: 0, episode: nil, body: "Hi")
 
       expect(comment).not_to be_valid
-      expect(comment.errors[:season]).to eq([ "Season must be a whole number of at least 1." ])
-      expect(comment.errors[:episode]).to eq([ "Episode must be a whole number of at least 1." ])
+      expect(comment.errors[:season]).to eq([ "Season must be a whole number from 1 to 9999." ])
+      expect(comment.errors[:episode]).to eq([ "Episode must be a whole number from 1 to 9999." ])
     end
 
     it "requires an author who belongs to the group" do
