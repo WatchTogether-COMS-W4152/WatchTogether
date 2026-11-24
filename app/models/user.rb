@@ -8,10 +8,10 @@ class User < ApplicationRecord
   has_many :groups, through: :memberships
 
   normalizes :email, with: ->(email) { email.strip.downcase }
-  normalizes :display_name, with: ->(name) { name.strip }
+  normalizes :display_name, with: ->(name) { name.gsub(/[\u200B-\u200D\u2060\uFEFF]/, "").gsub(/\A[[:space:]]+|[[:space:]]+\z/, "") }
 
   validates :display_name, presence: true, length: { maximum: 50 }
   validates :email, presence: true, length: { maximum: 254 },
     format: { with: URI::MailTo::EMAIL_REGEXP }, uniqueness: true
-  validates :password, length: { minimum: 8 }, allow_nil: true
+  validates :password, length: { minimum: 8 }, format: { with: /\S/, message: "can't be only spaces" }, allow_nil: true
 end

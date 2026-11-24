@@ -26,21 +26,19 @@ export default function RatingButtons({
               aria-pressed={active}
               disabled={pending}
               onClick={() => {
-                if (active) return;
-                router.put(
-                  `/groups/${groupId}/suggestions/${suggestion.id}/vote`,
-                  { rating: option.value },
-                  {
-                    preserveScroll: true,
-                    onStart: () => {
-                      setPending(true);
-                      setError("");
-                    },
-                    onError: (errors) =>
-                      setError(errors.rating?.join(". ") ?? "Couldn't save your rating."),
-                    onFinish: () => setPending(false),
+                const path = `/groups/${groupId}/suggestions/${suggestion.id}/vote`;
+                const options = {
+                  preserveScroll: true,
+                  onStart: () => {
+                    setPending(true);
+                    setError("");
                   },
-                );
+                  onError: (errors: Record<string, string[] | undefined>) =>
+                    setError(errors.rating?.join(". ") ?? "Couldn't save your rating."),
+                  onFinish: () => setPending(false),
+                };
+                if (active) router.delete(path, options);
+                else router.put(path, { rating: option.value }, options);
               }}
             >
               {option.label}

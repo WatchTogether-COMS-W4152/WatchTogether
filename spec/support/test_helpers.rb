@@ -14,7 +14,8 @@ module TestHelpers
 
   def sign_in(user)
     post sign_in_path, params: { email: user.email, password: "password123" }
-    expect(response).to redirect_to(groups_path)
+    expect(response).to have_http_status(:see_other)
+    expect(user.sessions).to exist
   end
 
   def page_props

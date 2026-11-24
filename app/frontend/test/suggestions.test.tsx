@@ -183,11 +183,12 @@ describe("rating", () => {
     expect(item("Up").getByRole("button", { name: "Love it" })).toBeEnabled();
   });
 
-  it("does not resend my current rating", async () => {
+  it("removes my rating when I click it again", async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(item("Paddington").getByRole("button", { name: "Maybe" }));
     expect(putRequest).not.toHaveBeenCalled();
+    expect(deleteRequest.mock.calls[0][0]).toMatch(/\/suggestions\/\d+\/vote$/);
   });
 
   it("shows a rating error next to that title", async () => {

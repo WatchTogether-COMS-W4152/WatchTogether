@@ -264,7 +264,10 @@ describe("catalog titles in voting and watchlist", () => {
           name: area === "voting" ? "Add suggestion" : "Add to watchlist",
         }),
       );
-      expect(postRequest.mock.calls[1][1]).toEqual({ title: "My custom title", manual_media_type: "" });
+      expect(postRequest.mock.calls[1][1]).toEqual({
+        title: "My custom title",
+        manual_media_type: "",
+      });
     },
   );
 
