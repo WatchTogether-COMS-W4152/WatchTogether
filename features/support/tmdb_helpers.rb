@@ -72,6 +72,25 @@ module TmdbHelpers
         { "id" => 10, "media_type" => "person", "name" => "A Person" },
         { "id" => 11, "media_type" => "movie", "title" => "Adult result", "adult" => true }
       ] }
+    elsif uri.path.end_with?("/watch/providers")
+      _, _, media_type, id = uri.path.split("/")
+
+      if media_type == "movie" && id.to_i == 329865
+        {
+          "results" => {
+            "US" => {
+              "flatrate" => [ { "provider_name" => "Netflix" } ],
+              "rent" => [ { "provider_name" => "Amazon Video" } ],
+              "buy" => [ { "provider_name" => "Apple TV Store" } ]
+            },
+            "GB" => {
+              "flatrate" => [ { "provider_name" => "BBC iPlayer" } ]
+            }
+          }
+        }
+      else
+        { "results" => {} }
+      end
     else
       _, _, media_type, id = uri.path.split("/")
       TITLES[[ media_type, id.to_i ]]
