@@ -1,6 +1,6 @@
 # WatchTogether
 
-WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. A **shared watchlist** lets members keep titles, mark them watched or unwatched, and remove them. Both voting and watchlist support **TMDB movie and TV search**, saved metadata, and posters. Episode-level progress tracking and spoiler-free discussion are outside this iteration.
+WatchTogether helps friends organize what they watch together. This web-first iteration implements **group management**: email/password accounts, editable display names, private groups, shared ownership, member management, reusable invitation codes, and owner-only group deletion. It also implements **group voting**: members suggest titles, privately rate each one, and see a ranking of what the whole group is happiest to watch. A **shared watchlist** lets members keep titles, mark them watched or unwatched, and remove them. Both voting and watchlist support **TMDB movie and TV search**, saved metadata, and posters. Watchlist title pages also support episode-level progress tracking, spoiler-safe discussion, and US streaming availability.
 
 ## Team
 
@@ -44,6 +44,16 @@ Copy `.env.example` to `.env` and set `TMDB_API_KEY` to your TMDB API key. Docke
 Both voting and watchlist title fields search movies and TV shows as you type. Select a result to preview its poster, description, year, TMDB audience score, and US age certification when available. Arrow keys navigate results, Enter selects, and Escape dismisses the dropdown. You can also add a title as plain text, including when TMDB is unavailable. Existing titles are preserved without guessing which TMDB entry they represent.
 
 Rails authenticates catalogue requests and fetches canonical details for selected IDs before saving them. Saved metadata remains available if TMDB is later offline. Movie and TV IDs are treated separately, and distinct adaptations with the same name can coexist. Search uses [TMDB multi-search](https://developer.themoviedb.org/reference/search-multi); age labels come from [movie certifications](https://developer.themoviedb.org/reference/movie-release-dates) or [TV content ratings](https://developer.themoviedb.org/reference/tv-series-content-ratings), not the audience score.
+
+### Streaming availability
+
+Open a catalogue-linked movie or TV show from the group's watchlist to see its **Where to watch** section.
+
+Availability is specific to the United States and is grouped into streaming subscriptions, free viewing, free with ads, rental, and purchase. Empty categories are hidden. Provider data is supplied by JustWatch via TMDB and cached for 12 hours.
+
+Manually added titles, titles without listed providers, and temporary TMDB outages display appropriate fallback messages without preventing access to the title page.
+
+This feature uses the existing `TMDB_API_KEY` configuration and requires no additional credentials or database migrations.
 
 ## Design and scope
 
@@ -129,7 +139,7 @@ docker compose exec web bin/brakeman
 docker compose exec web bin/bundler-audit
 ```
 
-- [Thirty user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, the discussion stories with `bundle exec cucumber features/episode_discussion.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
+- [Thirty-one user stories](docs/user-stories.md) map to tagged executable Cucumber scenarios. Run a story with `bundle exec cucumber --tags @US19`, just the voting stories with `bundle exec cucumber features/voting.feature`, the watchlist stories with `bundle exec cucumber features/watchlist.feature`, the episode progress stories with `bundle exec cucumber features/episode_progress.feature`, the discussion stories with `bundle exec cucumber features/episode_discussion.feature`, or all TMDB stories with `bundle exec cucumber --tags @tmdb`.
 - RSpec checks models, services, constraints, authentication, permissions, privacy, and failure paths. SimpleCov tracks all application controller/model/service files, including files never loaded by a suite, and enforces at least **90% line coverage independently for RSpec and Cucumber**. Reports are written to `coverage/rspec/index.html` and `coverage/cucumber/index.html`, so one suite cannot mask gaps in the other. TMDB tests use fake credentials and deterministic HTTP responses; no real key or live service is needed.
 - Cucumber uses real Rails/Inertia requests and separate browser cookie jars against the test database. These are service acceptance tests; they do not execute React in a browser.
 - React Testing Library tests cover web forms and controls. TypeScript, linting, security scans, and the production asset build complement the behavioral suites.
@@ -162,7 +172,7 @@ Measured results and their scope are recorded in [verification.md](docs/verifica
 | `POST /groups/:id/watchlist_items`                    | Add a title to the group's watchlist.                         |
 | `PATCH /groups/:id/watchlist_items/:id`               | Toggle an item between watched and unwatched.                 |
 | `DELETE /groups/:id/watchlist_items/:id`              | Remove an item from the group's watchlist.                    |
-| `GET /groups/:id/watchlist_items/:id`                 | A title's page: episode progress and spoiler-safe discussion. |
+| `GET /groups/:id/watchlist_items/:id`                 | A title's page: streaming availability, episode progress and spoiler-safe discussion. |
 | `PUT /groups/:id/watchlist_items/:id/progress`        | Set your last watched episode, or advance with `next=1`.      |
 | `DELETE /groups/:id/watchlist_items/:id/progress`     | Clear your episode progress for a show.                       |
 | `POST /groups/:id/watchlist_items/:id/comments`       | Comment on an episode you have watched.                       |

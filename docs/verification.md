@@ -1,5 +1,27 @@
 # Verification record
 
+## Streaming availability — November 23, 2026
+
+The `feature/streaming-availability` branch starts from `main` commit `073d25b`. The feature was developed and verified locally on macOS with Ruby 4.0.10, Node 24.22.2, and SQLite.
+
+| Check | Result |
+| --- | --- |
+| RSpec | 312 examples passed; 99.85% line coverage (667/668), 96.90% branch coverage (219/226). |
+| Cucumber | 95 scenarios and 1222 steps passed, including four new scenarios tagged US31. |
+| Cucumber coverage | 95.80% line coverage (640/668), 79.20% branch coverage (179/226). |
+| Vitest / React Testing Library | 91 tests passed, including seven new streaming availability component tests. |
+| TypeScript / frontend lint | Passed; no warnings or errors. |
+| RuboCop | All modified Ruby files passed with no offenses. |
+| Git diff | No whitespace errors in committed changes. |
+
+Streaming availability adds six service tests, five request tests, seven frontend tests, and four Cucumber scenarios. All existing automated tests continued to pass.
+
+The tests cover US-specific provider results, caching, duplicate and malformed provider entries, empty availability, manually added titles, upstream failures, private group access, and frontend fallback messages. Automated tests use deterministic responses and do not require a live TMDB credential.
+
+Live API verification returned provider information for both a movie and a TV show. Local browser verification confirmed that Dexter displayed streaming subscription and purchase providers, the United States region label, and JustWatch attribution. Empty categories were hidden, and existing episode progress remained accessible.
+
+No database migration, new dependency, or additional API credential is required. The existing TMDB configuration is reused. These results apply to local verification before integration with the redesign branch; final CI and deployment verification are separate.
+
 ## TMDB integration — November 15, 2026
 
 `tmdb-integration` starts from remote `main` commit `234f8a4`. The integration was checked locally in Docker with Ruby 4.0.9, Node 24.16.0, and SQLite before publication. No deployment was performed; PostgreSQL was not exercised for this change.

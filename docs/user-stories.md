@@ -1,6 +1,6 @@
 # User stories
 
-This branch delivers thirty web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26), and spoiler-safe episode discussion (US27–US30). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
+This branch delivers thirty-one web application stories: group management (US01–US11), group voting (US12–US15), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26), spoiler-safe episode discussion (US27–US30), and streaming availability (US31). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
 
 | Story                                        | User need and acceptance criteria                                                                                                                                                                                                                                                                                                                                  | Executable coverage                                                                                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -134,6 +134,25 @@ Acceptance criteria for **US26**:
 - Clearing removes only my progress for that show; other members and other shows are unchanged. Clearing when I have no progress is harmless.
 
 For US23–US26, signed-out visitors must sign in, outsiders and removed members receive not found, and a show cannot be reached through another group's URL.
+
+## Streaming availability user story
+
+| Story | User need | Executable coverage |
+| --- | --- | --- |
+| **US31 — Find where to watch a title** | As a group member, I can see where a movie or TV show is available to watch so that my group can plan our next watch session. | `@US31`, [watch_providers.feature](../features/watch_providers.feature); [TMDB service tests](../spec/services/tmdb_client_spec.rb), [watchlist detail request tests](../spec/requests/watchlist_item_show_spec.rb), [provider component tests](../app/frontend/test/watch-providers.test.tsx). |
+
+Acceptance criteria for **US31**:
+
+- A group member can open a catalogue-linked movie or TV show from the watchlist and see its available US watch providers.
+- Providers are grouped by streaming subscription, free, free with ads, rental, and purchase. Empty categories are not displayed.
+- Provider information is specific to the United States and includes JustWatch attribution via TMDB.
+- Titles with no listed providers display an explicit message instead of guessing availability.
+- Manually added titles explain why streaming information is not available.
+- During a TMDB outage, the title page remains accessible and displays a temporary availability message.
+- Provider results are cached for 12 hours to reduce external requests.
+- Outsiders cannot access another group's title page or trigger its provider lookup.
+
+Run this story independently with `bundle exec cucumber --tags @US31`.
 
 ## Two-user demonstration
 
