@@ -26,6 +26,7 @@ class WatchlistItemsController < InertiaController
     render inertia: "watchlist_items/show", props: {
       group: @group.as_json(only: [ :id, :name ]),
       item: item.as_json(only: [ :id, :title, :watched ]).merge(item.catalog_json, "episodic" => item.episodic?),
+      watch_providers: watch_provider_props(item),
       **progress_props(item),
       **discussion_props(item)
     }
@@ -68,6 +69,14 @@ class WatchlistItemsController < InertiaController
   end
 
   private
+
+    def watch_provider_props(item)
+    return { status: "not_linked" } unless item.tmdb_id.present? && item.media_type.present?
+
+    TmdbClient.new.watch_providers(item.media_type, item.tmdb_id).merge(status: "available")
+  rescue TmdbClient::Error
+    { status: "unavailable" }
+  end
 
   def redirect_with_title_errors(messages)
     redirect_to group_watchlist_items_path(@group),

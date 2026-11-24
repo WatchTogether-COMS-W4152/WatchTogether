@@ -212,6 +212,101 @@ RSpec.describe TmdbClient do
     end
   end
 
+  describe "#watch_providers" do
+    it "returns US watch providers by availability type and caches results" do
+      http = stub_response({
+        "results" => {
+          "US" => {
+            "flatrate" => [ { "provider_name" => "Netflix" } ],
+            "rent" => [ { "provider_name" => "Amazon Video" } ],
+            "buy" => [ { "provider_name" => "Apple TV" } ],
+            "free" => [ { "provider_name" => "Plex" } ],
+            "ads" => [ { "provider_name" => "Tubi" } ]
+          },
+          "GB" => {
+            "flatrate" => [ { "provider_name" => "BBC iPlayer" } ]
+          }
+        }
+      })
+
+      expected = {
+        region: "US",
+        streaming: [ "Netflix" ],
+        rent: [ "Amazon Video" ],
+        buy: [ "Apple TV" ],
+        free: [ "Plex" ],
+        ads: [ "Tubi" ]
+      }
+
+      expect(client.watch_providers("movie", 11)).to eq(expected)
+      expect(client.watch_providers("movie", "11")).to eq(expected)
+      expect(http).to have_received(:get).once.with(
+        a_string_including("/movie/11/watch/providers?"), anything
+      )
+    end
+
+    it "returns empty availability when US providers are missing" do
+      stub_response({ "results" => { "GB" => {} } })
+
+      expect(client.watch_providers("tv", 11)).to eq({
+        region: "US",
+        streaming: [],
+        rent: [],
+        buy: [],
+        free: [],
+        ads: []
+      })
+    end
+
+    it "filters malformed and duplicate provider names" do
+      stub_response({
+        "results" => {
+          "US" => {
+            "flatrate" => [
+              nil,
+              "invalid",
+              {},
+              { "provider_name" => 123 },
+              { "provider_name" => " " },
+              { "provider_name" => " Netflix " },
+              { "provider_name" => "Netflix" }
+            ],
+            "rent" => {}
+          }
+        }
+      })
+
+      result = client.watch_providers("tv", 11)
+
+      expect(result[:streaming]).to eq([ "Netflix" ])
+      expect(result[:rent]).to eq([])
+    end
+
+    it "rejects invalid title identities without contacting TMDB" do
+      expect(Net::HTTP).not_to receive(:start)
+
+      expect { client.watch_providers("person", 11) }
+        .to raise_error(TmdbClient::InvalidSelection)
+
+      expect { client.watch_providers("movie", -1) }
+        .to raise_error(TmdbClient::InvalidSelection)
+    end
+
+    it "handles malformed availability responses" do
+      stub_response({ "results" => [] })
+
+      expect { client.watch_providers("movie", 11) }
+        .to raise_error(TmdbClient::Unavailable)
+    end
+
+    it "handles upstream failures" do
+      stub_response(nil, code: "503")
+
+      expect { client.watch_providers("tv", 11) }
+        .to raise_error(TmdbClient::Unavailable)
+    end
+  end
+
   describe "after TMDB fails" do
     it "skips TMDB for a short while, then tries again" do
       stub_response(nil, code: "503")

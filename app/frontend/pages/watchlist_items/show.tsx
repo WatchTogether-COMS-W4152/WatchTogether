@@ -6,6 +6,7 @@ import EpisodeProgressSection from "../../components/episode-progress";
 import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
 import { Poster } from "../../components/media-details";
+import WatchProvidersSection, { type WatchProviders } from "../../components/watch-providers";
 import { mediaFacts, type MediaMetadata } from "../../types/catalog";
 
 export type WatchlistItemDetails = MediaMetadata & {
@@ -18,9 +19,11 @@ export type WatchlistItemDetails = MediaMetadata & {
 export default function WatchlistItemPage({
   group,
   item,
+  watch_providers,
 }: {
   group: { id: number; name: string };
   item: WatchlistItemDetails;
+  watch_providers?: WatchProviders;
 }) {
   const { props } = usePage();
   const [pending, setPending] = useState(false);
@@ -54,6 +57,7 @@ export default function WatchlistItemPage({
           {item.overview && <p className="overview">{item.overview}</p>}
         </PageHeader>
       </div>
+      <WatchProvidersSection availability={watch_providers} />
       {item.episodic && (
         <>
           <EpisodeProgressSection {...props} />
