@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { AvatarStack } from "../../components/avatar";
 import GroupMembers, { type MemberPanel } from "../../components/group-members";
+import InlineConfirm from "../../components/inline-confirm";
 import Layout, { PageHeader } from "../../components/layout";
 import { useToast } from "../../components/toast-context";
 import { memberCount, type GroupDetails } from "../../types";
@@ -88,50 +89,58 @@ export default function Group({ group }: { group: GroupDetails }) {
           />
         ) : null}
       </div>
-      {group.is_owner && (
-        <section className="danger-zone" aria-labelledby="delete-group-title">
-          <h2 id="delete-group-title" className="visually-hidden">
-            Delete this group
-          </h2>
-          {confirmDelete ? (
-            <div className="confirm">
-              <p>Delete “{group.name}” for everyone? This cannot be undone.</p>
-              <div className="row">
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  disabled={action.processing}
-                  onClick={() => action.delete(`/groups/${group.id}`)}
-                >
-                  {action.processing ? "Deleting…" : "Yes, delete group"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-quiet btn-sm"
-                  ref={deleteCancel}
-                  disabled={action.processing}
-                  onClick={() => setConfirmDelete(false)}
-                >
-                  Cancel
-                </button>
+      <section className="danger-zone" aria-label="Leave or delete this group">
+        <InlineConfirm
+          label="Leave group"
+          question={`Leave “${group.name}”? Your progress and ratings in this group will be deleted.`}
+          confirmLabel="Yes, leave"
+          pendingLabel="Leaving…"
+          pending={action.processing}
+          onConfirm={() => action.delete(`/groups/${group.id}/membership`)}
+          flush
+        />
+        {group.is_owner && (
+          <>
+            {confirmDelete ? (
+              <div className="confirm">
+                <p>Delete “{group.name}” for everyone? This cannot be undone.</p>
+                <div className="row">
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    disabled={action.processing}
+                    onClick={() => action.delete(`/groups/${group.id}`)}
+                  >
+                    {action.processing ? "Deleting…" : "Yes, delete group"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-quiet btn-sm"
+                    ref={deleteCancel}
+                    disabled={action.processing}
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-quiet btn-sm is-danger is-flush"
-              disabled={action.processing}
-              onClick={() => {
-                setConfirmDelete(true);
-                setConfirmReset(false);
-                setMemberPanel(null);
-              }}
-            >
-              Delete group
-            </button>
-          )}
-        </section>
-      )}
+            ) : (
+              <button
+                type="button"
+                className="btn btn-quiet btn-sm is-danger"
+                disabled={action.processing}
+                onClick={() => {
+                  setConfirmDelete(true);
+                  setConfirmReset(false);
+                  setMemberPanel(null);
+                }}
+              >
+                Delete group
+              </button>
+            )}
+          </>
+        )}
+      </section>
     </Layout>
   );
 }

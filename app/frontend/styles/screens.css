@@ -284,3 +284,14 @@
   margin-top: var(--space-3);
   padding-top: 0;
 }
+
+.danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.danger-zone > .confirm {
+  flex-basis: 100%;
+}

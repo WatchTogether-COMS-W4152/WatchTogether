@@ -116,7 +116,7 @@ RSpec.describe "Group ownership and member management", type: :request do
       }.not_to change(Membership, :count)
       expect(response).to redirect_to(group_path(group))
       follow_redirect!
-      expect(page_props.dig("flash", "alert")).to eq("A group needs at least one owner.")
+      expect(page_props.dig("flash", "alert")).to eq("Use Leave group to leave.")
       expect(group.owner?(owner)).to be(true)
       expect(group.reload.invite_code).to eq(original_code)
     end
@@ -202,6 +202,63 @@ RSpec.describe "Group ownership and member management", type: :request do
       expect(response).to have_http_status(:forbidden)
       expect(group.reload.owners).to contain_exactly(member)
       expect(group.members).to contain_exactly(member)
+    end
+  end
+
+  describe "leaving a group" do
+    let(:show) { group.watchlist_items.create!(title: "Severance") }
+    let(:suggestion) { Suggestion.create!(group: group, title: "Heat", suggested_by: owner) }
+
+    it "lets a member leave and forgets their progress and ratings, but keeps their comments" do
+      show.episode_progresses.create!(user: member, season: 1, episode: 2)
+      Vote.create!(suggestion: suggestion, user: member, rating: "love")
+      show.episode_comments.create!(user: member, season: 1, episode: 1, body: "Great start")
+      sign_in(member)
+
+      delete group_leave_path(group)
+
+      expect(response).to redirect_to(groups_path)
+      expect(group.memberships.exists?(user: member)).to be(false)
+      expect(show.episode_progresses.where(user: member)).to be_empty
+      expect(Vote.where(user: member)).to be_empty
+      expect(show.episode_comments.where(user: member).count).to eq(1)
+    end
+
+    it "shows a former member's comments without their name" do
+      show.episode_progresses.create!(user: member, season: 1, episode: 2)
+      show.episode_progresses.create!(user: owner, season: 1, episode: 2)
+      show.episode_comments.create!(user: member, season: 1, episode: 1, body: "Great start")
+      membership.destroy!
+      sign_in(owner)
+
+      get group_watchlist_item_path(group, show)
+
+      comment = page_props.dig("discussion", "episodes").sole.fetch("comments").sole
+      expect(comment).to include("body" => "Great start", "author" => nil)
+    end
+
+    it "lets an owner leave when another owner remains, but not the last owner" do
+      sign_in(owner)
+
+      delete group_leave_path(group)
+      follow_redirect!
+      expect(page_props.dig("flash", "alert")).to eq("Make someone else an owner before you leave.")
+      expect(group.owner?(owner)).to be(true)
+
+      membership.update!(role: "owner")
+      delete group_leave_path(group)
+      expect(response).to redirect_to(groups_path)
+      expect(group.memberships.exists?(user: owner)).to be(false)
+    end
+
+    it "tells a sole member to delete the group instead" do
+      membership.destroy!
+      sign_in(owner)
+
+      delete group_leave_path(group)
+      follow_redirect!
+
+      expect(page_props.dig("flash", "alert")).to eq("You're the only member. Delete the group instead.")
     end
   end
 end

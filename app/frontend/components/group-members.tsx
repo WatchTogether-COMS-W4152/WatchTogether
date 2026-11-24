@@ -119,7 +119,7 @@ export default function GroupMembers({
                       <p className="meta">
                         {panel.step === "promote"
                           ? "They'll be able to invite and remove people, and delete the group."
-                          : "They'll lose access, and the invitation code will change."}
+                          : "They'll lose access, their progress and ratings here will be deleted, and the invitation code will change."}
                       </p>
                       <div className="row">
                         <button

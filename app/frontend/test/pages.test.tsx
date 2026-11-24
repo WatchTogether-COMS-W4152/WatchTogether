@@ -311,6 +311,17 @@ describe("group flows", () => {
     expect(screen.getByRole("button", { name: "Replacing…" })).toBeDisabled();
   });
 
+  it("asks before leaving the group, then leaves", async () => {
+    const user = userEvent.setup();
+    render(<Group group={{ ...group, is_owner: false, invitation_code: undefined }} />);
+    expect(screen.queryByRole("button", { name: "Delete group" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Leave group" }));
+    expect(screen.getByText(/Leave “Friday Film Club”\?/)).toBeVisible();
+    expect(deleteRequest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Yes, leave" }));
+    expect(deleteRequest.mock.calls[0][0]).toBe("/groups/7/membership");
+  });
+
   it("lets the owner cancel deletion without sending a request", async () => {
     const user = userEvent.setup();
     render(<Group group={group} />);

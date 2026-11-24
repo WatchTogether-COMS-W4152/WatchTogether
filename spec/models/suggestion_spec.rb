@@ -193,7 +193,7 @@ RSpec.describe Suggestion, type: :model do
       expect(ranked.score).to eq(1)
       expect(ranked.votes_count).to eq(1)
       expect(ranked.love_count).to eq(0)
-      expect(Vote.where(user: carol)).to exist
+      expect(Vote.where(user: carol)).not_to exist
     end
 
     it "includes only the viewer's own rating and only this group's suggestions" do
