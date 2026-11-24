@@ -148,6 +148,12 @@ describe("accounts", () => {
     expect(screen.getByText("alice@example.com")).toBeVisible();
   });
 
+  it("credits TMDB on the profile page", () => {
+    render(<Profile />);
+    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
+    expect(screen.getByRole("img", { name: "TMDB" })).toBeVisible();
+  });
+
   it("signs out through the server and prevents repeated logout clicks", async () => {
     const user = userEvent.setup();
     render(<Groups groups={[]} />);

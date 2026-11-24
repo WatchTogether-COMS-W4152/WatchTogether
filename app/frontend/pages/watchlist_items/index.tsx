@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import EpisodeCode from "../../components/episode-code";
 import Layout, { PageHeader } from "../../components/layout";
-import { MediaMeta, Poster, TmdbAttribution } from "../../components/media-details";
+import { MediaMeta, Poster } from "../../components/media-details";
 import TitleSearch from "../../components/title-search";
 import type { CatalogTitle, MediaMetadata } from "../../types/catalog";
 import type { EpisodePosition } from "../../types/episodes";
@@ -115,7 +115,6 @@ export default function Watchlist({
           </ul>
         )}
       </section>
-      <TmdbAttribution />
     </Layout>
   );
 }

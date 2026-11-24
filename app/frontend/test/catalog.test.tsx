@@ -272,7 +272,6 @@ describe("catalog titles in voting and watchlist", () => {
     render(<Suggestions group={group} member_count={2} suggestions={[suggestion]} />);
     expect(screen.getByText("TMDB 7.8")).toBeVisible();
     expect(screen.getByText("+3")).toHaveTextContent("Score +3");
-    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
   });
 
   it("adds a suggestion to the watchlist and shows pending and already-added states", () => {
@@ -321,6 +320,5 @@ describe("catalog titles in voting and watchlist", () => {
     expect(within(rows[1]).getByText("Year unavailable")).toBeVisible();
     expect(within(rows[1]).getByText("Not yet rated")).toBeVisible();
     expect(within(rows[1]).getByText("Watched")).toBeVisible();
-    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeVisible();
   });
 });
