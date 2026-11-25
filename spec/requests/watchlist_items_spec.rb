@@ -21,9 +21,11 @@ RSpec.describe "Watchlist items", type: :request do
       expect(response).to have_http_status(:ok)
       expect(inertia).to render_component("watchlist_items/index")
       expect(page_props["group"]).to eq("id" => group.id, "name" => "Movie night")
+      unavailable = { "included" => false, "label" => GroupWatchability::MANUAL_LABEL }
+      expect(page_props["filtering"]).to be(false)
       expect(page_props["watchlist_items"]).to eq([
-        { "id" => newer.id, "title" => "Barbie", "watched" => false, "next_episode" => nil },
-        { "id" => older.id, "title" => "Titanic", "watched" => true, "next_episode" => nil }
+        { "id" => newer.id, "title" => "Barbie", "watched" => false, "next_episode" => nil, "watchability" => unavailable },
+        { "id" => older.id, "title" => "Titanic", "watched" => true, "next_episode" => nil, "watchability" => unavailable }
       ])
       expect(response.body).not_to include("Private film", owner.email, group.invite_code)
     end
@@ -267,5 +269,94 @@ RSpec.describe "Watchlist items", type: :request do
     expect(elsewhere.reload).to have_attributes(group_id: other_group.id, title: "Up", watched: false)
     expect(User.exists?(owner.id)).to be(true)
     expect(User.exists?(member.id)).to be(true)
+  end
+
+  describe "where everyone can watch" do
+    let(:client) { instance_double(TmdbClient) }
+
+    def providers(**lists)
+      {
+        region: "US",
+        streaming: [], streaming_ids: [],
+        rent: [], buy: [],
+        free: [], ads: []
+      }.merge(lists)
+    end
+
+    before do
+      allow(TmdbClient).to receive(:new).and_return(client)
+      owner.streaming_subscriptions.create!(provider_id: 8)
+    end
+
+    it "labels each title and filters to the ones nobody has to pay extra for" do
+      group.watchlist_items.create!(title: "Arrival", tmdb_id: 11, media_type: "movie")
+      group.watchlist_items.create!(title: "Paper Moons", tmdb_id: 12, media_type: "movie")
+      group.watchlist_items.create!(title: "Harbor Lights", tmdb_id: 13, media_type: "movie")
+      group.watchlist_items.create!(title: "Home movie", manual_media_type: "movie")
+      allow(client).to receive(:watch_providers).with("movie", 11).and_return(
+        providers(streaming: [ "Netflix" ], streaming_ids: [ 8 ], rent: [ "Amazon Video" ])
+      )
+      allow(client).to receive(:watch_providers).with("movie", 12).and_return(providers(rent: [ "Amazon Video" ]))
+      allow(client).to receive(:watch_providers).with("movie", 13).and_return(providers(free: [ "Plex" ]))
+      sign_in(member)
+
+      get group_watchlist_items_path(group)
+
+      labels = page_props["watchlist_items"].to_h { |item| [ item["title"], item["watchability"] ] }
+      expect(labels["Arrival"]).to eq("included" => false, "label" => "Bob needs a rental")
+      expect(labels["Paper Moons"]).to eq("included" => false, "label" => "Alice and Bob need a rental")
+      expect(labels["Harbor Lights"]).to eq("included" => true, "label" => "On everyone's services")
+      expect(labels["Home movie"]).to eq("included" => false, "label" => GroupWatchability::MANUAL_LABEL)
+      expect(response.body).not_to include("provider_id", "streaming_ids", "Netflix", "Hulu")
+
+      get group_watchlist_items_path(group, where: "everyone")
+
+      expect(page_props["filtering"]).to be(true)
+      expect(page_props["watchlist_items"].map { |item| item["title"] }).to eq([ "Harbor Lights" ])
+    end
+
+    it "keeps the list available when one title's providers cannot be loaded" do
+      group.watchlist_items.create!(title: "Arrival", tmdb_id: 11, media_type: "movie")
+      group.watchlist_items.create!(title: "Harbor Lights", tmdb_id: 13, media_type: "movie")
+      allow(client).to receive(:watch_providers).with("movie", 11).and_raise(TmdbClient::Unavailable)
+      allow(client).to receive(:watch_providers).with("movie", 13).and_return(providers(free: [ "Plex" ]))
+      sign_in(owner)
+
+      get group_watchlist_items_path(group)
+
+      expect(response).to have_http_status(:ok)
+      labels = page_props["watchlist_items"].to_h { |item| [ item["title"], item.dig("watchability", "label") ] }
+      expect(labels).to eq(
+        "Harbor Lights" => "On everyone's services",
+        "Arrival" => GroupWatchability::UNAVAILABLE_LABEL
+      )
+    end
+
+    it "stops counting a member who has left" do
+      group.watchlist_items.create!(title: "Arrival", tmdb_id: 11, media_type: "movie")
+      allow(client).to receive(:watch_providers).and_return(
+        providers(streaming: [ "Netflix" ], streaming_ids: [ 8 ])
+      )
+      group.memberships.find_by!(user: member).destroy!
+      sign_in(owner)
+
+      get group_watchlist_items_path(group)
+
+      expect(page_props["watchlist_items"].sole["watchability"]).to eq(
+        "included" => true, "label" => "On everyone's services"
+      )
+    end
+
+    it "hides the filtered list from outsiders and signed-out visitors" do
+      group.watchlist_items.create!(title: "Arrival", tmdb_id: 11, media_type: "movie")
+
+      get group_watchlist_items_path(group, where: "everyone")
+      expect(response).to redirect_to(sign_in_path)
+
+      sign_in(outsider)
+      get group_watchlist_items_path(group, where: "everyone")
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).not_to include("Arrival")
+    end
   end
 end

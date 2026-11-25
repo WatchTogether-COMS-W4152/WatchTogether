@@ -231,11 +231,11 @@ RSpec.describe TmdbClient do
 
       expected = {
         region: "US",
-        streaming: [ "Netflix" ],
-        rent: [ "Amazon Video" ],
-        buy: [ "Apple TV" ],
-        free: [ "Plex" ],
-        ads: [ "Tubi" ]
+        streaming: [ "Netflix" ], streaming_ids: [],
+        rent: [ "Amazon Video" ], rent_ids: [],
+        buy: [ "Apple TV" ], buy_ids: [],
+        free: [ "Plex" ], free_ids: [],
+        ads: [ "Tubi" ], ads_ids: []
       }
 
       expect(client.watch_providers("movie", 11)).to eq(expected)
@@ -250,11 +250,11 @@ RSpec.describe TmdbClient do
 
       expect(client.watch_providers("tv", 11)).to eq({
         region: "US",
-        streaming: [],
-        rent: [],
-        buy: [],
-        free: [],
-        ads: []
+        streaming: [], streaming_ids: [],
+        rent: [], rent_ids: [],
+        buy: [], buy_ids: [],
+        free: [], free_ids: [],
+        ads: [], ads_ids: []
       })
     end
 
@@ -268,8 +268,11 @@ RSpec.describe TmdbClient do
               {},
               { "provider_name" => 123 },
               { "provider_name" => " " },
-              { "provider_name" => " Netflix " },
-              { "provider_name" => "Netflix" }
+              { "provider_name" => " Netflix ", "provider_id" => 0 },
+              { "provider_name" => "Netflix", "provider_id" => -8 },
+              { "provider_name" => "Netflix", "provider_id" => 8 },
+              { "provider_name" => "Netflix", "provider_id" => 8 },
+              { "provider_id" => 9 }
             ],
             "rent" => {}
           }
@@ -279,7 +282,9 @@ RSpec.describe TmdbClient do
       result = client.watch_providers("tv", 11)
 
       expect(result[:streaming]).to eq([ "Netflix" ])
+      expect(result[:streaming_ids]).to eq([ 8 ])
       expect(result[:rent]).to eq([])
+      expect(result[:rent_ids]).to eq([])
     end
 
     it "rejects invalid title identities without contacting TMDB" do

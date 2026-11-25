@@ -8,6 +8,11 @@ import InlineConfirm from "../../components/inline-confirm";
 import Layout from "../../components/layout";
 import { MediaMeta, SmallPoster } from "../../components/media-details";
 import RatingButtons from "../../components/rating-buttons";
+import {
+  EMPTY_FILTER_MESSAGE,
+  WatchabilityFilter,
+  WatchabilityLabel,
+} from "../../components/watchability";
 import type { Suggestion, VotingGroup } from "../../types/voting";
 
 function formatScore(score: number) {
@@ -18,10 +23,12 @@ export default function Suggestions({
   group,
   member_count: memberCount,
   suggestions,
+  filtering = false,
 }: {
   group: VotingGroup;
   member_count: number;
   suggestions: Suggestion[];
+  filtering?: boolean;
 }) {
   const [adding, setAdding] = useState(suggestions.length === 0);
   const removal = useForm({});
@@ -52,10 +59,15 @@ export default function Suggestions({
             onClose={suggestions.length > 0 ? () => setAdding(false) : undefined}
           />
         )}
+        {(suggestions.length > 0 || filtering) && (
+          <WatchabilityFilter filtering={filtering} path={`/groups/${group.id}/picks`} />
+        )}
         <div className="ranking">
           <section className="card" aria-labelledby="ranking-title">
             <h2 id="ranking-title">Ranking</h2>
-            {suggestions.length === 0 ? (
+            {filtering && suggestions.length === 0 ? (
+              <p className="muted">{EMPTY_FILTER_MESSAGE}</p>
+            ) : suggestions.length === 0 ? (
               <p className="muted">No suggestions yet.</p>
             ) : (
               <ol className="rows">
@@ -74,6 +86,7 @@ export default function Suggestions({
                           : ""}
                         {suggestion.votes_count} of {memberCount} rated
                       </p>
+                      <WatchabilityLabel watchability={suggestion.watchability} />
                     </div>
                     <span
                       className={`score${suggestion.score < 0 ? " is-negative" : suggestion.score === 0 ? " is-zero" : ""}`}

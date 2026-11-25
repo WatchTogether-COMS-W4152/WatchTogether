@@ -3,6 +3,29 @@ require "rspec/mocks"
 
 module TmdbHelpers
   FAKE_API_KEY = "acceptance-test-key-not-a-real-secret"
+  WATCH_PROVIDERS = {
+    [ "movie", 329865 ] => {
+      "results" => {
+        "US" => {
+          "flatrate" => [ { "provider_name" => "Netflix", "provider_id" => 8 } ],
+          "rent" => [ { "provider_name" => "Amazon Video", "provider_id" => 10 } ],
+          "buy" => [ { "provider_name" => "Apple TV Store", "provider_id" => 2 } ]
+        },
+        "GB" => {
+          "flatrate" => [ { "provider_name" => "BBC iPlayer", "provider_id" => 38 } ]
+        }
+      }
+    },
+    [ "movie", 424242 ] => {
+      "results" => { "US" => { "rent" => [ { "provider_name" => "Amazon Video", "provider_id" => 10 } ] } }
+    },
+    [ "movie", 515151 ] => {
+      "results" => { "US" => { "free" => [ { "provider_name" => "Plex", "provider_id" => 538 } ] } }
+    },
+    [ "movie", 616161 ] => {
+      "results" => { "US" => { "flatrate" => [ { "provider_name" => "Hulu", "provider_id" => 15 } ] } }
+    }
+  }.freeze
   TITLES = {
     [ "movie", 329865 ] => {
       "id" => 329865, "title" => "Arrival", "media_type" => "movie", "release_date" => "2016-11-11",
@@ -37,6 +60,18 @@ module TmdbHelpers
     [ "tv", 999002 ] => {
       "id" => 999002, "name" => "Unannounced Series", "media_type" => "tv", "first_air_date" => "",
       "overview" => "", "poster_path" => nil, "vote_average" => 0, "vote_count" => 0
+    },
+    [ "movie", 424242 ] => {
+      "id" => 424242, "title" => "Paper Moons", "media_type" => "movie", "release_date" => "2019-04-01",
+      "overview" => "A rental-only movie.", "vote_average" => 6.4, "vote_count" => 20
+    },
+    [ "movie", 515151 ] => {
+      "id" => 515151, "title" => "Harbor Lights", "media_type" => "movie", "release_date" => "2020-06-01",
+      "overview" => "A movie anyone can watch for free.", "vote_average" => 7.1, "vote_count" => 30
+    },
+    [ "movie", 616161 ] => {
+      "id" => 616161, "title" => "Night Shift", "media_type" => "movie", "release_date" => "2021-01-01",
+      "overview" => "A movie on one subscription, with no rental.", "vote_average" => 6.8, "vote_count" => 15
     }
   }.freeze
 
@@ -79,23 +114,8 @@ module TmdbHelpers
       ] }
     elsif uri.path.end_with?("/watch/providers")
       _, _, media_type, id = uri.path.split("/")
-
-      if media_type == "movie" && id.to_i == 329865
-        {
-          "results" => {
-            "US" => {
-              "flatrate" => [ { "provider_name" => "Netflix" } ],
-              "rent" => [ { "provider_name" => "Amazon Video" } ],
-              "buy" => [ { "provider_name" => "Apple TV Store" } ]
-            },
-            "GB" => {
-              "flatrate" => [ { "provider_name" => "BBC iPlayer" } ]
-            }
-          }
-        }
-      else
-        { "results" => {} }
-      end
+      providers = WATCH_PROVIDERS[[ media_type, id.to_i ]]
+      providers || { "results" => {} }
     else
       _, _, media_type, id = uri.path.split("/")
       TITLES[[ media_type, id.to_i ]]

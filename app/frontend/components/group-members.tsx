@@ -40,18 +40,23 @@ export default function GroupMembers({
       <h2 id="members-title" ref={listTitle} tabIndex={-1}>
         Members
       </h2>
-      <ul className="rows">
+      <ul className="rows member-list">
         {group.members.map((member) => {
           const isActive = panel?.memberId === member.id;
           return (
             <li key={member.id}>
               <div className="person-row">
                 <Avatar name={member.display_name} />
-                <span className="who">
-                  {member.display_name}
-                  {member.id === currentUserId && <span className="muted"> (you)</span>}
-                  {member.role === "owner" && <span className="chip">Owner</span>}
-                </span>
+                <div className="member-identity">
+                  <span className="who">
+                    {member.display_name}
+                    {member.id === currentUserId && <span className="muted"> (you)</span>}
+                    {member.role === "owner" && <span className="chip">Owner</span>}
+                  </span>
+                  <p className="meta">
+                    {member.services?.length ? member.services.join(", ") : "No services listed"}
+                  </p>
+                </div>
                 {group.is_owner && member.id !== currentUserId && (
                   <button
                     type="button"

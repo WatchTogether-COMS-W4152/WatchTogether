@@ -72,21 +72,26 @@ class TmdbClient
       raise InvalidSelection, "Choose a valid movie or TV show."
     end
 
-    @cache.fetch([ "tmdb", "watch_providers", media_type, tmdb_id.to_s, "US" ], expires_in: 12.hours) do
+    @cache.fetch([ "tmdb", "watch_providers", media_type, tmdb_id.to_s, "US", "ids" ], expires_in: 12.hours) do
       data = request("#{media_type}/#{tmdb_id}/watch/providers")
       results = data["results"]
       raise Unavailable, UNAVAILABLE_MESSAGE unless results.is_a?(Hash)
 
       country = results["US"]
       country = {} unless country.is_a?(Hash)
+      streaming, streaming_ids = provider_lists(country["flatrate"])
+      rent, rent_ids = provider_lists(country["rent"])
+      buy, buy_ids = provider_lists(country["buy"])
+      free, free_ids = provider_lists(country["free"])
+      ads, ads_ids = provider_lists(country["ads"])
 
       {
         region: "US",
-        streaming: provider_names(country["flatrate"]),
-        rent: provider_names(country["rent"]),
-        buy: provider_names(country["buy"]),
-        free: provider_names(country["free"]),
-        ads: provider_names(country["ads"])
+        streaming: streaming, streaming_ids: streaming_ids,
+        rent: rent, rent_ids: rent_ids,
+        buy: buy, buy_ids: buy_ids,
+        free: free, free_ids: free_ids,
+        ads: ads, ads_ids: ads_ids
       }
     end
   end
@@ -97,15 +102,25 @@ class TmdbClient
 
   private
 
-  def provider_names(providers)
-    return [] unless providers.is_a?(Array)
+  def provider_lists(providers)
+    names = []
+    ids = []
+    return [ names, ids ] unless providers.is_a?(Array)
 
-    providers.filter_map do |provider|
+    providers.each do |provider|
       next unless provider.is_a?(Hash)
 
       name = provider["provider_name"]
-      name.strip if name.is_a?(String) && name.present?
-    end.uniq
+      next unless name.is_a?(String)
+
+      name = name.strip
+      next if name.empty?
+
+      names << name unless names.include?(name)
+      id = provider["provider_id"]
+      ids << id if id.is_a?(Integer) && id.positive? && !ids.include?(id)
+    end
+    [ names, ids ]
   end
 
   def request(path, **query)

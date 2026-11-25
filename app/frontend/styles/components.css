@@ -310,6 +310,24 @@
   font-weight: 400;
 }
 
+.member-identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.member-identity .who {
+  flex: none;
+  width: 100%;
+}
+
+.member-identity .meta {
+  margin: 0;
+}
+
 .topbar {
   background: var(--surface);
   box-shadow: 0 1px 0 var(--line);

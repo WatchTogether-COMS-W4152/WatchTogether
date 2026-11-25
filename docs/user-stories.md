@@ -1,6 +1,6 @@
 # User stories
 
-WatchTogether delivers thirty-four web application stories: group management (US01–US11, US32), group voting (US12–US15, US33), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26, US34), spoiler-safe episode discussion (US27–US30), and streaming availability (US31). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
+WatchTogether delivers thirty-seven web application stories: group management (US01–US11, US32), group voting (US12–US15, US33), a shared watchlist with watched/unwatched status (US16–US18), TMDB discovery, metadata, transfers, and recovery (US19–US22), episode progress tracking (US23–US26, US34), spoiler-safe episode discussion (US27–US30), streaming availability (US31), and choosing titles everyone can watch without paying extra (US35–US37). Each story has a stable Cucumber tag so it can be demonstrated and tested independently.
 
 | Story                                        | User need and acceptance criteria                                                                                                                                                                                                                                                                                                                                  | Executable coverage                                                                                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -153,6 +153,40 @@ Acceptance criteria for **US31**:
 - Outsiders cannot access another group's title page or trigger its provider lookup.
 
 Run this story independently with `bundle exec cucumber --tags @US31`.
+
+## Where can we all watch
+
+Members record the US streaming services they pay for on their profile. Watchlist and Picks compare those services with each catalogue title's US availability. A title is included when every current member is covered by a service they listed, or by a free or free-with-ads provider. Renting or buying does not count. The same list applies in every group.
+
+| Story                                             | User need                                                                                                                                          | Executable coverage                                                                                                                                                                                                                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **US35 — List the services I pay for**            | As a member, I can record the streaming services I pay for, change them, and clear them, so my groups know where I can watch without paying extra. | `@US35`, [watchability.feature](../features/watchability.feature); [subscription model specs](../spec/models/streaming_subscription_spec.rb), [profile request specs](../spec/requests/profiles_spec.rb), [profile form tests](../app/frontend/test/watchability.test.tsx). |
+| **US36 — See who can watch without paying extra** | As a member, I can see whether a watchlist or ranked title is on everyone's services, or which friends would have to rent or cannot watch it.      | `@US36`, [watchability.feature](../features/watchability.feature); [group watchability specs](../spec/services/group_watchability_spec.rb), [watchlist](../spec/requests/watchlist_items_spec.rb) and [picks](../spec/requests/suggestions_spec.rb) request specs.          |
+| **US37 — Filter to what we can all watch**        | As a member, I can hide watchlist titles and ranked picks that someone would have to pay extra for, then show the full lists again.                | `@US37`, [watchability.feature](../features/watchability.feature); watchlist and picks request specs, [filter control tests](../app/frontend/test/watchability.test.tsx).                                                                                                   |
+
+Acceptance criteria for **US35**:
+
+- The profile lists a fixed set of US subscription services. Checking services and saving persists them, and saving again replaces the previous set.
+- Saving with nothing checked clears the list. An id outside the catalogue is ignored and is not stored.
+- The list belongs to the member, so it is the same in every group. Another member cannot change it, and saving services does not change the display name, email, or password.
+- On the members page, each member's saved services appear by name in catalogue order. A member with none saved is shown as having no services. The page does not include provider ids.
+
+Acceptance criteria for **US36**:
+
+- On the watchlist and on ranked picks, a catalogue title says **On everyone's services** when every current member is covered.
+- A member is covered by a service they saved when that service streams the title, or when the title is free or free with ads. Rent and buy never cover a member.
+- Otherwise the title names the uncovered members in display-name order: **Sam needs a rental** when it can be rented or bought, and **Not available for Sam** when it cannot.
+- A manually added title, a title with no US providers, and a title whose availability cannot be loaded each explain that, and are not described as on everyone's services.
+- Someone outside the group cannot see the labels. Group pages do not include other members' service ids.
+
+Acceptance criteria for **US37**:
+
+- **Where can we all watch?** on the watchlist and on ranked picks shows only included titles.
+- Rent-only titles, titles missing from someone's services, manual titles, and titles whose availability cannot be loaded are hidden.
+- Turning the filter off shows the full list again. Ranks follow the titles that remain while the filter is on.
+- A signed-out visitor is sent to sign in, and an outsider receives not found.
+
+Run these stories with `bundle exec cucumber --tags @US35`, `@US36`, or `@US37`.
 
 ## Iteration 2 additions
 

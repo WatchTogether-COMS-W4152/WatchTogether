@@ -12,6 +12,9 @@ class SuggestionsController < InertiaController
     source_ids = watchlist.map(&:first).compact.to_set
     catalog_ids = watchlist.filter_map { |_, type, id, _| [ type, id ] if id }.to_set
     manual_titles = watchlist.filter_map { |_, _, id, title| title.downcase unless id }.to_set
+    members = @group.members.includes(:streaming_subscriptions).to_a
+    client = TmdbClient.new
+    filtering = params[:where] == "everyone"
     suggestions = Suggestion.ranked_for(@group, viewer: current_user).map do |suggestion|
       suggestion.as_json(only: [ :id, :title ]).merge(suggestion.catalog_json).merge(
         score: suggestion.score.to_i,
@@ -20,12 +23,15 @@ class SuggestionsController < InertiaController
         suggested_by: suggestion.suggested_by&.display_name,
         can_remove: is_owner || suggestion.suggested_by_id == current_user.id,
         in_watchlist: source_ids.include?(suggestion.id) || catalog_ids.include?([ suggestion.media_type, suggestion.tmdb_id ]) ||
-          (suggestion.tmdb_id.nil? && manual_titles.include?(suggestion.title.downcase))
+          (suggestion.tmdb_id.nil? && manual_titles.include?(suggestion.title.downcase)),
+        watchability: GroupWatchability.for(suggestion, members: members, client: client)
       )
     end
+    suggestions.select! { |suggestion| suggestion[:watchability]["included"] } if filtering
     render inertia: "suggestions/index", props: {
       group: @group.as_json(only: [ :id, :name ]).merge(is_owner: is_owner),
       member_count: @group.memberships.count,
+      filtering: filtering,
       suggestions: suggestions
     }
   end
