@@ -29,7 +29,12 @@ export type GroupDetails = {
   id: number;
   name: string;
   is_owner: boolean;
-  members: { id: number; display_name: string; role: "owner" | "member" }[];
+  members: {
+    id: number;
+    display_name: string;
+    role: "owner" | "member";
+    services?: string[];
+  }[];
   invitation_code?: string;
 };
 

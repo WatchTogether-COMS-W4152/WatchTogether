@@ -27,6 +27,45 @@ RSpec.describe "Profiles", type: :request do
     end
   end
 
+  it "saves, replaces, and clears the services the member pays for" do
+    patch profile_path, params: { streaming_services: "1", provider_ids: [ 8, 15, 999_999, "nope" ] }
+
+    expect(response).to redirect_to(profile_path)
+    follow_redirect!
+    expect(user.streaming_subscriptions.pluck(:provider_id)).to contain_exactly(8, 15)
+    expect(page_props["selected_service_ids"]).to eq([ 8, 15 ])
+    expect(page_props["services"].map { |service| service["id"] }).to eq(StreamingService::IDS)
+
+    patch profile_path, params: { streaming_services: "1", provider_ids: [ 9 ] }
+    follow_redirect!
+    expect(user.streaming_subscriptions.pluck(:provider_id)).to eq([ 9 ])
+
+    patch profile_path, params: { streaming_services: "1" }
+    follow_redirect!
+    expect(user.streaming_subscriptions).to be_empty
+    expect(page_props["selected_service_ids"]).to eq([])
+  end
+
+  it "does not let a streaming update change the display name or another account" do
+    other = create_user(display_name: "Sam")
+
+    patch profile_path, params: {
+      streaming_services: "1", provider_ids: [ 8 ], display_name: "Hacker", user_id: other.id
+    }
+
+    expect(user.reload.display_name).to eq("Alex")
+    expect(user.streaming_subscriptions.pluck(:provider_id)).to eq([ 8 ])
+    expect(other.streaming_subscriptions).to be_empty
+  end
+
+  it "requires sign-in before saving streaming services" do
+    delete "/session"
+    patch profile_path, params: { streaming_services: "1", provider_ids: [ 8 ] }
+
+    expect(response).to redirect_to(sign_in_path)
+    expect(user.streaming_subscriptions).to be_empty
+  end
+
   it "does not let profile editing change email, password, or another user's id" do
     original_digest = user.password_digest
     patch profile_path, params: { display_name: "Sam", email: "changed@example.com", password: "newpassword123", id: user.id + 1 }

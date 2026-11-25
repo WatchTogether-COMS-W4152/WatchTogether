@@ -6,6 +6,12 @@ import EpisodeCode from "../../components/episode-code";
 import GroupHeader from "../../components/group-header";
 import Layout from "../../components/layout";
 import { MediaMeta, Poster } from "../../components/media-details";
+import {
+  EMPTY_FILTER_MESSAGE,
+  WatchabilityFilter,
+  WatchabilityLabel,
+  type Watchability,
+} from "../../components/watchability";
 import type { MediaMetadata } from "../../types/catalog";
 import type { EpisodePosition } from "../../types/episodes";
 
@@ -14,6 +20,7 @@ type WatchlistItem = MediaMetadata & {
   title: string;
   watched: boolean;
   next_episode?: EpisodePosition | null;
+  watchability?: Watchability;
 };
 
 type Group = {
@@ -24,9 +31,11 @@ type Group = {
 export default function Watchlist({
   group,
   watchlist_items,
+  filtering = false,
 }: {
   group: Group;
   watchlist_items: WatchlistItem[];
+  filtering?: boolean;
 }) {
   const [adding, setAdding] = useState(watchlist_items.length === 0);
 
@@ -57,11 +66,17 @@ export default function Watchlist({
         />
       )}
 
+      {(watchlist_items.length > 0 || filtering) && (
+        <WatchabilityFilter filtering={filtering} path={`/groups/${group.id}/watchlist`} />
+      )}
+
       <section aria-labelledby="watchlist-titles">
         <h2 id="watchlist-titles" className="visually-hidden">
           Movies and shows
         </h2>
-        {watchlist_items.length === 0 ? (
+        {filtering && watchlist_items.length === 0 ? (
+          <p className="muted">{EMPTY_FILTER_MESSAGE}</p>
+        ) : watchlist_items.length === 0 ? (
           <p className="muted">Nothing on the watchlist yet.</p>
         ) : (
           <ul className="poster-grid">
@@ -77,6 +92,7 @@ export default function Watchlist({
                   </Poster>
                   <h3>{item.title}</h3>
                   <MediaMeta media={item} />
+                  <WatchabilityLabel watchability={item.watchability} />
                 </Link>
               </li>
             ))}

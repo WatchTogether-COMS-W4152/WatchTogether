@@ -38,8 +38,10 @@ Then("member details contain names but no emails or invitation code") do
   expect(group).not_to have_key("invitation_code")
   expect(group).not_to have_key("invite_code")
   group.fetch("members").each do |member|
-    expect(member.keys).to match_array(%w[id display_name role])
+    expect(member.keys).to match_array(%w[id display_name role services])
+    expect(member.fetch("services")).to all(be_a(String))
   end
+  expect(nested_keys(group)).not_to include("email", "provider_id", "provider_ids")
 end
 
 Then("{string} has exactly one membership in {string}") do |viewer, name|

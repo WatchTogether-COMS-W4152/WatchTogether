@@ -250,6 +250,23 @@ describe("group flows", () => {
     expect(screen.getByLabelText("Invitation code")).toHaveAttribute("aria-invalid", "true");
   });
 
+  it("lists each member's streaming services under their name", () => {
+    render(
+      <Group
+        group={{
+          ...group,
+          members: [
+            { ...group.members[0], services: ["Netflix", "Hulu"] },
+            { ...group.members[1], services: [] },
+          ],
+        }}
+      />,
+    );
+    const alice = screen.getByRole("heading", { name: "Members" }).closest("section")!;
+    expect(within(alice).getByText("Netflix, Hulu")).toBeVisible();
+    expect(within(alice).getByText("No services listed")).toBeVisible();
+  });
+
   it("shows member names and hides all invitation controls from ordinary members", () => {
     page.props.auth.user = { id: 2, display_name: "Bob", email: "bob@example.com" };
     const { invitation_code: _code, ...memberGroup } = group;

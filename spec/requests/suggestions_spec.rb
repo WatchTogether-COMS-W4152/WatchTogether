@@ -27,11 +27,13 @@ RSpec.describe "Group suggestions", type: :request do
       expect(inertia).to render_component("suggestions/index")
       expect(page_props["group"]).to eq("id" => group.id, "name" => "Friday films", "is_owner" => false)
       expect(page_props["member_count"]).to eq(2)
+      unavailable = { "included" => false, "label" => GroupWatchability::MANUAL_LABEL }
+      expect(page_props["filtering"]).to be(false)
       expect(page_props["suggestions"]).to eq([
         { "id" => up.id, "title" => "Up", "score" => 1, "votes_count" => 1, "my_rating" => nil,
-          "suggested_by" => "Bob", "can_remove" => true, "in_watchlist" => false },
+          "suggested_by" => "Bob", "can_remove" => true, "in_watchlist" => false, "watchability" => unavailable },
         { "id" => heat.id, "title" => "Heat", "score" => 0, "votes_count" => 2, "my_rating" => "not_interested",
-          "suggested_by" => "Alice", "can_remove" => false, "in_watchlist" => false }
+          "suggested_by" => "Alice", "can_remove" => false, "in_watchlist" => false, "watchability" => unavailable }
       ])
       expect(response.body).not_to include(owner.email, member.password_digest, group.invite_code)
     end
@@ -208,6 +210,56 @@ RSpec.describe "Group suggestions", type: :request do
       delete group_suggestion_path(group, suggestion)
       expect(response).to have_http_status(:not_found)
       expect(Suggestion.exists?(suggestion.id)).to be(true)
+    end
+  end
+
+  describe "where everyone can watch" do
+    let(:client) { instance_double(TmdbClient) }
+
+    before do
+      allow(TmdbClient).to receive(:new).and_return(client)
+      owner.streaming_subscriptions.create!(provider_id: 8)
+      member.streaming_subscriptions.create!(provider_id: 8)
+    end
+
+    it "labels ranked picks and filters out titles someone would have to pay extra for" do
+      shared = suggest("Arrival")
+      shared.update!(tmdb_id: 11, media_type: "movie")
+      rental = suggest("Paper Moons")
+      rental.update!(tmdb_id: 12, media_type: "movie")
+      Vote.create!(suggestion: shared, user: owner, rating: "love")
+      allow(client).to receive(:watch_providers).with("movie", 11).and_return(
+        region: "US", streaming: [ "Netflix" ], streaming_ids: [ 8 ], rent: [], buy: [], free: [], ads: []
+      )
+      allow(client).to receive(:watch_providers).with("movie", 12).and_return(
+        region: "US", streaming: [], streaming_ids: [], rent: [ "Amazon Video" ], buy: [], free: [], ads: []
+      )
+      sign_in(member)
+
+      get group_suggestions_path(group)
+
+      labels = page_props["suggestions"].to_h { |item| [ item["title"], item["watchability"] ] }
+      expect(labels["Arrival"]).to eq("included" => true, "label" => "On everyone's services")
+      expect(labels["Paper Moons"]).to eq("included" => false, "label" => "Alice and Bob need a rental")
+      expect(page_props["suggestions"].map { |item| item["title"] }).to eq([ "Arrival", "Paper Moons" ])
+      expect(response.body).not_to include("provider_id", "streaming_ids")
+
+      get group_suggestions_path(group, where: "everyone")
+
+      expect(page_props["filtering"]).to be(true)
+      expect(page_props["suggestions"].map { |item| item["title"] }).to eq([ "Arrival" ])
+      expect(page_props["suggestions"].sole["score"]).to eq(2)
+    end
+
+    it "hides the filtered picks from outsiders and signed-out visitors" do
+      suggest("Arrival")
+      get group_suggestions_path(group, where: "everyone")
+      expect(response).to redirect_to(sign_in_path)
+
+      sign_in(outsider)
+      get group_suggestions_path(group, where: "everyone")
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).not_to include("Arrival")
     end
   end
 end

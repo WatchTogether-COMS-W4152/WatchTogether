@@ -9,14 +9,20 @@ class WatchlistItemsController < InertiaController
 
   def index
     watchlist_items = @group.watchlist_items.includes(:episode_progresses).order(created_at: :desc)
-    members = @group.members.to_a
+    members = @group.members.includes(:streaming_subscriptions).to_a
+    client = TmdbClient.new
+    filtering = params[:where] == "everyone"
+    items = watchlist_items.map do |item|
+      item.as_json(only: [ :id, :title, :watched ])
+        .merge(item.catalog_json, "next_episode" => (item.next_group_episode(members: members) unless item.watched))
+        .merge("watchability" => GroupWatchability.for(item, members: members, client: client))
+    end
+    items.select! { |item| item["watchability"]["included"] } if filtering
 
     render inertia: "watchlist_items/index", props: {
       group: @group.as_json(only: [ :id, :name ]),
-      watchlist_items: watchlist_items.map do |item|
-        item.as_json(only: [ :id, :title, :watched ])
-          .merge(item.catalog_json, "next_episode" => (item.next_group_episode(members: members) unless item.watched))
-      end
+      filtering: filtering,
+      watchlist_items: items
     }
   end
 

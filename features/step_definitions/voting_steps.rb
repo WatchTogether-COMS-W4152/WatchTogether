@@ -82,7 +82,7 @@ end
 
 Then("the suggestions show no individual ratings or emails") do
   props.fetch("suggestions").each do |suggestion|
-    expect(suggestion.keys).to match_array(%w[id title score votes_count my_rating suggested_by can_remove in_watchlist])
+    expect(suggestion.keys).to match_array(%w[id title score votes_count my_rating suggested_by can_remove in_watchlist watchability])
   end
   expect(nested_keys(props)).not_to include("rating", "votes", "voters", "user_id", "love_count")
   expect(nested_keys(props.except("auth"))).not_to include("email")

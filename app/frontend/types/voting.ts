@@ -1,3 +1,4 @@
+import type { Watchability } from "../components/watchability";
 import type { MediaMetadata } from "./catalog";
 
 export type Rating = "love" | "maybe" | "not_interested";
@@ -17,6 +18,7 @@ export type Suggestion = MediaMetadata & {
   suggested_by: string | null;
   can_remove: boolean;
   in_watchlist?: boolean;
+  watchability?: Watchability;
 };
 
 export type VotingGroup = {

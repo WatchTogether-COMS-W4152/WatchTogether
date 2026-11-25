@@ -12,6 +12,7 @@ RSpec.describe "Catalog voting and watchlist integration", type: :request do
   before do
     group.memberships.create!(user: member)
     allow(TmdbClient).to receive(:new).and_return(client)
+    allow(client).to receive(:watch_providers).and_raise(TmdbClient::Unavailable)
   end
 
   [ :suggestions, :watchlist_items ].each do |destination|

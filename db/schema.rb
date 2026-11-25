@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_210000) do
   create_table "episode_comments", force: :cascade do |t|
     t.integer "watchlist_item_id", null: false
     t.integer "user_id"
@@ -66,6 +66,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
     t.datetime "updated_at", null: false
     t.index ["token_digest"], name: "index_sessions_on_token_digest", unique: true
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "streaming_subscriptions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "provider_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "provider_id"], name: "index_streaming_subscriptions_on_user_id_and_provider_id", unique: true
+    t.index ["user_id"], name: "index_streaming_subscriptions_on_user_id"
+    t.check_constraint "provider_id IN (8, 9, 15, 283, 337, 350, 386, 531, 1899)", name: "streaming_subscriptions_provider_id_check"
   end
 
   create_table "suggestions", force: :cascade do |t|
@@ -139,6 +149,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_010000) do
   add_foreign_key "memberships", "groups"
   add_foreign_key "memberships", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "streaming_subscriptions", "users", on_delete: :cascade
   add_foreign_key "suggestions", "groups", on_delete: :cascade
   add_foreign_key "suggestions", "users", column: "suggested_by_id", on_delete: :nullify
   add_foreign_key "votes", "suggestions", on_delete: :cascade

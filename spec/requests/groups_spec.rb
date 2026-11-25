@@ -77,19 +77,22 @@ RSpec.describe "Groups and invitations", type: :request do
     expect(queries).to be <= 8
   end
 
-  it "shows members' names while keeping their emails and secrets private" do
+  it "shows members' names and services while keeping their emails and secrets private" do
     group.memberships.create!(user: member)
+    owner.streaming_subscriptions.create!(provider_id: 15)
+    owner.streaming_subscriptions.create!(provider_id: 8)
     sign_in(member)
     get group_members_path(group)
     details = page_props["group"]
     expect(details["members"]).to contain_exactly(
-      { "id" => owner.id, "display_name" => "Owner", "role" => "owner" },
-      { "id" => member.id, "display_name" => "Member", "role" => "member" }
+      { "id" => owner.id, "display_name" => "Owner", "role" => "owner", "services" => [ "Netflix", "Hulu" ] },
+      { "id" => member.id, "display_name" => "Member", "role" => "member", "services" => [] }
     )
     expect(details).not_to have_key("invitation_code")
     expect(details["is_owner"]).to be(false)
     expect(details).not_to have_key("owner_id")
     expect(response.body).not_to include(owner.email, owner.password_digest, group.invite_code)
+    expect(response.body).not_to include("provider_id", "provider_ids", "selected_service_ids", "streaming_ids")
   end
 
   it "shows invitation controls data only to the owner" do

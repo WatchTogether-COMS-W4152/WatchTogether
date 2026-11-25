@@ -38,8 +38,12 @@ class GroupsController < InertiaController
     is_owner = group.owner?(current_user)
     details = group.as_json(only: [ :id, :name ]).merge(
       is_owner: is_owner,
-      members: group.memberships.includes(:user).joins(:user).order("users.display_name", "users.id").map do |membership|
-        membership.user.as_json(only: [ :id, :display_name ]).merge(role: membership.role)
+      members: group.memberships.includes(user: :streaming_subscriptions).joins(:user).order("users.display_name", "users.id").map do |membership|
+        provider_ids = membership.user.streaming_subscriptions.map(&:provider_id)
+        membership.user.as_json(only: [ :id, :display_name ]).merge(
+          role: membership.role,
+          services: StreamingService::CATALOG.filter_map { |service| service.fetch(:name) if provider_ids.include?(service.fetch(:id)) }
+        )
       end
     )
     details[:invitation_code] = group.invite_code if is_owner
